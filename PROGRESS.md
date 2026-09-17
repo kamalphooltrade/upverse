@@ -1,6 +1,14 @@
 # PROGRESS — UPVerse (Personal Financial Advisor)
 
-## สถานะล่าสุด: 18 ก.ย. 2569 (00:45) — เปลี่ยนรหัสผ่านในแอปได้ · 2FA Webull ตามเอกสารทางการ
+## สถานะล่าสุด: 18 ก.ย. 2569 (01:00) — 🟢 พอร์ตจริงจาก Webull แสดงในแอปแล้ว
+- ✅ ต้นเชื่อม Webull สำเร็จ (token NORMAL · บัญชี Individual Cash CTH6641233) · ต้นตั้งรหัสผ่านในแอปแล้ว (source=db)
+- ✅ **แก้ endpoint ให้ตรง TH จริง**: `/trading/accounts/list` · `/trading/assets/balances/get` · `/trading/assets/positions/list` · `/trading/orders/historical-orders/list` (ที่ผมใช้ก่อนหน้า `/app/subscriptions/list` เป็นของ US → 404)
+- ✅ **sync** (`POST /broker/sync` · ปุ่ม "ดึงจาก Webull" ในหน้าพอร์ต · งานกลางคืนเรียกให้): snapshot balance+positions (qty/cost/last_price จาก Webull = ชั้น 1) + นำเข้า fills → บัญชี `webull_live` · พอร์ตรวม paper + live · ราคาใช้ของ Webull ถ้าใหม่กว่า Yahoo
+- ✅ ผล sync จริง: 7 ตำแหน่ง (NVDA INTC TSLA AXON GOOG AAPL USB เศษหุ้น) · เงินสด $46.09 · มูลค่าหุ้น $20.40 · Webull รายงานรวม ฿2,210.58 · fills นำเข้า 4 รายการ
+- ⚠️ **ข้อจำกัด Webull TH**: historical-orders คืนเฉพาะช่วงล่าสุด (start_time ทุกรูปแบบ → 417 · ยิงถี่ → 429) → ledger ของบัญชี Webull ไม่ครบ **positions snapshot = ความจริง** · market-data host timeout/ต้อง subscription → ใช้ last_price จาก positions
+- ✅ กัน dev ปน prod: `UPVERSE_USE_SUPABASE=1` เท่านั้นถึงใช้ Supabase นอก Vercel (ผมเปิดชั่วคราวเพื่อทดสอบ sync จริง แล้วปิดคืน)
+
+## สถานะก่อนหน้า: 18 ก.ย. 2569 (00:45) — เปลี่ยนรหัสผ่านในแอปได้ · 2FA Webull ตามเอกสารทางการ
 - ✅ **เปลี่ยนรหัสผ่านเจ้าของในแอป** (ตั้งค่า › รหัสผ่านเจ้าของ): เก็บ scrypt hash ใน DB · env `UPVERSE_OWNER_PASSPHRASE` เป็นแค่ค่าตั้งต้น (เมื่อตั้งในแอปแล้ว env ไม่ถูกใช้) · ต้องใส่รหัสเดิม · API token เปลี่ยนไม่ได้ (403) · หมุนเซสชัน · ทดสอบผ่าน UI แล้ว
 - ✅ **2FA Webull ทำตามเอกสาร `authentication/token`**: create → PENDING + **Webull ส่ง SMS** → ผู้ใช้ไป **แอป Webull → Menu → Messages → OpenAPI Notifications → Check Now → กรอก SMS** (5 นาที) → เรากด "ตรวจสถานะ" → NORMAL · token เก็บเข้ารหัส (ไม่สร้างใหม่ทุกครั้ง = ไม่ SMS ซ้ำ) · ปุ่ม "ขอรหัสใหม่" แยก · INVALID หลัง 15 วันไม่ใช้ → สแกนกลางคืนเรียก refresh ต่ออายุ · **แอปเราไม่มีช่องกรอก SMS โดยเจตนา**
 - ✅ ยิงจริงถึง `api.webull.co.th` ด้วยกุญแจปลอม → `401 UNAUTHORIZED: Invalid credentials` (ลายเซ็น/endpoint ถูกรับที่ปลายทาง)

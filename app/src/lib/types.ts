@@ -267,6 +267,7 @@ export interface DataFile {
     accounts: Array<{ account_id: string; account_number?: string; account_type?: string }> | null;
   } | null;
   owner: { passphraseHash: string; salt: string; changedAt: string } | null; // null = use env UPVERSE_OWNER_PASSPHRASE
+  liveSnapshots?: Array<{ accountId: string; brokerAccountId: string; asOf: string; currency: "USD"; cashUsd: number; buyingPowerUsd: number; marketValueUsd: number; unrealizedUsd: number; totalThbReported: number | null; positions: Array<{ symbol: string; qty: number; costPrice: number; lastPrice: number; unrealized: number; positionId: string }> }>;
 }
 
 export const API_SCOPES = [

@@ -71,13 +71,18 @@ export const createToken = (creds: WebullCreds, existing?: string | null) => cal
 export const checkToken = (creds: WebullCreds, token: string) => callWebull<AccessToken>({ method: "POST", uri: "/auth/tokens/check", body: { token }, creds });
 export const refreshToken = (creds: WebullCreds, token: string) => callWebull<AccessToken>({ method: "POST", uri: "/openapi/auth/token/refresh", body: { token }, creds });
 
-// ---------- account ----------
-export interface WebullAccount { account_id: string; account_type?: string; account_number?: string; [k: string]: unknown }
-export const listAccounts = (creds: WebullCreds) => callWebull<WebullAccount[] | { accounts?: WebullAccount[] }>({ method: "GET", uri: "/app/subscriptions/list", creds });
-export const accountBalance = (creds: WebullCreds, accountId: string, currency = "USD") => callWebull<Record<string, unknown>>({ method: "GET", uri: "/account/balance", query: { account_id: accountId, total_asset_currency: currency }, creds });
-export const accountPositions = (creds: WebullCreds, accountId: string, pageSize = 100, last?: string) => callWebull<Record<string, unknown>>({ method: "GET", uri: "/account/positions", query: { account_id: accountId, page_size: pageSize, last_instrument_id: last }, creds });
-export const openOrders = (creds: WebullCreds, accountId: string) => callWebull<Record<string, unknown>>({ method: "GET", uri: "/trade/orders/list-open", query: { account_id: accountId, page_size: 100 }, creds });
-export const orderDetail = (creds: WebullCreds, accountId: string, clientOrderId: string) => callWebull<Record<string, unknown>>({ method: "GET", uri: "/trade/order/detail", query: { account_id: accountId, client_order_id: clientOrderId }, creds });
+// ---------- account (v3 "trading" API — verified live on api.webull.co.th, 18 Sep 2026) ----------
+export interface WebullAccount { account_id: string; account_number?: string; account_type?: string; account_label?: string; account_class?: string }
+export interface WebullBalance { total_asset_currency: string; total_market_value: string; total_cash_balance: string; total_unrealized_profit_loss: string; account_currency_assets: Array<{ currency: string; market_value: string; cash_balance: string; buying_power: string; unrealized_profit_loss: string }> }
+export interface WebullPosition { currency: string; quantity: string; position_id: string; symbol: string; instrument_type: string; cost_price: string; last_price: string; unrealized_profit_loss: string }
+export interface WebullOrderLeg { symbol: string; side: "BUY" | "SELL"; status: string; client_order_id: string; order_id?: string; order_type: string; instrument_type: string; filled_quantity?: string; filled_price?: string; place_time?: string; filled_time?: string; time_in_force?: string; quantity?: string; limit_price?: string }
+export interface WebullOrderGroup { client_order_id: string; combo_type: string; orders: WebullOrderLeg[] }
+export const listAccounts = (creds: WebullCreds) => callWebull<WebullAccount[]>({ method: "GET", uri: "/trading/accounts/list", creds });
+export const accountBalance = (creds: WebullCreds, accountId: string, currency = "USD") => callWebull<WebullBalance>({ method: "GET", uri: "/trading/assets/balances/get", query: { account_id: accountId, total_asset_currency: currency }, creds });
+export const accountPositions = (creds: WebullCreds, accountId: string) => callWebull<WebullPosition[]>({ method: "GET", uri: "/trading/assets/positions/list", query: { account_id: accountId }, creds });
+export const openOrders = (creds: WebullCreds, accountId: string) => callWebull<{ data: WebullOrderGroup[] }>({ method: "GET", uri: "/trading/orders/open-orders/list", query: { account_id: accountId, page_size: 50 }, creds });
+export const orderHistory = (creds: WebullCreds, accountId: string, pageSize = 100) => callWebull<{ data: WebullOrderGroup[] }>({ method: "GET", uri: "/trading/orders/historical-orders/list", query: { account_id: accountId, page_size: pageSize }, creds });
+export const orderDetail = (creds: WebullCreds, accountId: string, clientOrderId: string) => callWebull<Record<string, unknown>>({ method: "GET", uri: "/trading/orders/get", query: { account_id: accountId, client_order_id: clientOrderId }, creds });
 
 // ---------- orders (stock) ----------
 export interface StockOrder {
@@ -97,9 +102,9 @@ export interface StockOrder {
   total_cash_amount?: string;
   trading_session?: "CORE";
 }
-export const previewOrder = (creds: WebullCreds, accountId: string, stock_order: StockOrder) => callWebull<Record<string, unknown>>({ method: "POST", uri: "/trade/order/preview", body: { account_id: accountId, stock_order }, creds });
-export const placeOrder = (creds: WebullCreds, accountId: string, stock_order: StockOrder) => callWebull<Record<string, unknown>>({ method: "POST", uri: "/trade/order/place", body: { account_id: accountId, stock_order }, creds });
-export const cancelOrder = (creds: WebullCreds, accountId: string, clientOrderId: string) => callWebull<Record<string, unknown>>({ method: "POST", uri: "/trade/order/cancel", body: { account_id: accountId, client_order_id: clientOrderId }, creds });
+export const previewOrder = (creds: WebullCreds, accountId: string, stock_order: StockOrder) => callWebull<Record<string, unknown>>({ method: "POST", uri: "/trading/orders/preview", body: { account_id: accountId, stock_order }, creds });
+export const placeOrder = (creds: WebullCreds, accountId: string, stock_order: StockOrder) => callWebull<Record<string, unknown>>({ method: "POST", uri: "/trading/orders/place", body: { account_id: accountId, stock_order }, creds });
+export const cancelOrder = (creds: WebullCreds, accountId: string, clientOrderId: string) => callWebull<Record<string, unknown>>({ method: "POST", uri: "/trading/orders/cancel", body: { account_id: accountId, client_order_id: clientOrderId }, creds });
 
 // ---------- market data (requires market-data subscription; 403 otherwise) ----------
 export const snapshot = (creds: WebullCreds, symbols: string[]) => callWebull<unknown[]>({ host: "data", method: "GET", uri: "/market-data/snapshot", query: { symbols: symbols.join(","), category: "US_STOCK" }, creds });

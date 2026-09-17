@@ -3,13 +3,15 @@ import { useState } from "react";
 import useSWR from "swr";
 import Link from "next/link";
 import { fetcher, api } from "@/components/shell";
-import { Card, H2, Muted, Src, Chip, Btn, Tabs, Field, inputCls, KV, Banner, Empty, Skeleton, PlusIcon, XIcon, usd, thb, pctf, fmtTime, cx } from "@/components/ui";
+import { Card, H2, Muted, Src, Chip, Btn, Tabs, Field, inputCls, KV, Banner, Empty, Skeleton, PlusIcon, XIcon, RefreshIcon, usd, thb, pctf, fmtTime, cx } from "@/components/ui";
+import { useHealth } from "@/components/shell";
 
 type Portfolio = {
+  live: { as_of: string; accounts: Array<{ accountId: string; cash_usd: number; buying_power_usd: number; market_value_usd: number; unrealized_usd: number; total_thb_reported: number | null; positions: number }> } | null;
   account: string; as_of: string; total_usd: number; invested_usd: number; cash_usd: number; cash_pct: number; total_thb: number | null;
   fx: { rate: number; asOf: string; source: string } | null;
   pnl: { unrealized_usd: number; realized_usd: number; dividends_usd: number; fees_usd: number; fx_pnl_thb: number | null; thb_invested: number; avg_rate_paid: number | null };
-  holdings: Array<{ symbol: string; qty: number; avg_cost: number; cost_basis: number; price: number | null; market_value: number | null; weight_pct: number | null; pnl: number | null; pnl_pct: number | null; quote_source: string | null; quote_as_of: string | null; market_state: string | null; stale: boolean | null }>;
+  holdings: Array<{ symbol: string; qty: number; avg_cost: number; cost_basis: number; price: number | null; market_value: number | null; weight_pct: number | null; pnl: number | null; pnl_pct: number | null; quote_source: string | null; quote_as_of: string | null; market_state: string | null; stale: boolean | null; accounts: string[] }>;
   missing_quotes: string[]; accounts: Array<{ id: string; kind: string; label: string; environment: string }>; caveats: string[];
 };
 type Tx = { id: string; ts: string; symbol: string | null; type: string; qty: number; price: number; amountUsd: number; fees: number; note: string; source: string };
@@ -22,14 +24,27 @@ export default function PortfolioPage() {
   const { data: txs, mutate: mutTx } = useSWR<{ transactions: Tx[] }>(`/api/v1/transactions?account=${acct}`, fetcher);
   const [sheet, setSheet] = useState(false);
   const [showTx, setShowTx] = useState(false);
+  const { health } = useHealth();
+  const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState<string | null>(null);
+  const brokerConnected = health?.broker?.status === "connected";
+  const doSync = async () => { setSyncing(true); setSyncMsg(null); try { const r = await api<{ snapshots: Array<{ positions: number; cashUsd: number }>; importedFills: number; errors: string[] }>("/api/v1/broker/sync", { method: "POST" }); setSyncMsg(`ดึงแล้ว: ${r.snapshots.length} บัญชี · ${r.snapshots.reduce((n, s) => n + s.positions, 0)} ตำแหน่ง · นำเข้า fill ใหม่ ${r.importedFills} รายการ${r.errors.length ? " · ปัญหา: " + r.errors.join(" | ") : ""}`); mutate(); mutTx(); } catch (e) { setSyncMsg("ดึงไม่ได้: " + (e instanceof Error ? e.message : String(e))); } finally { setSyncing(false); } };
   const staleAny = p?.holdings.some((h) => h.stale);
   const tabs = [{ key: "all", label: "รวมทุกบัญชี" }, ...(p?.accounts ?? []).map((a) => ({ key: a.id, label: `${a.label}${a.kind === "webull_live" ? " · " + a.environment.toUpperCase() : ""}` }))];
   return (
     <>
       <Tabs items={tabs} active={acct} onChange={setAcct} />
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <Muted>{p?.live ? `Webull sync ล่าสุด ${fmtTime(p.live.as_of)}` : brokerConnected ? "เชื่อม Webull แล้ว — ยังไม่เคยดึงพอร์ต" : "ยังไม่ได้เชื่อม Webull (ตั้งค่า › เชื่อม Webull)"}</Muted>
+        <Btn small variant={p?.live ? "default" : "primary"} disabled={!brokerConnected || syncing} onClick={doSync}><RefreshIcon className={cx("w-4 h-4", syncing && "animate-spin")} /> {syncing ? "กำลังดึง…" : "ดึงจาก Webull"}</Btn>
+      </div>
+      {syncMsg && <Banner tone={syncMsg.startsWith("ดึงไม่ได้") ? "danger" : "info"}>{syncMsg}</Banner>}
       {staleAny && <Banner>ราคาบางตัวค้าง (ผู้ให้ราคาชั้น 2 ดีเลย์) — ห้ามใช้ตัดสินตั๋วเงินจริงโดยไม่ verify</Banner>}
       {error && <Banner tone="danger">โหลดพอร์ตไม่ได้: {String(error.message)}</Banner>}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {p?.live && p.live.accounts.map((la) => <Card key={la.accountId}><H2 right={<Chip tone="up">Webull</Chip>}>{p.accounts.find((a) => a.id === la.accountId)?.label ?? la.accountId}</H2>
+          <KV rows={[["เงินสด USD", usd(la.cash_usd)], ["กำลังซื้อ", usd(la.buying_power_usd)], ["มูลค่าหุ้น (Webull)", usd(la.market_value_usd)], ["กำไรยังไม่ขาย (Webull)", <span key="u" className={la.unrealized_usd >= 0 ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}>{la.unrealized_usd >= 0 ? "▲ +" : "▼ −"}{usd(Math.abs(la.unrealized_usd))}</span>], ["รวมที่ Webull รายงาน (THB)", la.total_thb_reported != null ? thb(la.total_thb_reported) : "—"], ["ตำแหน่ง", `${la.positions} ตัว`]]} />
+          <Src>Webull · {fmtTime(p.live!.as_of)} · ตัวเลขจากโบรกเกอร์โดยตรง</Src></Card>)}
         <Card glow>
           <H2>มูลค่าพอร์ต</H2>
           {!p ? <Skeleton className="h-40" /> : <>
@@ -72,7 +87,7 @@ export default function PortfolioPage() {
         {!p ? <Skeleton className="h-24" /> : p.holdings.length === 0 ? <Empty>ยังไม่มีการถือครอง — กด &quot;บันทึกรายการ&quot; เพื่อใส่ซื้อครั้งแรก (เศษหุ้นได้)</Empty> : p.holdings.map((h) => (
           <Link key={h.symbol} href={`/stock/${h.symbol}`} className="grid grid-cols-[44px_minmax(0,1fr)_auto] gap-3 items-center py-3 border-t first:border-t-0 border-slate-900/10 dark:border-white/10">
             <div className="w-11 h-11 rounded-2xl grid place-items-center text-[12px] font-bold bg-gradient-to-br from-slate-500/15 to-slate-500/5 dark:from-white/15 dark:to-white/5">{h.symbol.slice(0, 4)}</div>
-            <div className="min-w-0"><b>{h.symbol}</b> {h.stale && <Chip tone="warn">ค้าง</Chip>}<Muted className="num">{h.qty} หุ้น · ต้นทุน {h.avg_cost.toFixed(2)}</Muted></div>
+            <div className="min-w-0"><b>{h.symbol}</b> {h.stale && <Chip tone="warn">ค้าง</Chip>} {h.quote_source?.startsWith("Webull") && <Chip tone="up">Webull</Chip>}<Muted className="num">{h.qty} หุ้น · ต้นทุน {h.avg_cost.toFixed(2)}</Muted></div>
             <div className="text-right"><div className="num">{usd(h.market_value)}</div><div className={cx("text-[13px] num", h.pnl_pct == null ? "text-slate-500" : h.pnl_pct >= 0 ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400")}>{pctf(h.weight_pct)} · {h.pnl_pct == null ? "—" : `${h.pnl_pct >= 0 ? "▲ +" : "▼ −"}${Math.abs(h.pnl_pct).toFixed(1)}%`}</div></div>
           </Link>
         ))}

@@ -84,6 +84,7 @@ curl -s -o /dev/null -w "%{http_code}\n" -X POST $B/tickets/<ID>/confirm -H "$J"
 | POST `/broker/connect` | เจ้าของ | บันทึกกุญแจ (เข้ารหัส) + สร้าง token → **Webull ส่ง SMS** · คืน `instructions` |
 | GET `/broker/status` · `?check=1` | เจ้าของ | มุมมองที่เก็บไว้ / ตรวจ token กับ Webull (ไม่ส่ง SMS) · `twoFaSecondsLeft` นับถอยหลัง 5 นาที |
 | POST `/broker/status {action:"resend"}` · POST `/broker/disconnect` | เจ้าของ | สร้าง token ใหม่ (ส่ง SMS ใหม่) เมื่อ EXPIRED/INVALID · ลบกุญแจ+token |
+| POST `/broker/sync` · GET `/broker/sync` | เจ้าของ / `x-cron-secret` | **ดึงพอร์ตจริง**: balance + positions (qty · cost · last_price) + fills ล่าสุด → บัญชี `webull_live` + `liveSnapshots` · GET = snapshot ล่าสุด · งานกลางคืนเรียกให้ทุกวัน |
 | POST `/query {q}` | any (ตาม scope ที่ใช้) | ตัวแปลเจตนาแบบกฎ ไม่มี LLM |
 
 ## กฎความเสี่ยงที่ตรวจทุกตั๋ว (ค่าเริ่มต้น v1)
@@ -96,6 +97,16 @@ quote สด (≤ 60 วิ ตอนตลาดเปิด · fail-closed) ·
 4. token จะ **INVALID ถ้าไม่มีการเรียก 15 วันติดต่อกัน** → งานสแกนกลางคืนเรียก refresh ให้ · ถ้าหลุดให้กด "ขอรหัสใหม่"
 
 **แอป UPVerse ไม่มีช่องกรอกรหัส SMS โดยเจตนา** — รหัสกรอกในแอป Webull เท่านั้น (เราแค่รอสถานะ)
+
+## Endpoint ของ Webull TH ที่ยืนยันด้วยบัญชีจริง (18 ก.ย. 2569)
+| ใช้ทำ | path (host `api.webull.co.th` · header `x-version: v3`) | หมายเหตุ |
+|---|---|---|
+| รายการบัญชี | `GET /trading/accounts/list` | คืน `account_id · account_number · account_type · account_label` (`/app/subscriptions/list` ของ US = 404) |
+| ยอดเงิน | `GET /trading/assets/balances/get?account_id&total_asset_currency=USD` | `total_asset_currency` กลับมาเป็น **THB** เสมอ · รายสกุลใน `account_currency_assets[]` (USD cash/buying power/market value/unrealized) |
+| ตำแหน่ง | `GET /trading/assets/positions/list?account_id` | เศษหุ้น 5 ทศนิยม · `cost_price` · `last_price` · `unrealized_profit_loss` |
+| คำสั่งเปิด | `GET /trading/orders/open-orders/list?account_id&page_size` | `{data:[]}` |
+| ประวัติคำสั่ง | `GET /trading/orders/historical-orders/list?account_id&page_size` | **คืนเฉพาะช่วงล่าสุด** · ทุกรูปแบบ `start_time`/`end_time` → 417 · ยิงถี่ → 429 (เว้น ≥ 8 วิ) |
+| ราคาตลาด | `data-api.webull.co.th/market-data/...` | timeout/ต้อง subscription — ใช้ `last_price` จาก positions แทน |
 
 ## ข้อค้นพบสำคัญ (จากซอร์ส SDK ทางการ 3.0.1)
 - ลายเซ็น HMAC-SHA256 ของ Webull ถูกพอร์ตเป็น TypeScript และ **ตรวจเทียบกับ Python SDK แล้วตรงทั้ง GET/POST** (`x-version` ส่งแต่ไม่ถูก sign)

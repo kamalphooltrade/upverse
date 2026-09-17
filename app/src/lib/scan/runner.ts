@@ -8,6 +8,7 @@ import { getFundamentals, type Fundamentals } from "./fundamentals";
 import { MODELS, MODEL_VERSION, runModel, avoidList, type Candidate, type ModelKey } from "./models";
 import { withData, uid, nowIso } from "../store";
 import { keepAlive } from "../webull/session";
+import { syncWebull } from "../webull/sync";
 
 export interface RunOptions {
   limit?: number; // cap universe for quick runs
@@ -94,6 +95,7 @@ export async function runScan(opts: RunOptions = {}): Promise<ScanRun[]> {
     runs.push({ id: uid(), modelKey: "AVOID", modelVersion: MODEL_VERSION, runAt, universeSize: items.length, passedCount: avoid.length, excludedMissing: [], status: "ok", results: avoid, note: "ตกตะแกรงแข็ง (F-score ≤ 3 · หนี้สุทธิ/CF > 4 · FCF ติดลบ)" });
 
     await keepAlive().catch(() => undefined);
+    await syncWebull().catch(() => undefined); // best-effort daily portfolio sync (no-op when not connected)
     await withData((d) => {
       d.scanRuns.push(...runs);
       // keep last 90 days

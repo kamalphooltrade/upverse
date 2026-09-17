@@ -6,9 +6,13 @@ import { gate, json, parseBody, safe } from "@/lib/api";
 import { readData } from "@/lib/store";
 import { viewOf, checkVerification, beginVerification } from "@/lib/webull/session";
 async function _GET(req: Request) {
-  const g = await gate(req, null);
-  if ("res" in g) return g.res;
-  if (g.p.kind !== "owner") return json({ error: { code: "owner_only", message: "เจ้าของเท่านั้น" } }, { status: 403 });
+  const cron = req.headers.get("x-cron-secret");
+  const cronOk = !!process.env.CRON_SECRET && cron === process.env.CRON_SECRET;
+  if (!cronOk) {
+    const g = await gate(req, null);
+    if ("res" in g) return g.res;
+    if (g.p.kind !== "owner") return json({ error: { code: "owner_only", message: "เจ้าของเท่านั้น" } }, { status: 403 });
+  }
   if (new URL(req.url).searchParams.get("check") === "1") {
     const d = await readData();
     if (!d.brokerCredentials) return json(viewOf(d));

@@ -24,7 +24,7 @@ export async function api<T = unknown>(url: string, init?: RequestInit & { json?
   return j as T;
 }
 
-type Health = { trading: { environment: "uat" | "prod"; api_rail_possible: boolean }; owner_auth: string; owner_passphrase_source?: "db" | "env" | "none"; broker: { status: string }; counts: { tickets: number } };
+type Health = { trading: { environment: "uat" | "prod"; api_rail_possible: boolean }; owner_auth: string; owner_passphrase_source?: "db" | "env" | "none"; broker: { status: string; token_status?: string | null }; counts: { tickets: number } };
 const HealthCtx = createContext<{ health: Health | null; refresh: () => void }>({ health: null, refresh: () => {} });
 export const useHealth = () => useContext(HealthCtx);
 

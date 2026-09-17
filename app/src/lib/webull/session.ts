@@ -84,9 +84,8 @@ export async function checkVerification(loadAccounts = true): Promise<BrokerView
         bc.status = "connected"; bc.lastOkAt = nowIso(); bc.tokenLastUsedAt = nowIso(); bc.lastError = null;
         if (loadAccounts) {
           try {
-            const raw = await listAccounts({ ...creds, token: c.token || creds.token });
-            const arr = Array.isArray(raw) ? raw : (raw as { accounts?: unknown[] }).accounts ?? [];
-            bc.accounts = (arr as Array<Record<string, unknown>>).map((a) => ({ account_id: String(a.account_id ?? a.accountId ?? ""), account_number: a.account_number ? String(a.account_number) : undefined, account_type: a.account_type ? String(a.account_type) : undefined }));
+            const arr = await listAccounts({ ...creds, token: c.token || creds.token });
+            bc.accounts = arr.map((a) => ({ account_id: a.account_id, account_number: a.account_number, account_type: a.account_label ?? a.account_type }));
           } catch (e) { bc.lastError = "เชื่อมแล้ว แต่ดึงรายการบัญชีไม่ได้: " + (e instanceof Error ? e.message : String(e)); }
         }
       } else if (c.status === "PENDING") {
