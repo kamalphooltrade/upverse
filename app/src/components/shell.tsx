@@ -8,7 +8,13 @@ import { cx, Chip, HomeIcon, ChartIcon, SearchIcon, TicketIcon, MoreIcon, MoonIc
 export const fetcher = async (url: string) => {
   const r = await fetch(url, { cache: "no-store" });
   const j = await r.json();
-  if (!r.ok) throw Object.assign(new Error(j?.error?.message ?? r.statusText), { status: r.status, body: j });
+  if (!r.ok) {
+    // Not signed in → go to /login (owner passphrase). Only on protected pages, never loop on /login itself.
+    if (r.status === 401 && typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+      window.location.replace(`/login?next=${encodeURIComponent(window.location.pathname)}`);
+    }
+    throw Object.assign(new Error(j?.error?.message ?? r.statusText), { status: r.status, body: j });
+  }
   return j;
 };
 export async function api<T = unknown>(url: string, init?: RequestInit & { json?: unknown }): Promise<T> {
