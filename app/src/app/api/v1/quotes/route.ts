@@ -1,7 +1,7 @@
 // GET /api/v1/quotes?symbols=AAPL,MSFT — latest quotes with source + as_of + market_state + stale flag.
-import { gate, json } from "@/lib/api";
+import { gate, json, safe } from "@/lib/api";
 import { getQuotes } from "@/lib/prices";
-export async function GET(req: Request) {
+async function _GET(req: Request) {
   const g = await gate(req, "quotes:read");
   if ("res" in g) return g.res;
   const s = (new URL(req.url).searchParams.get("symbols") ?? "").split(",").map((x) => x.trim()).filter(Boolean);
@@ -9,3 +9,4 @@ export async function GET(req: Request) {
   const quotes = await getQuotes(s);
   return json({ as_of: new Date().toISOString(), quotes });
 }
+export const GET = safe(_GET);

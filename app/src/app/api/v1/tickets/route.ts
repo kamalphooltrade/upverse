@@ -1,6 +1,6 @@
 // GET/POST /api/v1/tickets — create is always `proposed`; risk checks run immediately and are returned.
 import { z } from "zod";
-import { gate, json, parseBody, actorOf } from "@/lib/api";
+import { gate, json, parseBody, actorOf, safe } from "@/lib/api";
 import { readData, withData, uid, nowIso, audit, activeRules } from "@/lib/store";
 import { getQuotes } from "@/lib/prices";
 import { positionsFrom, cashFrom, valuePositions } from "@/lib/portfolio";
@@ -39,7 +39,7 @@ export async function evaluate(d: Awaited<ReturnType<typeof readData>>, t: Ticke
   return { checks, quote, rules, qty: ticketQty(t, quote?.price ?? null) };
 }
 
-export async function GET(req: Request) {
+async function _GET(req: Request) {
   const g = await gate(req, "portfolio:read");
   if ("res" in g) return g.res;
   const d = await readData();
@@ -48,7 +48,7 @@ export async function GET(req: Request) {
   return json({ count: list.length, tickets: list });
 }
 
-export async function POST(req: Request) {
+async function _POST(req: Request) {
   const g = await gate(req, "tickets:propose");
   if ("res" in g) return g.res;
   const b = await parseBody(req, TicketSchema);
@@ -75,3 +75,5 @@ export async function POST(req: Request) {
   });
   return json({ ticket: t, quote: ev.quote, note: "สถานะ proposed — ต้นต้องเปิดตั๋วในหน้าจอและพิมพ์ประโยคยืนยันเอง" }, { status: 201 });
 }
+export const GET = safe(_GET);
+export const POST = safe(_POST);

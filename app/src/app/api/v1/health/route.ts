@@ -6,7 +6,10 @@ import { scanStatus } from "@/lib/scan/runner";
 import { json } from "@/lib/api";
 
 export async function GET() {
-  const d = await readData();
+  let d;
+  try { d = await readData(); } catch (e) {
+    return json({ ok: false, app: "UPVerse", version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "dev", time: new Date().toISOString(), storage: backend().name, storage_error: e instanceof Error ? e.message : String(e), owner_auth: ownerConfigured() ? "passphrase" : "OPEN (dev only)", broker: { master_key: masterKeyConfigured() }, disclaimer: "ไม่ใช่คำแนะนำจากผู้มีใบอนุญาต · ใช้ส่วนตัว" }, { status: 503 });
+  }
   const lastScan = d.scanRuns.length ? d.scanRuns[d.scanRuns.length - 1].runAt : null;
   const rules = d.riskRules[d.riskRules.length - 1];
   return json({

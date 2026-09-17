@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { gate, json, parseBody } from "@/lib/api";
+import { gate, json, parseBody, safe } from "@/lib/api";
 import { withData, uid, nowIso, audit } from "@/lib/store";
-export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
+async function _POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const g = await gate(req, null);
   if ("res" in g) return g.res;
   if (g.p.kind !== "owner") return json({ error: { code: "owner_only", message: "เจ้าของเท่านั้น" } }, { status: 403 });
@@ -20,3 +20,4 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   });
   return r ? json({ ticket: r, note: "บันทึกเหตุผลลง journal แล้ว (แก้ไขได้)" }) : json({ error: { code: "not_found", message: "ไม่พบตั๋ว" } }, { status: 404 });
 }
+export const POST = safe(_POST);

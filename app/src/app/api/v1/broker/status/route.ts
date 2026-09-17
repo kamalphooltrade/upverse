@@ -1,7 +1,7 @@
-import { gate, json } from "@/lib/api";
+import { gate, json, safe } from "@/lib/api";
 import { readData, withData, nowIso } from "@/lib/store";
 import { decryptSecret, createToken, checkToken, listAccounts } from "@/lib/webull";
-export async function GET(req: Request) {
+async function _GET(req: Request) {
   const g = await gate(req, null);
   if ("res" in g) return g.res;
   if (g.p.kind !== "owner") return json({ error: { code: "owner_only", message: "เจ้าของเท่านั้น" } }, { status: 403 });
@@ -21,3 +21,4 @@ export async function GET(req: Request) {
   }
   return json({ status, key_last4: bc.keyLast4, region: bc.region, last_ok_at: bc.lastOkAt, last_error: err ?? bc.lastError, accounts: live });
 }
+export const GET = safe(_GET);

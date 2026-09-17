@@ -1,11 +1,11 @@
 // POST /api/v1/query {q} — rule-based intent parser (no LLM server-side). Always returns understood_as.
 import { z } from "zod";
-import { gate, json, parseBody } from "@/lib/api";
+import { gate, json, parseBody, safe } from "@/lib/api";
 import { allowed } from "@/lib/auth";
 import { readData } from "@/lib/store";
 import { getQuotes } from "@/lib/prices";
 import { positionsFrom, cashFrom, valuePositions } from "@/lib/portfolio";
-export async function POST(req: Request) {
+async function _POST(req: Request) {
   const g = await gate(req, null);
   if ("res" in g) return g.res;
   const b = await parseBody(req, z.object({ q: z.string().min(1).max(300) }));
@@ -35,3 +35,4 @@ export async function POST(req: Request) {
   }
   return json({ understood_as: null, needs_disambiguation: true, options: ["พอร์ต", "ราคา <SYMBOL>", "สแกน M1..M5", "ตั๋วรอยืนยัน"] });
 }
+export const POST = safe(_POST);

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { principalFrom, allowed, deny, type Principal } from "./auth";
 import { withData, uid, nowIso } from "./store";
 import type { ApiScope } from "./types";
+import { StorageUnavailable } from "./store";
 
 export const json = (data: unknown, init?: ResponseInit) => Response.json(data, { ...init, headers: { "Cache-Control": "no-store", ...(init?.headers ?? {}) } });
 
@@ -37,3 +38,15 @@ export async function parseBody<T extends z.ZodTypeAny>(req: Request, schema: T)
 }
 
 export const actorOf = (p: Principal): "owner" | "agent" | "api" => (p.kind === "owner" ? "owner" : p.kind === "token" && /agent/i.test(p.label) ? "agent" : "api");
+
+/** Wrap a route handler so infrastructure failures become explicit JSON (503/500) instead of opaque errors. */
+export function safe<A extends unknown[]>(fn: (...a: A) => Promise<Response>): (...a: A) => Promise<Response> {
+  return async (...a: A) => {
+    try { return await fn(...a); }
+    catch (e) {
+      if (e instanceof StorageUnavailable) return json({ error: { code: e.code, message: e.message } }, { status: 503 });
+      console.error("[api]", e);
+      return json({ error: { code: "internal", message: e instanceof Error ? e.message : String(e) } }, { status: 500 });
+    }
+  };
+}

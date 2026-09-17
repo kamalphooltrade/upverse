@@ -1,12 +1,12 @@
 // GET /api/v1/instruments/:symbol?range=1y — quote + bars + indicators + EDGAR fundamentals + scan tags + position.
-import { gate, json } from "@/lib/api";
+import { gate, json, safe } from "@/lib/api";
 import { readData } from "@/lib/store";
 import { getQuote, getBars } from "@/lib/prices";
 import { snapshot, ema, sma, rsi } from "@/lib/scan/indicators";
 import { getFundamentals } from "@/lib/scan/fundamentals";
 import { positionsFrom } from "@/lib/portfolio";
 
-export async function GET(req: Request, ctx: { params: Promise<{ symbol: string }> }) {
+async function _GET(req: Request, ctx: { params: Promise<{ symbol: string }> }) {
   const g = await gate(req, "quotes:read");
   if ("res" in g) return g.res;
   const { symbol: raw } = await ctx.params;
@@ -36,3 +36,4 @@ export async function GET(req: Request, ctx: { params: Promise<{ symbol: string 
     sources: { price: "yahoo (ชั้น 2)", fundamentals: "SEC EDGAR companyfacts (ทางการ)" },
   });
 }
+export const GET = safe(_GET);

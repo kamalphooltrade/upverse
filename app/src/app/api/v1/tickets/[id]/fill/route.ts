@@ -1,9 +1,9 @@
 // POST /api/v1/tickets/:id/fill — manual rail: owner reports actual fill → creates ledger transaction (source manual_after_ticket).
 import { z } from "zod";
-import { gate, json, parseBody } from "@/lib/api";
+import { gate, json, parseBody, safe } from "@/lib/api";
 import { withData, uid, nowIso, audit } from "@/lib/store";
 
-export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
+async function _POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const g = await gate(req, null);
   if ("res" in g) return g.res;
   if (g.p.kind !== "owner") return json({ error: { code: "owner_only", message: "เจ้าของเท่านั้น" } }, { status: 403 });
@@ -25,3 +25,4 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   if ("error" in r) return json({ error: { code: "bad_state", message: r.error } }, { status: 409 });
   return json({ ...r, next: "บันทึก journal ภายใน 24 ชม." });
 }
+export const POST = safe(_POST);

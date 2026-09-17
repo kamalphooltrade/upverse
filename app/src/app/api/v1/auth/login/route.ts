@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { checkPassphrase, makeSessionToken, ownerConfigured, SESSION_COOKIE } from "@/lib/auth";
-import { json, parseBody } from "@/lib/api";
+import { json, parseBody, safe } from "@/lib/api";
 import { withData, audit } from "@/lib/store";
 import { cookies } from "next/headers";
 
-export async function POST(req: Request) {
+async function _POST(req: Request) {
   if (!ownerConfigured()) return json({ ok: true, note: "ยังไม่ตั้ง UPVERSE_OWNER_PASSPHRASE — โหมด dev เปิดให้เข้าได้เลย" });
   const b = await parseBody(req, z.object({ passphrase: z.string().min(1) }));
   if (!b.ok) return b.res;
@@ -15,3 +15,4 @@ export async function POST(req: Request) {
   c.set(SESSION_COOKIE, makeSessionToken(30), { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 30 * 86400 });
   return json({ ok: true });
 }
+export const POST = safe(_POST);

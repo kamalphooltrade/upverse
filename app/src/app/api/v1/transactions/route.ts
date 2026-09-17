@@ -1,6 +1,6 @@
 // GET/POST /api/v1/transactions — manual/paper ledger (fractional qty). Import CSV via POST {rows:[...]}.
 import { z } from "zod";
-import { gate, json, parseBody, actorOf } from "@/lib/api";
+import { gate, json, parseBody, actorOf, safe } from "@/lib/api";
 import { readData, withData, uid, nowIso, audit } from "@/lib/store";
 import type { Transaction } from "@/lib/types";
 
@@ -31,7 +31,7 @@ function normalize(t: z.infer<typeof TxSchema>, source: Transaction["source"]): 
   return { id: uid(), accountId: t.accountId, ts: t.ts ?? nowIso(), symbol: needsSymbol ? (t.symbol as string) : (t.symbol ?? null), type: t.type, qty: t.qty, price: t.price, amountUsd: Math.round(amount * 100) / 100, fxRateThb: t.fxRateThb ?? null, fees: t.fees, note: t.note, source, ticketId: null, brokerOrderId: null };
 }
 
-export async function GET(req: Request) {
+async function _GET(req: Request) {
   const g = await gate(req, "portfolio:read");
   if ("res" in g) return g.res;
   const d = await readData();
@@ -41,7 +41,7 @@ export async function GET(req: Request) {
   return json({ count: rows.length, transactions: rows });
 }
 
-export async function POST(req: Request) {
+async function _POST(req: Request) {
   const g = await gate(req, "portfolio:write");
   if ("res" in g) return g.res;
   const b = await parseBody(req, z.union([TxSchema, z.object({ rows: z.array(TxSchema).max(2000) })]));
@@ -67,7 +67,7 @@ export async function POST(req: Request) {
   }
 }
 
-export async function DELETE(req: Request) {
+async function _DELETE(req: Request) {
   const g = await gate(req, "portfolio:write");
   if ("res" in g) return g.res;
   const id = new URL(req.url).searchParams.get("id");
@@ -81,3 +81,6 @@ export async function DELETE(req: Request) {
   });
   return ok ? json({ deleted: id }) : json({ error: { code: "not_found", message: "ไม่พบรายการ" } }, { status: 404 });
 }
+export const GET = safe(_GET);
+export const POST = safe(_POST);
+export const DELETE = safe(_DELETE);

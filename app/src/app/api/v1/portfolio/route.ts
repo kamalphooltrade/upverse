@@ -1,10 +1,10 @@
 // GET /api/v1/portfolio?account=<id|all> — positions valued at latest quotes + cash + P&L split (stock vs FX).
-import { gate, json } from "@/lib/api";
+import { gate, json, safe } from "@/lib/api";
 import { readData } from "@/lib/store";
 import { getQuotes, getUsdThb } from "@/lib/prices";
 import { positionsFrom, cashFrom, realizedFrom, thbInvested, valuePositions } from "@/lib/portfolio";
 
-export async function GET(req: Request) {
+async function _GET(req: Request) {
   const g = await gate(req, "portfolio:read");
   if ("res" in g) return g.res;
   const url = new URL(req.url);
@@ -36,3 +36,4 @@ export async function GET(req: Request) {
     caveats: ["ราคาจาก yahoo (ชั้น 2) อาจดีเลย์ — ห้ามใช้ตัดสินตั๋วเงินจริงโดยไม่ verify", "ต้นทุนเฉลี่ยจากสมุดบันทึกของผู้ใช้ ไม่ใช่จากโบรกเกอร์ จนกว่าจะเชื่อม Webull"],
   });
 }
+export const GET = safe(_GET);

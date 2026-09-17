@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { gate, json, parseBody, actorOf } from "@/lib/api";
+import { gate, json, parseBody, actorOf, safe } from "@/lib/api";
 import { readData, withData, uid, nowIso, audit } from "@/lib/store";
 import { getQuotes } from "@/lib/prices";
 const W = z.object({ symbol: z.string().trim().toUpperCase().min(1).max(10), reason: z.string().max(500).default(""), zoneLow: z.number().positive().nullable().optional(), zoneHigh: z.number().positive().nullable().optional(), stop: z.number().positive().nullable().optional(), note: z.string().max(500).default(""), fromModel: z.string().max(20).nullable().optional() });
-export async function GET(req: Request) {
+async function _GET(req: Request) {
   const g = await gate(req, "portfolio:read");
   if ("res" in g) return g.res;
   const d = await readData();
@@ -18,7 +18,7 @@ export async function GET(req: Request) {
   });
   return json({ count: items.length, watchlist: items });
 }
-export async function POST(req: Request) {
+async function _POST(req: Request) {
   const g = await gate(req, "watchlist:write");
   if ("res" in g) return g.res;
   const b = await parseBody(req, W);
@@ -33,10 +33,13 @@ export async function POST(req: Request) {
   });
   return json({ item }, { status: 201 });
 }
-export async function DELETE(req: Request) {
+async function _DELETE(req: Request) {
   const g = await gate(req, "watchlist:write");
   if ("res" in g) return g.res;
   const symbol = new URL(req.url).searchParams.get("symbol")?.toUpperCase();
   const ok = await withData((d) => { const i = d.watchlist.findIndex((w) => w.symbol === symbol); if (i < 0) return false; d.watchlist.splice(i, 1); return true; });
   return ok ? json({ deleted: symbol }) : json({ error: { code: "not_found", message: "ไม่พบ" } }, { status: 404 });
 }
+export const GET = safe(_GET);
+export const POST = safe(_POST);
+export const DELETE = safe(_DELETE);

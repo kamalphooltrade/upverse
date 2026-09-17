@@ -1,10 +1,10 @@
 // POST /api/v1/broker/connect {appKey, appSecret} — owner only. Encrypts at rest, requests token, reports 2FA state.
 // Keys never echo back; only last4. Requires UPVERSE_MASTER_KEY.
 import { z } from "zod";
-import { gate, json, parseBody } from "@/lib/api";
+import { gate, json, parseBody, safe } from "@/lib/api";
 import { withData, audit, nowIso } from "@/lib/store";
 import { encryptSecret, masterKeyConfigured, createToken, checkToken, listAccounts, WebullError } from "@/lib/webull";
-export async function POST(req: Request) {
+async function _POST(req: Request) {
   const g = await gate(req, null);
   if ("res" in g) return g.res;
   if (g.p.kind !== "owner") return json({ error: { code: "owner_only", message: "เจ้าของเท่านั้น" } }, { status: 403 });
@@ -29,3 +29,4 @@ export async function POST(req: Request) {
   });
   return json({ status, key_last4: last4, last_error: lastError, accounts, next: status === "needs_2fa" ? "อนุมัติการเข้าถึงในแอป Webull (2FA) แล้วกด 'ตรวจสถานะ'" : status === "connected" ? "เชื่อมแล้ว — เลือกบัญชีที่จะ sync" : "ตรวจกุญแจ/สิทธิ์ OpenAPI แล้วลองใหม่" });
 }
+export const POST = safe(_POST);

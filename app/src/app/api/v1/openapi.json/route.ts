@@ -1,5 +1,5 @@
-import { json } from "@/lib/api";
-export async function GET(req: Request) {
+import { json, safe } from "@/lib/api";
+async function _GET(req: Request) {
   const base = new URL(req.url).origin + "/api/v1";
   const bearer = { type: "http", scheme: "bearer" };
   const R = (desc: string, scope?: string) => ({ summary: desc, description: scope ? `scope: ${scope}` : "owner session only", responses: { "200": { description: "OK" } } });
@@ -29,3 +29,4 @@ export async function GET(req: Request) {
     },
   });
 }
+export const GET = safe(_GET);

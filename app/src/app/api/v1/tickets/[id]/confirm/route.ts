@@ -3,14 +3,14 @@
 //  - rail=manual → status confirmed (owner executes in Webull app, then POST /fill)
 //  - rail=api    → sends to Webull only if prod + both kill switches + connected; otherwise blocked by checks
 import { z } from "zod";
-import { gate, json, parseBody } from "@/lib/api";
+import { gate, json, parseBody, safe } from "@/lib/api";
 import { isOwnerSession } from "@/lib/auth";
 import { readData, withData, uid, nowIso, audit } from "@/lib/store";
 import { evaluate } from "../../route";
 import { hasBlock, confirmPhraseFor } from "@/lib/risk";
 import { decryptSecret, placeOrder } from "@/lib/webull";
 
-export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
+async function _POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const g = await gate(req, null);
   if ("res" in g) return g.res;
   if (g.p.kind !== "owner" || !(await isOwnerSession())) {
@@ -66,3 +66,4 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     return json({ error: { code: "broker_error", message: e instanceof Error ? e.message : String(e) } }, { status: 502 });
   }
 }
+export const POST = safe(_POST);

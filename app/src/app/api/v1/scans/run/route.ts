@@ -1,9 +1,9 @@
 // POST /api/v1/scans/run {limit?, withFundamentals?} — owner or scan:read token with x-cron-secret. Long-running (minutes).
 import { z } from "zod";
-import { gate, json, parseBody } from "@/lib/api";
+import { gate, json, parseBody, safe } from "@/lib/api";
 import { runScan, scanStatus } from "@/lib/scan/runner";
 export const maxDuration = 300;
-export async function POST(req: Request) {
+async function _POST(req: Request) {
   const cron = req.headers.get("x-cron-secret");
   const cronOk = !!process.env.CRON_SECRET && cron === process.env.CRON_SECRET;
   if (!cronOk) {
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   }
 }
 // Vercel Cron calls GET with `Authorization: Bearer <CRON_SECRET>`.
-export async function GET(req: Request) {
+async function _GET(req: Request) {
   const auth = req.headers.get("authorization") ?? "";
   const isCron = !!process.env.CRON_SECRET && auth === `Bearer ${process.env.CRON_SECRET}`;
   if (!isCron) return json({ running: scanStatus() });
@@ -32,3 +32,5 @@ export async function GET(req: Request) {
   try { const runs = await runScan({}); return json({ ok: true, seconds: Math.round((Date.now() - t0) / 1000), runs: runs.map((r) => ({ model: r.modelKey, passed: r.passedCount })) }); }
   catch (e) { return json({ error: { code: "scan_failed", message: e instanceof Error ? e.message : String(e) } }, { status: 500 }); }
 }
+export const POST = safe(_POST);
+export const GET = safe(_GET);

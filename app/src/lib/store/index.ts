@@ -132,8 +132,19 @@ function supabaseBackend(): Backend | null {
   };
 }
 
+export class StorageUnavailable extends Error { code = "storage_unavailable"; }
 export function backend(): Backend {
-  return supabaseBackend() ?? fileBackend;
+  const sb = supabaseBackend();
+  if (sb) return sb;
+  // On Vercel the filesystem is read-only: refuse loudly instead of failing deep inside a write.
+  if (process.env.VERCEL) {
+    return {
+      name: "none",
+      async load() { throw new StorageUnavailable("ยังไม่ได้ต่อฐานข้อมูล: ตั้ง SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY ใน Vercel env (บน Vercel ระบบไฟล์อ่านอย่างเดียว)"); },
+      async save() { throw new StorageUnavailable("storage unavailable"); },
+    };
+  }
+  return fileBackend;
 }
 
 // Simple in-process mutex so concurrent API calls don't clobber the file.

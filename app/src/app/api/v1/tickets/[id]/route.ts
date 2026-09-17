@@ -1,9 +1,9 @@
-import { gate, json } from "@/lib/api";
+import { gate, json, safe } from "@/lib/api";
 import { readData, withData } from "@/lib/store";
 import { evaluate } from "../route";
 import { confirmPhraseFor } from "@/lib/risk";
 
-export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
+async function _GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const g = await gate(req, "portfolio:read");
   if ("res" in g) return g.res;
   const { id } = await ctx.params;
@@ -20,3 +20,4 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   }
   return json({ ticket: t, quote: null, log: d.orderLog.filter((l) => l.ticketId === id) });
 }
+export const GET = safe(_GET);
