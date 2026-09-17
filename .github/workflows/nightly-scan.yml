@@ -1,5 +1,5 @@
-# Nightly S&P 500 scan (SPEC §10.4). 22:30 UTC = 05:30 ICT, Tue–Sat (after US close).
-# Calls the deployed app's /api/v1/scans/run with CRON_SECRET. Set secrets: UPVERSE_URL, CRON_SECRET.
+# Nightly S&P 500 scan + Webull sync + token keep-alive (SPEC §10.4). 22:30 UTC = 05:30 ICT, Tue–Sat (after US close).
+# Calls the deployed app's /api/v1/scans/run with CRON_SECRET. Secrets: UPVERSE_URL, CRON_SECRET.
 name: nightly-scan
 on:
   schedule:
@@ -8,12 +8,21 @@ on:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
-      - name: Trigger scan
+      - name: Trigger scan (retry if another run is in progress)
         run: |
-          curl -sS -X POST "${{ secrets.UPVERSE_URL }}/api/v1/scans/run" \
-            -H "Content-Type: application/json" \
-            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
-            -d '{}' --max-time 900 | tee out.json
-          python3 -c "import json;d=json.load(open('out.json'));assert d.get('ok'),d"
+          for attempt in 1 2 3 4 5 6; do
+            curl -sS -X POST "${{ secrets.UPVERSE_URL }}/api/v1/scans/run" \
+              -H "Content-Type: application/json" \
+              -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+              -d '{}' --max-time 900 -o out.json -w "HTTP %{http_code}\n"
+            if python3 -c "import json;d=json.load(open('out.json'));import sys;sys.exit(0 if d.get('ok') else 1)"; then
+              cat out.json; exit 0
+            fi
+            if python3 -c "import json;d=json.load(open('out.json'));import sys;sys.exit(0 if d.get('running') else 1)"; then
+              echo "another scan is running — waiting 60s (attempt $attempt)"; sleep 60; continue
+            fi
+            echo "scan failed:"; cat out.json; exit 1
+          done
+          echo "gave up waiting for a free slot"; exit 1
