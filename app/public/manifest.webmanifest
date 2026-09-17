@@ -1,0 +1,1 @@
+{ "name": "UPVerse", "short_name": "UPVerse", "start_url": "/", "display": "standalone", "background_color": "#050a17", "theme_color": "#050a17", "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }] }

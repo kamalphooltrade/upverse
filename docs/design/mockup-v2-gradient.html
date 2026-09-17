@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>UPVerse — ต้นแบบ v2 · gradient + ขอบโค้งมน (ข้อมูลสมมติ)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Prompt:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: { extend: {
+    fontFamily: { th: ['"IBM Plex Sans Thai"','"IBM Plex Sans"','system-ui','sans-serif'], mono: ['"IBM Plex Mono"','ui-monospace','monospace'] },
+    borderRadius: { '4xl': '2rem' },
+    boxShadow: { glow: '0 12px 40px -12px rgba(16,185,129,.45)', soft: '0 8px 30px -12px rgba(2,6,23,.22)', softdark: '0 14px 44px -14px rgba(0,0,0,.65)' },
+    colors: { ink: { DEFAULT: '#0F172A', 2: '#475569' }, night: '#050A17' }
+  } }
+}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<style>
+  html{font-size:17.5px}
+  html,body{overflow-x:hidden;max-width:100%}
+  body{font-family:"IBM Plex Sans Thai","IBM Plex Sans",system-ui,sans-serif;line-height:1.8;-webkit-font-smoothing:antialiased}
+  body[data-font="prompt"]{font-family:Prompt,"IBM Plex Sans",system-ui,sans-serif}
+  .num{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+  /* page backgrounds: soft gradient (light) · aurora (dark) */
+  body{background:linear-gradient(160deg,#F3FAF6 0%,#F6F7F9 40%,#EEF6FB 100%)}
+  html.dark body{background:#050A17}
+  html.dark body[data-aurora="on"]{background:
+    radial-gradient(900px 520px at 8% -10%, rgba(16,185,129,.16), transparent 60%),
+    radial-gradient(800px 480px at 96% 0%, rgba(14,165,233,.13), transparent 55%),
+    radial-gradient(700px 600px at 50% 120%, rgba(139,92,246,.11), transparent 60%), #050A17}
+  .hidescroll{scrollbar-width:none}.hidescroll::-webkit-scrollbar{display:none}
+  *:focus-visible{outline:2px solid #10B981;outline-offset:2px}
+  @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+  input[type=range]{accent-color:#10B981}
+</style>
+</head>
+<body class="text-slate-900 dark:text-slate-100" data-aurora="on">
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo } = React;
+const cx = (...a) => a.filter(Boolean).join(' ');
+
+/* ---------------- icons (Lucide-style, inline SVG) ---------------- */
+const I = {
+  home: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11 12 3l9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>,
+  chart: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>,
+  search: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>,
+  ticket: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4z"/></svg>,
+  more: p => <svg {...p} viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>,
+  moon: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>,
+  clock: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>,
+  plus: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>,
+  star: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="m12 3 2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.8 6.1 21l1.2-6.5L2.5 9.9l6.6-.9z"/></svg>,
+  alert: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>,
+  check: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 5 5L20 7"/></svg>,
+  x: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>,
+  trend: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>,
+  shield: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M12 3 4 6v6c0 5 3.4 8.4 8 9 4.6-.6 8-4 8-9V6z"/></svg>,
+};
+
+/* ---------------- primitives ---------------- */
+const Card = ({ children, className, glow, onClick }) => (
+  <div onClick={onClick} className={cx("rounded-3xl p-px bg-gradient-to-br from-white/80 via-white/40 to-white/10 dark:from-white/15 dark:via-white/[.06] dark:to-white/[.02] shadow-soft dark:shadow-softdark transition-transform duration-300 ease-out", onClick && "cursor-pointer hover:-translate-y-0.5", className)}>
+    <div className="relative overflow-hidden rounded-[23px] bg-white/85 dark:bg-slate-900/70 backdrop-blur-xl p-4 h-full min-w-0">
+      {glow && <div className="pointer-events-none absolute -top-20 -right-20 h-52 w-52 rounded-full bg-gradient-to-br from-emerald-400/25 via-teal-400/15 to-sky-400/20 blur-3xl" />}
+      <div className="relative min-w-0">{children}</div>
+    </div>
+  </div>
+);
+const H2 = ({ children, right }) => <div className="flex items-center justify-between gap-2 mb-2"><h2 className="text-[15px] font-semibold">{children}</h2>{right}</div>;
+const Muted = ({ children, className }) => <div className={cx("text-[14px] text-slate-600 dark:text-slate-400", className)}>{children}</div>;
+const Src = ({ children }) => <div className="mt-2 inline-flex items-center gap-1 text-[13px] text-slate-600 dark:text-slate-400"><I.clock className="w-3.5 h-3.5" />{children}</div>;
+const tones = {
+  up: "text-green-700 bg-green-600/10 dark:text-green-400 dark:bg-green-400/10",
+  down: "text-red-700 bg-red-600/10 dark:text-red-400 dark:bg-red-400/10",
+  warn: "text-amber-800 bg-amber-100 dark:text-amber-300 dark:bg-amber-400/15",
+  info: "text-blue-800 bg-blue-100 dark:text-sky-300 dark:bg-sky-400/15",
+  neutral: "text-slate-600 bg-slate-500/10 dark:text-slate-300 dark:bg-white/10",
+  danger: "text-white bg-gradient-to-r from-red-700 to-rose-700",
+};
+const Chip = ({ tone = "neutral", children, className }) => <span className={cx("inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[13px] font-semibold whitespace-nowrap", tones[tone], className)}>{children}</span>;
+const Delta = ({ pct, abs }) => { const up = pct >= 0; return <Chip tone={up ? "up" : "down"}>{up ? "▲ +" : "▼ −"}{abs ? abs + " · " : ""}{Math.abs(pct).toFixed(2)}%</Chip>; };
+const Btn = ({ variant = "default", className, children, block, small, ...rest }) => {
+  const v = {
+    primary: "bg-gradient-to-r from-emerald-700 to-teal-700 text-white dark:from-emerald-400 dark:to-teal-300 dark:text-emerald-950 shadow-glow border-transparent",
+    default: "bg-white/70 dark:bg-white/5 text-slate-900 dark:text-slate-100 border-slate-900/10 dark:border-white/10",
+    ghost: "bg-transparent text-slate-700 dark:text-slate-200 border-transparent",
+    danger: "bg-gradient-to-r from-red-700 to-rose-700 text-white border-transparent",
+  }[variant];
+  return <button {...rest} className={cx("inline-flex items-center justify-center gap-2 rounded-2xl border font-semibold transition-all duration-300 ease-out hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 cursor-pointer", small ? "min-h-[44px] px-3 text-[14px]" : "min-h-[44px] px-4", block && "w-full", v, className)}>{children}</button>;
+};
+const Tabs = ({ items, active, onChange }) => (
+  <div className="flex gap-2 overflow-x-auto hidescroll max-w-full min-w-0 pb-1 mb-3" role="tablist">
+    {items.map(t => <button key={t} role="tab" aria-selected={t === active} onClick={() => onChange && onChange(t)} className={cx("flex-none min-h-[44px] px-4 rounded-full border text-[15px] font-semibold transition-all duration-300", t === active ? "bg-gradient-to-r from-emerald-700 to-teal-700 dark:from-emerald-400 dark:to-teal-300 text-white dark:text-emerald-950 border-transparent shadow-glow" : "bg-white/70 dark:bg-white/5 text-slate-600 dark:text-slate-300 border-slate-900/10 dark:border-white/10")}>{t}</button>)}
+  </div>
+);
+const Ring = ({ v }) => (
+  <div className="w-14 h-14 rounded-full grid place-items-center flex-none" style={{ background: `conic-gradient(#059669 0%, #14B8A6 ${v}%, rgba(148,163,184,.25) ${v}%)` }}>
+    <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-900 grid place-items-center text-[14px] font-semibold num">{v}</div>
+  </div>
+);
+const Field = ({ label, children }) => <label className="block mb-3 min-w-0"><div className="text-[14px] text-slate-600 dark:text-slate-400 mb-1">{label}</div>{children}</label>;
+const inputCls = "w-full min-w-0 min-h-[46px] px-3 rounded-2xl border border-slate-900/10 dark:border-white/10 bg-white/80 dark:bg-white/5 text-slate-900 dark:text-slate-100 transition-shadow focus:shadow-glow";
+const KV = ({ rows }) => <dl className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 text-[15px]">{rows.map(([k, v], i) => <React.Fragment key={i}><dt className="text-slate-600 dark:text-slate-400">{k}</dt><dd className="text-right num">{v}</dd></React.Fragment>)}</dl>;
+const Toggle = ({ items, value, onChange }) => (
+  <div className="inline-flex flex-wrap gap-1 p-1 rounded-full bg-slate-500/10 dark:bg-white/10 max-w-full">
+    {items.map(([k, label]) => <button key={k} aria-pressed={value === k} onClick={() => onChange(k)} className={cx("min-h-[44px] min-w-[44px] px-3 rounded-full text-[14px] font-semibold transition-all duration-300", value === k ? "bg-white dark:bg-slate-900 shadow-soft text-slate-900 dark:text-slate-100" : "text-slate-600 dark:text-slate-300")}>{label}</button>)}
+  </div>
+);
+const Check = ({ state, children }) => { const m = { ok: ["✅", "text-green-700 dark:text-green-400"], warn: ["⚠", "text-amber-800 dark:text-amber-300"], bad: ["⛔", "text-red-700 dark:text-red-400"] }[state]; return <div className="flex gap-3 py-2 border-t first:border-t-0 border-slate-900/10 dark:border-white/10 text-[15px]"><b className={cx("flex-none w-7", m[1])}>{m[0]}</b><div className="min-w-0">{children}</div></div>; };
+const Stack = ({ parts, faded }) => (
+  <div className="flex h-3.5 rounded-full overflow-hidden gap-0.5 bg-slate-500/10 dark:bg-white/5" aria-label={parts.map(p => p.label + ' ' + p.v + '%').join(', ')}>
+    {parts.map(p => <div key={p.label} style={{ width: p.v + '%', background: p.c, opacity: faded ? .5 : 1 }} />)}
+  </div>
+);
+const PAL = { s1: '#16A34A', s2: '#7C3AED', s3: '#D97706', s4: '#0284C7', other: '#94A3B8' }; // validated (dataviz) both modes
+const Legend = ({ items, right }) => <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-[13px] text-slate-600 dark:text-slate-400 items-center">{items.map(([c, l]) => <span key={l}><i className="inline-block w-2.5 h-2.5 rounded-sm mr-1.5 align-middle" style={{ background: c }} />{l}</span>)}{right}</div>;
+const Empty = ({ children, icon: Icon = I.trend }) => <div className="text-center py-7 text-slate-600 dark:text-slate-400"><Icon className="w-10 h-10 mx-auto mb-2 opacity-70" /><div>{children}</div></div>;
+
+/* ---------------- charts (sample data) ---------------- */
+const Spark = () => (
+  <svg viewBox="0 0 320 140" className="w-full h-40 block" role="img" aria-label="กราฟมูลค่าพอร์ต 90 วัน">
+    <g className="stroke-slate-900/10 dark:stroke-white/10"><line x1="30" y1="20" x2="310" y2="20" /><line x1="30" y1="70" x2="310" y2="70" /><line x1="30" y1="120" x2="310" y2="120" /></g>
+    <g className="fill-slate-600 dark:fill-slate-400 num" fontSize="10"><text x="0" y="24">1.3k</text><text x="0" y="74">1.0k</text><text x="0" y="124">0.7k</text></g>
+    <defs><linearGradient id="sparkfill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor={PAL.s1} stopOpacity=".28" /><stop offset="1" stopColor={PAL.s1} stopOpacity="0" /></linearGradient></defs>
+    <polygon fill="url(#sparkfill)" points="30,118 50,116 70,110 90,104 110,108 130,96 150,90 170,94 190,80 210,72 230,66 250,60 270,50 290,38 310,30 310,125 30,125" />
+    <polyline fill="none" stroke={PAL.s1} strokeWidth="2" strokeLinejoin="round" points="30,118 50,116 70,110 90,104 110,108 130,96 150,90 170,94 190,80 210,72 230,66 250,60 270,50 290,38 310,30" />
+    <g fill={PAL.s3}><circle cx="70" cy="110" r="3.5" /><circle cx="150" cy="90" r="3.5" /><circle cx="230" cy="66" r="3.5" /></g>
+  </svg>
+);
+const Candles = () => {
+  const bars = useMemo(() => { let p = 370, seed = 7; const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }; const out = []; for (let i = 0; i < 40; i++) { const o = p, c = p + (rnd() - 0.45) * 14; const h = Math.max(o, c) + rnd() * 5, l = Math.min(o, c) - rnd() * 5; p = c; out.push({ x: 42 + i * 7.7, o, c, h, l, vol: rnd() * 30 + (i === 38 ? 12 : 0) }); } return out; }, []);
+  const y = v => 210 - (v - 340) * 1.5;
+  return (
+    <svg viewBox="0 0 360 260" className="w-full h-60 lg:h-80 block" role="img" aria-label="กราฟแท่งเทียนรายวัน 1 ปี พร้อมเส้นค่าเฉลี่ย">
+      <g className="stroke-slate-900/10 dark:stroke-white/10">{[30, 90, 150, 210].map(v => <line key={v} x1="34" y1={v} x2="350" y2={v} />)}</g>
+      <g className="fill-slate-600 dark:fill-slate-400 num" fontSize="10"><text x="2" y="34">460</text><text x="2" y="94">420</text><text x="2" y="154">380</text><text x="2" y="214">340</text></g>
+      <polyline fill="none" stroke={PAL.s2} strokeWidth="2" points="40,140 80,138 120,134 160,128 200,124 240,120 280,116 320,112 350,110" />
+      <polyline fill="none" stroke={PAL.s4} strokeWidth="2" points="40,150 80,120 120,100 160,110 200,130 240,150 280,160 320,150 350,135" />
+      <polyline fill="none" stroke={PAL.s3} strokeWidth="2" points="40,160 80,110 120,95 160,120 200,150 240,170 280,175 320,165 350,120" />
+      {bars.map((b, i) => { const up = b.c >= b.o; return <g key={i} className={up ? "stroke-green-700 dark:stroke-green-400" : "stroke-red-700 dark:stroke-red-400"}><line x1={b.x} y1={y(b.h)} x2={b.x} y2={y(b.l)} strokeWidth="1" /><rect x={b.x - 2.5} y={Math.min(y(b.o), y(b.c))} width="5" height={Math.max(1.5, Math.abs(y(b.o) - y(b.c)))} rx="1" strokeWidth="1" className={up ? "fill-green-700 dark:fill-green-400" : "fill-white dark:fill-slate-900"} /></g>; })}
+      {bars.map((b, i) => <rect key={'v' + i} x={b.x - 2.5} y={252 - b.vol} width="5" height={b.vol} rx="1" fill={PAL.other} opacity=".55" />)}
+      <line x1="290" y1="20" x2="290" y2="215" className="stroke-slate-500" strokeDasharray="3 3" />
+      <rect x="196" y="12" width="154" height="34" rx="8" className="fill-white dark:fill-slate-900 stroke-slate-900/10 dark:stroke-white/10" />
+      <g className="fill-slate-600 dark:fill-slate-400" fontSize="10"><text x="204" y="26">15 ก.ย. · O 388.1 H 395.0 L 384.2 C 393.9</text><text x="204" y="40">Vol 4.1M (2.0×) · RSI 58</text></g>
+    </svg>
+  );
+};
+
+/* ---------------- sample data (สมมติทั้งหมด) ---------------- */
+const HOLD = [
+  { s: "VOO", role: "แกน", qty: "1.234567", cost: "512.10", val: "$651.20", w: "50.7%", pct: 3.1 },
+  { s: "MSFT", role: "ดาวเทียม", qty: "0.410000", cost: "455.00", val: "$199.34", w: "15.5%", pct: 6.9 },
+  { s: "SCHD", role: "รายได้", qty: "3.500000", cost: "28.90", val: "$102.55", w: "8.0%", pct: 1.4 },
+  { s: "COST", role: "ดาวเทียม", qty: "0.030000", cost: "905.00", val: "$27.60", w: "2.1%", pct: 1.7, earn: "งบ 25 ก.ย." },
+  { s: "AAPL", role: "ดาวเทียม", qty: "0.550000", cost: "201.40", val: "$104.28", w: "8.1%", pct: -5.9 },
+];
+const SCAN = {
+  "M1 กลับตัว+วอลุ่ม": [
+    { s: "DE", n: "Deere & Co", pct: 4.8, m: ["วอลุ่ม 3.4×", "ปิดที่ 88% ของช่วง", "เหนือ EMA20 ครั้งแรกใน 27 วัน"], why: "ปิดเหนือ EMA20 ครั้งแรกใน 27 วันด้วยปริมาณ 3.4× ค่าเฉลี่ย · แข็งกว่า SPY 6.1% ใน 20 วัน · F-score 7 · งบถัดไป 19 พ.ย. (ไม่ชน)", v: 77 },
+    { s: "NKE", n: "Nike", pct: 6.2, m: ["วอลุ่ม 2.9×", "ต่ำกว่า 52w-high 31%", "RSI 54"], why: "กลับมายืนเหนือ EMA20 หลังลง 31% จากจุดสูง 52 สัปดาห์ · ปริมาณ 2.9× · ⚠ ยังต่ำกว่า SMA200 — รอ follow-through 1–3 วัน", v: 71 },
+    { s: "TGT", n: "Target", pct: 3.9, m: ["วอลุ่ม 2.2×", "ปิดที่ 74% ของช่วง", "FCF บวก"], why: "แท่งกลับตัวหลังพักฐาน 6 สัปดาห์ · ปริมาณ 2.2× · เหนือ EMA20 และ SMA50 · หัก −10: งบภายใน 5 วัน", v: 64 },
+    { s: "PFE", n: "Pfizer", pct: 2.7, m: ["วอลุ่ม 2.0×", "RS20 +3.2%", "ปันผล 6.1%"], why: "ปริมาณแตะเกณฑ์ 2.0× พอดี · ยืนเหนือ EMA20 แต่ยังต่ำกว่า SMA50/200 · คะแนนพื้นฐาน 10/20", v: 58 },
+  ],
+  "M2 ดาวรุ่ง VI": [{ s: "MSFT", n: "Microsoft", pct: 0.9, m: ["ROIC 32%", "FCF margin 33%", "EV/EBITDA 24 (มัธยฐาน 5 ปี 26)"], why: "รายได้โต 15%/ปี (3 ปี) · ROIC 32% · FCF margin 33% · EV/EBITDA ต่ำกว่ามัธยฐาน 5 ปี · เหนือ SMA200", v: 82 }],
+  "M3 ของถูกมีเหตุผล": [{ s: "ELV", n: "Elevance", pct: -1.2, m: ["P/FCF 9.8", "F-score 8/9", "ต่ำกว่า 52w-high 34%"], why: "P/FCF 9.8 · F-score 8/9 · ต่ำกว่าจุดสูง 52 สัปดาห์ 34% แต่ยืนเหนือ SMA50 มา 12 วัน · หนี้สุทธิ/EBITDA 1.9", v: 79 }],
+  "M4 ผู้นำแนวโน้ม": [{ s: "AVGO", n: "Broadcom", pct: 2.1, m: ["RS rank 96", "ห่าง EMA21 +12%", "กำไรไตรมาส +41%"], why: "RS rank 96 · เหนือ SMA200 ที่ยกตัว 7 เดือน · ห่าง EMA21 12% (ไล่ราคาแล้ว — รอ) · กำไรไตรมาสล่าสุด +41%", v: 84 }],
+  "M5 เครื่องจ่ายเงิน": [{ s: "SCHD", n: "Schwab US Dividend", pct: 0.4, m: ["ปันผลโต 12 ปีติด", "payout 58%", "ล็อต 100 ≈ $2,930"], why: "ปันผลโต 12 ปีติด · payout 58% · FCF yield 4.6% · ล็อต 100 หุ้น ≈ $2,930 · IV rank 22 (ต่ำ)", v: 73 }],
+  "✦ ซ้ำหลายโมเดล": [{ s: "DE", n: "Deere & Co", pct: 4.8, m: ["M1 #1", "M3 #6"], why: "ติด 2 โมเดล: กลับตัว+วอลุ่ม และ ของถูกมีเหตุผล", v: 80 }],
+  "⛔ หลีกเลี่ยง": [{ s: "XYZ", n: "ตัวอย่าง", pct: -8.1, m: ["F-score 2/9", "หนี้สุทธิ/EBITDA 4.6"], why: "ตกตะแกรงแข็ง: F-score ≤ 3 และหนี้สุทธิ/EBITDA > 4", v: 12 }],
+};
+
+/* ---------------- pages ---------------- */
+const Home = ({ go }) => (
+  <>
+    <div className="mb-3"><Muted>พุธ 17 ก.ย. 2569 · 19:42 ICT</Muted><div className="font-semibold">ตลาดสหรัฐเปิดใน 48 นาที (20:30 ICT)</div></div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <Card glow onClick={() => go('portfolio')}>
+        <H2>พอร์ตรวม</H2>
+        <div className="text-[34px] leading-tight font-semibold num">$1,284.<span className="text-[22px]">17</span></div>
+        <Muted className="num">≈ ฿42,730 · 33.27 THB/USD</Muted>
+        <div className="my-2"><Delta pct={1.10} abs="$14.02" /></div>
+        <div className="flex justify-between text-[13px] text-slate-600 dark:text-slate-400"><span>เป้า 3,000,000 ฿ · 31 ธ.ค. 2578</span><span className="num">1.4%</span></div>
+        <div className="h-2.5 rounded-full bg-slate-500/10 dark:bg-white/10 overflow-hidden" aria-label="ความคืบหน้าสู่เป้า 1.4%"><div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400" style={{ width: '1.4%' }} /></div>
+        <Src>Webull UAT · 19:41:58 · ราคาปิดก่อนหน้า</Src>
+      </Card>
+      <Card onClick={() => go('tickets')}>
+        <H2>ตั๋วรอยืนยัน <Chip tone="danger" className="ml-1">2</Chip></H2>
+        <div className="flex justify-between gap-2"><div className="min-w-0"><b>ซื้อ MSFT</b> <Chip tone="info">🤖 agent</Chip><Muted className="num">0.25 หุ้น · $121.50 · LIMIT 486.00</Muted></div><Chip tone="warn">หมดอายุใน 2 วัน</Chip></div>
+        <div className="flex justify-between gap-2 mt-2"><div className="min-w-0"><b>ซื้อ VOO</b> <Chip>DCA</Chip><Muted className="num">$200.00 · MARKET</Muted></div><Chip>รอ</Chip></div>
+      </Card>
+      <Card onClick={() => go('scan')}>
+        <H2>สแกนคืนนี้ · เข้าใหม่</H2>
+        {[["AVGO", "M4 ผู้นำแนวโน้ม", 84], ["ELV", "M3 ของถูกมีเหตุผล", 79], ["DE", "M1 กลับตัว+วอลุ่ม", 77]].map(([s, m, v]) => <div key={s} className="flex justify-between"><span><b>{s}</b> <Muted className="inline">{m}</Muted></span><span className="num">{v}</span></div>)}
+        <Src>รัน 05:31 ICT · จักรวาล 503 · v1.0</Src>
+      </Card>
+      <Card>
+        <H2>สัปดาห์นี้</H2>
+        <div className="flex justify-between gap-2"><span>📅 งบ <b>COST</b> (ถือ 2.1%)</span><Muted>พฤ 25 ก.ย. หลังปิด</Muted></div>
+        <div className="flex justify-between gap-2"><span>🔔 <b>AAPL</b> เข้าโซน 180–185</span><Muted>เมื่อคืน 22:14</Muted></div>
+        <div className="flex justify-between gap-2"><span>💵 วัน DCA ถัดไป</span><Muted>25 ก.ย. · ฿3,000</Muted></div>
+      </Card>
+      <Card className="ring-1 ring-amber-400/40">
+        <H2>สมุดบันทึกค้าง</H2>
+        <div className="flex justify-between items-center gap-3"><span>ซื้อ <b>SCHD</b> สำเร็จเมื่อวาน — ยังไม่ได้บันทึกความคิด</span><Btn onClick={() => go('journal')}>บันทึก</Btn></div>
+      </Card>
+    </div>
+  </>
+);
+
+const Portfolio = ({ go, openSheet }) => {
+  const [acct, setAcct] = useState("รวมทุกบัญชี");
+  return (
+    <>
+      <Tabs items={["รวมทุกบัญชี", "Webull ••••1234 · UAT", "Paper"]} active={acct} onChange={setAcct} />
+      <div className="flex gap-3 items-start p-3 mb-4 rounded-2xl bg-amber-100 dark:bg-amber-400/15 text-amber-800 dark:text-amber-300 text-[15px] border border-amber-400/30"><I.alert className="w-5 h-5 flex-none mt-1" /><div>ราคาค้าง 38 วินาที — ผู้ให้ราคาหลัก (Webull) ไม่ตอบ กำลังใช้สำรอง Finnhub (ดีเลย์ 15 นาที)</div></div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Card glow>
+          <H2>มูลค่าพอร์ต</H2>
+          <div className="text-[34px] leading-tight font-semibold num">$1,284.17</div><Muted className="num">≈ ฿42,730</Muted>
+          <div className="mt-2"><KV rows={[["กำไร/ขาดทุนจากหุ้น", <span className="text-green-700 dark:text-green-400">▲ +$61.40 (+5.0%)</span>], ["กำไร/ขาดทุนจากค่าเงิน", <span className="text-red-700 dark:text-red-400">▼ −฿410 (−1.0%)</span>], ["เงินสด", "$96.20 (7.5%)"], ["กระสุน DCA รอบถัดไป", "฿3,000 · 25 ก.ย."], ["ค่าใช้จ่ายสะสม", "0.62% ของเงินที่ใส่"]]} /></div>
+          <Src>FX: BOT 17 ก.ย. 33.27 · ราคา: Finnhub (สำรอง)</Src>
+        </Card>
+        <Card>
+          <H2>มูลค่า 90 วัน</H2><Spark />
+          <Legend items={[[PAL.s1, "มูลค่า"], [PAL.s3, "วันเติมเงิน"]]} right={<Btn variant="ghost" small className="ml-auto">ดูเป็นตาราง</Btn>} />
+        </Card>
+        <Card>
+          <H2>สัดส่วน (จริง vs เป้า)</H2>
+          <Muted>จริง</Muted><Stack parts={[{ label: "แกน", v: 64, c: PAL.s1 }, { label: "ดาวเทียม", v: 21, c: PAL.s2 }, { label: "รายได้", v: 8, c: PAL.s3 }, { label: "เงินสด", v: 7, c: PAL.other }]} />
+          <Muted className="mt-2">เป้า</Muted><Stack faded parts={[{ label: "แกน", v: 70, c: PAL.s1 }, { label: "ดาวเทียม", v: 20, c: PAL.s2 }, { label: "รายได้", v: 5, c: PAL.s3 }, { label: "เงินสด", v: 5, c: PAL.other }]} />
+          <Legend items={[[PAL.s1, "แกน 64/70"], [PAL.s2, "ดาวเทียม 21/20"], [PAL.s3, "รายได้ 8/5"], [PAL.other, "เงินสด 7/5"]]} />
+          <div className="mt-2"><Chip tone="warn">⚠ แกนต่ำกว่าเป้า 6 จุด — รอบ DCA ถัดไปเติมแกนก่อน</Chip></div>
+        </Card>
+      </div>
+      <Card className="mt-4">
+        <H2>ถือครอง (6)</H2>
+        {HOLD.map(h => <div key={h.s} onClick={() => go('stock')} className="grid grid-cols-[44px_minmax(0,1fr)_auto] gap-3 items-center py-3 border-t first:border-t-0 border-slate-900/10 dark:border-white/10 cursor-pointer">
+          <div className="w-11 h-11 rounded-2xl grid place-items-center text-[13px] font-bold bg-gradient-to-br from-slate-500/15 to-slate-500/5 dark:from-white/15 dark:to-white/5">{h.s}</div>
+          <div className="min-w-0"><b>{h.s}</b> <Chip>{h.role}</Chip> {h.earn && <Chip tone="warn">{h.earn}</Chip>}<Muted className="num">{h.qty} หุ้น · ต้นทุน {h.cost}</Muted></div>
+          <div className="text-right"><div className="num">{h.val}</div><div className="text-[13px] num text-slate-600 dark:text-slate-400">{h.w} · <span className={h.pct >= 0 ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}>{h.pct >= 0 ? "▲ +" : "▼ −"}{Math.abs(h.pct)}%</span></div></div>
+        </div>)}
+        <div className="grid grid-cols-[44px_minmax(0,1fr)_auto] gap-3 items-center py-3 border-t border-slate-900/10 dark:border-white/10"><div className="w-11 h-11 rounded-2xl grid place-items-center text-[13px] font-bold bg-slate-500/10 dark:bg-white/10">USD</div><div><b>เงินสด</b><Muted>รอรอบ DCA</Muted></div><div className="text-right num">$96.20<div className="text-[13px] text-slate-600 dark:text-slate-400">7.5%</div></div></div>
+      </Card>
+      <Btn variant="primary" onClick={openSheet} className="fixed right-4 bottom-24 lg:bottom-6 rounded-full min-h-[52px] px-5 z-30"><I.plus className="w-5 h-5" /> บันทึกรายการ</Btn>
+    </>
+  );
+};
+
+const Scan = ({ go }) => {
+  const models = Object.keys(SCAN); const [m, setM] = useState(models[0]);
+  return (
+    <>
+      <Tabs items={models} active={m} onChange={setM} />
+      <Card className="mb-4"><div className="flex flex-wrap items-center justify-between gap-2"><Muted>รัน 05:31 ICT (17 ก.ย.) · จักรวาล 503 · ผ่านตะแกรง 23 · โมเดล v1.0</Muted><div className="flex gap-2"><Btn variant="ghost" small>รอบก่อน</Btn><Btn variant="ghost" small>ความแม่น</Btn></div></div></Card>
+      <Card>
+        <H2>{m} — Top 10</H2>
+        {SCAN[m].map((r, i) => <div key={r.s} className="grid grid-cols-[28px_minmax(0,1fr)_56px] gap-3 items-start py-3.5 border-t first:border-t-0 border-slate-900/10 dark:border-white/10">
+          <div className="font-bold text-slate-600 dark:text-slate-400 pt-1">{i + 1}</div>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2"><b>{r.s}</b><Muted className="inline">{r.n}</Muted><Delta pct={r.pct} /></div>
+            <div className="flex flex-wrap gap-1.5 my-1">{r.m.map(x => <span key={x} className="text-[13px] px-2 py-0.5 rounded-lg bg-slate-500/10 dark:bg-white/10">{x}</span>)}</div>
+            <div className="text-[15px] text-slate-600 dark:text-slate-400 mb-2 [overflow-wrap:anywhere]">{r.why}</div>
+            <div className="flex flex-wrap gap-2"><Btn small onClick={() => go('stock')}>ดูหุ้น</Btn><Btn small><I.star className="w-4 h-4" /> Watchlist</Btn><Btn small variant="ghost">ขอ thesis 🤖</Btn></div>
+          </div>
+          <Ring v={r.v} />
+        </div>)}
+        {SCAN[m].length < 10 && <Muted className="pt-3">… อันดับที่เหลือ (ย่อในต้นแบบ)</Muted>}
+        <details className="mt-2 text-[13px] text-slate-600 dark:text-slate-400"><summary className="cursor-pointer">ตัดออกเพราะข้อมูลไม่ครบ (12) · ดูรายการเต็มที่ผ่านตะแกรง (23)</summary><div>BRK.B (ไม่มี EBITDA) · … — ไม่ประมาณค่าแทน</div></details>
+      </Card>
+    </>
+  );
+};
+
+const Stock = ({ go }) => {
+  const [tf, setTf] = useState('1Y');
+  return (
+    <>
+      <Card glow className="mb-4">
+        <div className="flex flex-wrap justify-between gap-3">
+          <div className="min-w-0"><div className="flex items-baseline gap-2 flex-wrap"><span className="text-[22px] font-semibold">DE</span><Muted className="inline">Deere &amp; Co · Industrials</Muted></div>
+            <div className="flex items-center gap-3 flex-wrap"><span className="text-[34px] leading-tight font-semibold num">$412.80</span><Delta pct={4.8} abs="$18.90" /></div>
+            <Src>Webull · 03:59:58 ET ปิดตลาด · 17 ก.ย.</Src></div>
+          <div className="flex flex-wrap gap-2 content-start"><Chip>ไม่ได้ถือ</Chip><Chip tone="info">M1 #1</Chip><Chip tone="info">M3 #6</Chip></div>
+        </div>
+        <div className="flex flex-wrap gap-3 mt-3"><Toggle items={[['1Y', '1Y'], ['3M', '3M'], ['1W', '1W']]} value={tf} onChange={setTf} /><Toggle items={[['e', 'EMA20'], ['s', 'SMA50'], ['l', 'SMA200']]} value="e" onChange={() => { }} /></div>
+        <Candles />
+        <Legend items={[[PAL.s3, "EMA20"], [PAL.s4, "SMA50"], [PAL.s2, "SMA200"], [PAL.other, "ปริมาณ"]]} right={<Btn variant="ghost" small className="ml-auto">ดูเป็นตาราง</Btn>} />
+      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Card><H2 right={<Src>EDGAR FY2025 · ดึง 14 ก.ย.</Src>}>พื้นฐาน</H2>
+          <KV rows={[["รายได้ (TTM)", "$45.8B"], ["รายได้โต 3 ปี", "+6.2%/ปี"], ["FCF margin", "11.4%"], ["ROIC", "17.9%"], ["หนี้สุทธิ/EBITDA", "1.6"], ["จำนวนหุ้น (3 ปี)", "−4.1%"], ["P/E · EV/EBITDA · P/FCF", "18.2 · 12.1 · 16.0"], ["ปันผล · payout", "1.5% · 24%"], ["F-score", "7 / 9"], ["งบถัดไป", <span>19 พ.ย. <span className="text-[13px] text-slate-600 dark:text-slate-400">(Finnhub · ชั้น 2)</span></span>], ["Beta", <span>— <span className="text-[13px] text-slate-600 dark:text-slate-400">ไม่มีข้อมูล</span></span>]]} /></Card>
+        <Card><H2 right={<Chip tone="info">🤖 draft · 17 ก.ย.</Chip>}>Thesis</H2>
+          {[["1. ทำอะไร หาเงินจากไหน", "ขายเครื่องจักรเกษตร/ก่อสร้าง + บริการการเงินให้ลูกค้าซื้อเครื่อง · รายได้จากขาย 78% การเงิน 22%", true], ["2. คูเมือง"], ["3. ตัวเลข 5–10 ปี"], ["4. มูลค่า 3 ฉากทัศน์", "Bear $340 (−18%) · Base $470 (+14%) · Bull $560 (+36%) · ราคาน่าซื้อ (base − 25%) ≈ $352 — ราคาปัจจุบันสูงกว่า", true], ["5. ความเสี่ยง 3 ข้อ + สัญญาณออก"], ["6. อะไรจะทำให้ผมคิดผิด"], ["7. บทบาทในพอร์ต"]].map(([t, body, open]) => <details key={t} open={open} className="border-t first:border-t-0 border-slate-900/10 dark:border-white/10 py-2"><summary className="cursor-pointer font-semibold">{t}</summary>{body && <div className="text-[15px] text-slate-600 dark:text-slate-400">{body}</div>}</details>)}
+          <div className="flex gap-2 mt-3"><Btn variant="primary"><I.check className="w-4 h-4" /> ยืนยัน thesis</Btn><Btn variant="ghost">ขอใหม่</Btn></div>
+          <Muted className="mt-2 text-[13px]">เสียงค้าน 3 ข้อแรก (persona): cfp — "ยังไม่มี margin of safety" · retail-VI — "วัฏจักรเกษตรกำลังลง" · trader — "รอ follow-through"</Muted></Card>
+        <Card><H2>ทำอะไรได้</H2>
+          <Btn block className="mb-2"><I.star className="w-4 h-4" /> เพิ่ม Watchlist · โซน 380–395</Btn>
+          <Btn block variant="primary" className="mb-2" onClick={() => go('ticket')}>สร้างตั๋วคำสั่ง</Btn>
+          <Btn block onClick={() => go('journal')}>บันทึก journal</Btn>
+          <Muted className="mt-2 text-[13px]">ไม่ใช่คำแนะนำจากผู้มีใบอนุญาต · ตัวเลขต้อง verify ก่อนลงมือ</Muted></Card>
+      </div>
+    </>
+  );
+};
+
+const Watch = () => (
+  <>
+    <Card className="mb-4"><H2>Watchlist (4)</H2>
+      {[["AAPL", "up", "ในโซน 180–185", "จาก M3 · ตัดขาดทุน 172 · แจ้ง LINE เมื่อคืน", "$183.10", "งบ 30 ต.ค."], ["DE", "neutral", "สูงกว่าโซน +5.7%", "จาก M1 · โซน 380–395 · รอ follow-through", "$412.80", "งบ 19 พ.ย."], ["ELV", "neutral", "ต่ำกว่าโซน −3.1%", "จาก M3 · โซน 310–320", "$300.40", "งบ 21 ต.ค."], ["AVGO", "warn", "ไล่ราคาแล้ว +12%", "จาก M4 · รอกลับมาใกล้ EMA21", "$1,742", "งบ 11 ธ.ค."]].map(([s, t, z, d, p, e]) => <div key={s} className="grid grid-cols-[44px_minmax(0,1fr)_auto] gap-3 items-center py-3 border-t first:border-t-0 border-slate-900/10 dark:border-white/10"><div className="w-11 h-11 rounded-2xl grid place-items-center text-[13px] font-bold bg-gradient-to-br from-slate-500/15 to-slate-500/5 dark:from-white/15 dark:to-white/5">{s}</div><div className="min-w-0"><b>{s}</b> <Chip tone={t}>{z}</Chip><Muted>{d}</Muted></div><div className="text-right"><div className="num">{p}</div><div className="text-[13px] text-slate-600 dark:text-slate-400">{e}</div></div></div>)}
+    </Card>
+    <Card><H2>กฎแจ้งเตือน</H2>
+      <Check state="ok">AAPL เข้าโซน 180–185 → LINE · ยิงแล้ว 16 ก.ย. 22:14 · เงียบ 6 ชม.</Check>
+      <Check state="ok">COST งบใน 5 วัน → LINE (ปลุกได้)</Check>
+      <Check state="warn">DE ปริมาณ ≥ 2× → LINE · ชั่วโมงเงียบ 23:30–06:30</Check>
+      <Btn block className="mt-3"><I.plus className="w-4 h-4" /> เพิ่มกฎ</Btn></Card>
+  </>
+);
+
+const Tickets = ({ go }) => {
+  const [t, setT] = useState("รอยืนยัน (2)");
+  return (
+    <>
+      <Tabs items={["รอยืนยัน (2)", "ส่งแล้ว (1)", "สำเร็จ (7)", "หมดอายุ/ปฏิเสธ (3)"]} active={t} onChange={setT} />
+      <Card className="mb-3" onClick={() => go('ticket')}><div className="flex flex-wrap justify-between gap-2"><div><b>ซื้อ MSFT</b> <Chip tone="info">🤖 agent</Chip> <Chip tone="info">UAT</Chip></div><Chip tone="warn">หมดอายุใน 2 วัน</Chip></div><div className="flex flex-wrap justify-between gap-2"><Muted className="num">0.25 หุ้น · LIMIT 486.00 · ≈ $121.50 / ฿4,042</Muted><span className="text-[13px] text-slate-600 dark:text-slate-400">✅ 6 · ⚠ 1 · ⛔ 1</span></div></Card>
+      <Card onClick={() => go('ticket')}><div className="flex flex-wrap justify-between gap-2"><div><b>ซื้อ VOO</b> <Chip>DCA ก.ย.</Chip> <Chip tone="info">UAT</Chip></div><Chip>รอ</Chip></div><div className="flex flex-wrap justify-between gap-2"><Muted className="num">มูลค่า $200.00 · MARKET · เศษหุ้น</Muted><span className="text-[13px] text-slate-600 dark:text-slate-400">✅ 7 · ⚠ 0 · ⛔ 0</span></div></Card>
+    </>
+  );
+};
+
+const Ticket = () => {
+  const [phrase, setPhrase] = useState(""); const ok = phrase.trim() === "ยืนยัน ซื้อ MSFT 0.25"; const hasBlock = true;
+  return (
+    <>
+      <Card glow className="mb-4"><div className="flex flex-wrap items-center justify-between gap-2"><span className="text-[22px] font-semibold">ซื้อ MSFT</span><Chip tone="info" className="text-[15px] px-3 py-1">จะส่งไปที่ UAT — ไม่ใช่เงินจริง</Chip></div>
+        <div className="flex flex-wrap items-center gap-1.5 mt-2 text-[13px] text-slate-600 dark:text-slate-400"><Chip tone="up">เสนอ 16 ก.ย. 22:40</Chip>›<Chip>ยืนยัน</Chip>›<Chip>ส่ง</Chip>›<Chip>สำเร็จ</Chip></div></Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card><H2>คำสั่ง</H2><KV rows={[["จำนวน", "0.250000 หุ้น"], ["ชนิด · ราคา", "LIMIT · 486.00"], ["ราคาตลาดตอนนี้", <span>489.12 <span className="text-[13px] text-slate-600 dark:text-slate-400">Webull · 19:41:58</span></span>], ["มูลค่า", "$121.50 · ฿4,042"], ["ตัดขาดทุน · เป้า", "452.00 · 560.00"], ["R : R", "1 : 2.2"], ["% พอร์ตหลังทำ (MSFT)", <span>15.5% → <b>24.9%</b></span>], ["หมดอายุ", "19 ก.ย. 23:59"], ["กฎที่ใช้ตรวจ", "v3 (17 ก.ย.)"]]} /></Card>
+        <Card><H2>ผลตรวจกฎ</H2>
+          <Check state="ok">มูลค่า $121.50 ≤ เพดาน $500</Check>
+          <Check state="ok">MSFT อยู่ใน whitelist</Check>
+          <Check state="ok">ราคาใหม่กว่า 60 วิ (12 วิ)</Check>
+          <Check state="warn">น้ำหนัก MSFT หลังทำ 24.9% &gt; เพดานเตือน 8%</Check>
+          <Check state="bad">ผิดกฎ "น้ำหนักหุ้นเดี่ยว ≤ 10%" — ยืนยันไม่ได้จนกว่าจะลดจำนวนหรือแก้กฎ (สร้างเวอร์ชันใหม่)</Check>
+          <Check state="ok">ตั๋วต่อวัน 1/5 · ไม่มีตั๋ว MSFT ซ้ำ · ไม่หมดอายุ</Check></Card>
+        <Card className="lg:col-span-2"><H2>เหตุผล · ทางเลือกที่ 0 · อะไรจะทำให้คิดผิด</H2>
+          <div className="text-[15px] text-slate-600 dark:text-slate-400 space-y-1"><p><b className="text-slate-900 dark:text-slate-100">เหตุผล (agent):</b> ผ่าน M2 อันดับ 4 (ROIC 32% · FCF margin 33%) · ราคาพักลงมาใกล้ EMA20 ครั้งแรกใน 3 สัปดาห์ · อ้าง thesis MSFT v2 (✅ ยืนยัน 10 ก.ย.)</p><p><b className="text-slate-900 dark:text-slate-100">ทางเลือกที่ 0 (ไม่ทำ):</b> ถือเงินสดรอรอบ DCA 25 ก.ย. · เสียโอกาสถ้าราคาไปต่อ แต่ไม่ทำให้พอร์ตกระจุกเกิน 10%</p><p><b className="text-slate-900 dark:text-slate-100">อะไรจะทำให้คิดผิด:</b> หลุด 452 (swing low) · งบ 28 ต.ค. โตช้ากว่า 12% · ดอกเบี้ยขึ้นกด multiple</p></div>
+          <Muted className="mt-2 text-[13px]">เสียงค้าน: lucifer — "นี่คือการเพิ่มตัวที่ถืออยู่แล้ว 15% ไม่ใช่ไอเดียใหม่ — ถามว่าทำไมไม่ใช่แกน" · cfp — "ลดเหลือ 0.08 หุ้นจะไม่ชนเพดาน"</Muted></Card>
+        <Card><H2>ยืนยัน</H2>
+          <Field label={<span>พิมพ์ประโยคนี้ให้ตรงทุกตัวอักษร: <b className="num text-slate-900 dark:text-slate-100">ยืนยัน ซื้อ MSFT 0.25</b></span>}><input className={inputCls} placeholder="พิมพ์ที่นี่" value={phrase} onChange={e => setPhrase(e.target.value)} /></Field>
+          <Btn block variant="primary" disabled={!(ok && !hasBlock)}>{ok && hasBlock ? "ประโยคตรงแล้ว แต่ยังมี ⛔ — ยืนยันไม่ได้" : "ยืนยันและส่ง UAT"}</Btn>
+          <Muted className="mt-2 text-[13px]">ปุ่มจะเปิดเมื่อประโยคตรงและไม่มี ⛔ · การยืนยันนี้ใช้กับตั๋วใบนี้ใบเดียว · API token ยืนยันแทนไม่ได้</Muted>
+          <div className="flex flex-wrap gap-2 mt-3"><Btn variant="ghost">แก้จำนวน (สร้างเวอร์ชันใหม่)</Btn><Btn variant="ghost" className="text-red-700 dark:text-red-400">ปฏิเสธ + บันทึกเหตุผล</Btn></div></Card>
+        <Card><H2>รางส่งมือ (ถ้าไม่ได้เชื่อม API)</H2>
+          <KV rows={[["สัญลักษณ์", <span>MSFT <Btn variant="ghost" small>คัดลอก</Btn></span>], ["จำนวน", "0.25"], ["LIMIT", "486.00"]]} />
+          <div className="flex flex-wrap gap-2 mt-3"><Btn>เปิดแอป Webull</Btn><Btn variant="primary">ทำแล้ว → กรอกราคา/จำนวนจริง</Btn></div></Card>
+      </div>
+    </>
+  );
+};
+
+const Journal = () => {
+  const [emo, setEmo] = useState("มั่นใจ"); const [dec, setDec] = useState("ซื้อ"); const [rv, setRv] = useState("30");
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <Card><H2>บันทึกการตัดสินใจ · ซื้อ SCHD (สำเร็จ 16 ก.ย.)</H2>
+        <Field label="การตัดสินใจ"><Toggle items={[["ซื้อ", "ซื้อ"], ["ขาย", "ขาย"], ["ไม่ทำ", "ไม่ทำ"], ["รอ", "รอ"]]} value={dec} onChange={setDec} /></Field>
+        <Field label="อารมณ์ตอนตัดสินใจ"><div className="flex flex-wrap gap-2">{["กลัว", "โลภ", "เบื่อ", "มั่นใจ", "ลังเล"].map(e => <button key={e} aria-pressed={emo === e} onClick={() => setEmo(e)} className={cx("min-h-[44px] px-4 rounded-full border transition-all duration-300", emo === e ? "bg-gradient-to-r from-emerald-700 to-teal-700 dark:from-emerald-400 dark:to-teal-300 text-white dark:text-emerald-950 border-transparent shadow-glow" : "bg-white/70 dark:bg-white/5 border-slate-900/10 dark:border-white/10")}>{e}</button>)}</div></Field>
+        <Field label="thesis ย่อ (1–2 บรรทัด)"><textarea className={cx(inputCls, "min-h-[88px] py-2")} defaultValue="เติมส่วน 'รายได้' ตามแผน DCA · yield 3.4% · ไม่ได้ดูจังหวะ" /></Field>
+        <Field label="คาดหวังอะไร"><input className={inputCls} defaultValue="ปันผลไตรมาสหน้า ≈ $0.9 · ราคาไม่สำคัญใน 12 เดือน" /></Field>
+        <Field label="ย้อนมาดูผลเมื่อ"><Toggle items={[["30", "30 วัน"], ["90", "90 วัน"]]} value={rv} onChange={setRv} /></Field>
+        <Btn block variant="primary">บันทึก</Btn></Card>
+      <Card><H2>สรุปไตรมาสนี้ (7 การตัดสินใจ)</H2>
+        <table className="w-full text-[15px]"><thead><tr className="text-[13px] text-slate-600 dark:text-slate-400"><th className="text-left py-1">อารมณ์</th><th className="text-right">ครั้ง</th><th className="text-right">ผลเฉลี่ย 30 วัน</th></tr></thead><tbody>
+          {[["มั่นใจ", 3, "+2.1%", "up"], ["ลังเล", 2, "+0.4%", "up"], ["โลภ", 1, "−4.8%", "down"], ["ไม่ทำ", 1, "—", ""]].map(([e, n, r, t]) => <tr key={e} className="border-t border-slate-900/10 dark:border-white/10"><td className="py-2">{e}</td><td className="text-right num">{n}</td><td className={cx("text-right num", t === "up" && "text-green-700 dark:text-green-400", t === "down" && "text-red-700 dark:text-red-400")}>{r}</td></tr>)}
+        </tbody></table>
+        <Muted className="mt-2 text-[13px]">ตัวเลขจริงจากผลตอบแทนหลังตัดสินใจ · ไม่ตีความให้ — ต้นอ่านเอง</Muted></Card>
+    </div>
+  );
+};
+
+const Goal = () => {
+  const [monthly, setMonthly] = useState(3000); const [years, setYears] = useState(9.3); const target = 3000000, start = 42730;
+  const rate = useMemo(() => { let lo = 0, hi = 2; for (let i = 0; i < 80; i++) { const r = (lo + hi) / 2, m = Math.pow(1 + r, 1 / 12) - 1, n = Math.round(years * 12); const fv = start * Math.pow(1 + r, years) + monthly * ((Math.pow(1 + m, n) - 1) / m); if (fv < target) lo = r; else hi = r; } return (lo + hi) / 2; }, [monthly, years]);
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <Card><H2>เป้าหมาย</H2>
+        <Field label="ยอดเป้า (บาท)"><input className={cx(inputCls, "num")} defaultValue="3,000,000" /></Field>
+        <Field label="วันเป้า"><input className={inputCls} defaultValue="31 ธ.ค. 2578" /></Field>
+        <div className="grid grid-cols-2 gap-3"><Field label="เงินตั้งต้น"><input className={cx(inputCls, "num")} defaultValue="฿42,730" /></Field><Field label="เติมต่อเดือน"><input className={cx(inputCls, "num")} value={monthly.toLocaleString()} onChange={e => { const v = parseFloat(e.target.value.replace(/,/g, '')); if (v > 0) setMonthly(v); }} /></Field></div>
+        <Field label="วัน DCA"><input className={inputCls} defaultValue="25 ของทุกเดือน" /></Field></Card>
+      <Card glow><H2>ต้องได้ผลตอบแทนเท่าไร</H2>
+        <div className="text-[34px] leading-tight font-semibold num bg-gradient-to-r from-emerald-700 to-teal-700 dark:from-emerald-300 dark:to-teal-200 bg-clip-text text-transparent">≈ {(rate * 100).toFixed(1)}% / ปี</div>
+        <Muted>ด้วยเติม ฿{monthly.toLocaleString()}/เดือน ใน {years} ปี — agent จะดึงตัวเลขจริงของตลาดมาเทียบ · คันโยกจริงคือ "เติมเพิ่ม" หรือ "ยืดเวลา" ไม่ใช่ "เสี่ยงเพิ่ม"</Muted>
+        <Field label={<span>ลองเติมเพิ่ม: <b className="num text-slate-900 dark:text-slate-100">฿{monthly.toLocaleString()}</b>/เดือน</span>}><input type="range" className="w-full" min="1000" max="30000" step="500" value={monthly} onChange={e => setMonthly(+e.target.value)} /></Field>
+        <Field label={<span>ลองยืดเวลา: <b className="text-slate-900 dark:text-slate-100">{years}</b> ปี</span>}><input type="range" className="w-full" min="5" max="25" step="0.5" value={years} onChange={e => setYears(+e.target.value)} /></Field>
+        <Muted className="text-[13px]">สูตร: หาอัตรา r ที่ทำให้ FV(เงินตั้งต้น) + FV(เงินเติมรายเดือน) = เป้า · คำนวณจริงในต้นแบบนี้</Muted></Card>
+      <Card><H2>เส้นทาง 3 ฉากทัศน์</H2>
+        <Muted>กรอกผลตอบแทนสมมติเอง (ระบบไม่ใส่ตัวเลขประวัติศาสตร์ให้)</Muted>
+        <div className="grid grid-cols-2 gap-3 mt-2"><Field label="ต่ำ"><input className={cx(inputCls, "num")} placeholder="เช่น 4%" /></Field><Field label="กลาง"><input className={cx(inputCls, "num")} placeholder="เช่น 8%" /></Field></div>
+        <Field label="สูง"><input className={cx(inputCls, "num")} placeholder="เช่น 12%" /></Field>
+        <Empty>กราฟจะแสดงเมื่อกรอกครบ 3 ค่า</Empty>
+        <Btn block>สร้างตั๋วชุด DCA เดือนนี้ (ยืนยันทีละใบ)</Btn></Card>
+    </div>
+  );
+};
+
+const Settings = ({ theme, setTheme, font, setFont, aurora, setAurora, env, setEnv }) => (
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <Card glow><H2>เชื่อม Webull</H2>
+      <div className="flex flex-wrap gap-2 items-center"><Chip tone="up">● เชื่อมแล้ว</Chip><Chip tone="info">UAT</Chip></div>
+      <Muted>บัญชี ••••1234 · App Key ••••7Q2F · token หมด 15 ต.ค. · ตรวจล่าสุด 19:41</Muted>
+      <div className="flex flex-wrap gap-2 mt-3"><Btn>ทดสอบเชื่อม</Btn><Btn>เปลี่ยนกุญแจ</Btn><Btn variant="ghost" className="text-red-700 dark:text-red-400">ตัดการเชื่อมต่อ</Btn></div>
+      <Muted className="mt-2 text-[13px]"><I.shield className="w-4 h-4 inline mr-1" />กุญแจถูกเข้ารหัสฝั่งเซิร์ฟเวอร์ · ไม่แสดงเต็ม · ไม่ส่งให้ AI · ไม่อยู่ใน log · <b>ใส่ได้เฉพาะในหน้านี้ ห้ามพิมพ์ในแชท</b></Muted>
+      <details className="mt-2 text-[13px] text-slate-600 dark:text-slate-400"><summary className="cursor-pointer">ขั้นตอนเชื่อม (wizard)</summary><ol className="list-decimal ml-5"><li>ใส่ App Key + App Secret (จาก developer.webull.co.th)</li><li>ระบบขอ token → Webull ส่งรหัส 2FA → กรอก</li><li>ทดสอบ account/list → แสดงการ์ดสถานะ</li></ol></details></Card>
+    <Card><H2>สภาพแวดล้อม (Environment)</H2>
+      <Toggle items={[["uat", "UAT (ทดสอบ)"], ["prod", "PROD (เงินจริง)"]]} value={env} onChange={setEnv} />
+      <Muted className="mt-2 text-[13px]">เฟส 1: PROD ปิดใช้จนผ่านประตูเฟส 2 (SPEC §14.3) · เปิดต้องพิมพ์ "เปิดเงินจริง" และจะมีแถบแดงทุกหน้า (ลองกดดูในต้นแบบ)</Muted>
+      <div className="flex flex-wrap items-center justify-between gap-2 mt-3 p-3 rounded-2xl bg-amber-100 dark:bg-amber-400/15"><b className="text-amber-800 dark:text-amber-300">Kill switch</b><Btn variant="danger">หยุดส่งคำสั่งทั้งหมด</Btn></div>
+      <Muted className="text-[13px] mt-1">env TRADING_ENABLED = true · settings.trading_enabled = true — ตัวใดตัวหนึ่งปิด = ส่งไม่ได้</Muted></Card>
+    <Card><H2 right={<Chip>v3 · 17 ก.ย.</Chip>}>กฎความเสี่ยง</H2>
+      <div className="grid grid-cols-2 gap-3">{[["เพดานมูลค่า/คำสั่ง (USD)", "500"], ["เพดานจำนวน/คำสั่ง", "100"], ["หุ้นเดี่ยวสูงสุด %", "10"], ["กลุ่มสูงสุด %", "25"], ["เงินสดขั้นต่ำ %", "5"], ["เสี่ยง/ไม้ %", "1"], ["ราคาใหม่กว่า (วิ)", "60"], ["ตั๋ว/วัน", "5"]].map(([l, v]) => <Field key={l} label={l}><input className={cx(inputCls, "num")} defaultValue={v} /></Field>)}</div>
+      <Field label="Whitelist (ว่าง = ห้ามส่งทุกตัว)"><input className={inputCls} defaultValue="VOO, MSFT, SCHD, COST, AAPL" /></Field>
+      <Btn block variant="primary">บันทึกเป็นเวอร์ชันใหม่ (v4)</Btn><Muted className="mt-1 text-[13px]">ตั๋วเดิมยังอ้าง v3 และต้องตรวจใหม่ก่อนยืนยัน</Muted></Card>
+    <Card><H2>ผู้ให้ราคา</H2><Check state="ok">1 · Webull Market Data · 24 ชม.: สำเร็จ 98.7%</Check><Check state="ok">2 · Finnhub (สำรอง · ดีเลย์ 15 นาที) · 100%</Check><Check state="warn">3 · yfinance (งานกลางคืนเท่านั้น · ห้ามใช้ตรวจตั๋ว)</Check></Card>
+    <Card><H2>แจ้งเตือน LINE</H2><KV rows={[["เปิดใช้", <Chip tone="up">เปิด</Chip>], ["ชั่วโมงเงียบ", "23:30–06:30"], ["ซ่อนยอดเงินในข้อความ", <Chip>ปิด</Chip>], ["บรีฟเช้า 07:00", <Chip>P1 — ยังไม่เปิด</Chip>]]} /></Card>
+    <Card><H2>API token</H2>
+      <div className="flex justify-between gap-2"><div className="min-w-0"><b>agent-upverse-advisor</b><Muted className="num">upv_8f3a2c1d… · ใช้ล่าสุด 19:40</Muted><div className="flex flex-wrap gap-1 mt-1">{["portfolio:read", "scan:read", "quotes:read", "theses:write", "tickets:propose", "journal:write"].map(s => <Chip key={s}>{s}</Chip>)}</div></div><Btn variant="ghost" className="text-red-700 dark:text-red-400 flex-none">เพิกถอน</Btn></div>
+      <Btn block className="mt-3"><I.plus className="w-4 h-4" /> สร้าง token</Btn><Muted className="mt-1 text-[13px]">ไม่มี scope "tickets:confirm" ให้เลือก — ยืนยันได้จากหน้าจอนี้เท่านั้น</Muted></Card>
+    <Card><H2>ธีม / ฟอนต์ / สไตล์</H2>
+      <div className="flex flex-col gap-3">
+        <Toggle items={[["auto", "ตามเครื่อง"], ["dark", "มืด"], ["light", "สว่าง"]]} value={theme} onChange={setTheme} />
+        <Toggle items={[["plex", "A · Plex Sans Thai"], ["prompt", "B · Prompt"]]} value={font} onChange={setFont} />
+        <Toggle items={[["on", "มืดแบบ aurora"], ["off", "มืดแบบเรียบ"]]} value={aurora} onChange={setAurora} />
+      </div>
+      <Muted className="mt-2 text-[13px]">v2 = ทิศทางที่ต้นเคาะ 17 ก.ย.: gradient + ขอบโค้งมน + smooth (Tailwind/React) · ที่เหลือลองสลับดูได้</Muted></Card>
+  </div>
+);
+
+/* ---------------- shell ---------------- */
+const NAV = [["home", "หน้าหลัก", I.home], ["portfolio", "พอร์ต", I.chart], ["scan", "สแกน", I.search], ["tickets", "ตั๋ว", I.ticket], ["settings", "เพิ่มเติม", I.more]];
+const SIDE = [["home", "หน้าหลัก"], ["portfolio", "พอร์ต"], ["scan", "สแกน"], ["stock", "หุ้น"], ["watch", "Watchlist"], ["tickets", "ตั๋วคำสั่ง"], null, ["journal", "สมุดบันทึก"], ["goal", "เป้า / DCA"], ["settings", "ตั้งค่า"]];
+const TITLES = { home: "หน้าหลัก", portfolio: "พอร์ต", scan: "สแกน Top 10", stock: "หุ้น · DE", watch: "Watchlist", tickets: "ตั๋วคำสั่ง", ticket: "ตั๋ว · ซื้อ MSFT", journal: "สมุดบันทึก", goal: "เป้า / DCA", settings: "ตั้งค่า" };
+
+function App() {
+  const [page, setPage] = useState((location.hash.slice(1) in TITLES) ? location.hash.slice(1) : 'home');
+  const [theme, setTheme] = useState('auto'); const [font, setFont] = useState('plex'); const [aurora, setAurora] = useState('on'); const [env, setEnv] = useState('uat'); const [sheet, setSheet] = useState(false);
+  const go = p => { setPage(p); location.hash = p; window.scrollTo({ top: 0 }); };
+  useEffect(() => { const h = () => { const p = location.hash.slice(1); if (p in TITLES) setPage(p); }; addEventListener('hashchange', h); window.__go = go; return () => removeEventListener('hashchange', h); }, []);
+  useEffect(() => { const mq = matchMedia('(prefers-color-scheme: dark)'); const apply = () => document.documentElement.classList.toggle('dark', theme === 'dark' || (theme === 'auto' && mq.matches)); apply(); mq.addEventListener('change', apply); return () => mq.removeEventListener('change', apply); }, [theme]);
+  useEffect(() => { document.body.setAttribute('data-font', font); document.body.setAttribute('data-aurora', aurora); }, [font, aurora]);
+  const isDark = () => document.documentElement.classList.contains('dark');
+  const active = page === 'ticket' ? 'tickets' : page;
+  const Page = { home: Home, portfolio: Portfolio, scan: Scan, stock: Stock, watch: Watch, tickets: Tickets, ticket: Ticket, journal: Journal, goal: Goal, settings: Settings }[page];
+  return (
+    <div className="min-h-[100dvh] lg:grid lg:grid-cols-[240px_minmax(0,1fr)]">
+      {env === 'prod' && <div className="lg:col-span-2 bg-gradient-to-r from-red-700 to-rose-700 text-white text-center font-bold py-1.5 px-4">⚠ โหมดเงินจริง (PROD) — ทุกคำสั่งที่ยืนยันจะถูกส่งไปที่บัญชีจริง</div>}
+      <div className="lg:col-span-2 text-center text-[12px] font-semibold py-0.5 bg-amber-100 text-amber-800 dark:bg-amber-400/15 dark:text-amber-300">ตัวอย่าง v2 · ข้อมูลสมมติทั้งหมด</div>
+      <header className="lg:col-span-2 sticky top-0 z-20 flex items-center gap-3 px-4 py-2.5 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border-b border-slate-900/10 dark:border-white/10">
+        <div className="flex items-center gap-2 font-bold"><span className="w-3 h-3 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 shadow-glow" />UPVerse</div>
+        <h1 className="flex-1 text-[19px] font-semibold m-0 truncate">{TITLES[page]}</h1>
+        <Chip tone={env === 'prod' ? 'danger' : 'info'}>{env.toUpperCase()}</Chip>
+        <button aria-label="สลับธีม" onClick={() => setTheme(isDark() ? 'light' : 'dark')} className="min-h-[40px] min-w-[40px] grid place-items-center rounded-2xl bg-white/70 dark:bg-white/5 border border-slate-900/10 dark:border-white/10 cursor-pointer"><I.moon className="w-5 h-5" /></button>
+      </header>
+      <nav className="hidden lg:flex flex-col gap-1 p-3 border-r border-slate-900/10 dark:border-white/10 bg-white/50 dark:bg-slate-900/40 backdrop-blur-xl sticky top-[64px] h-[calc(100dvh-64px)]" aria-label="เมนูหลัก">
+        {SIDE.map((it, i) => it ? <button key={it[0]} aria-current={active === it[0] ? 'page' : undefined} onClick={() => go(it[0])} className={cx("flex items-center justify-between px-3 py-2.5 rounded-2xl text-left transition-all duration-300 cursor-pointer", active === it[0] ? "bg-gradient-to-r from-emerald-500/20 to-teal-500/10 font-semibold" : "text-slate-600 dark:text-slate-300 hover:bg-slate-500/10 dark:hover:bg-white/5")}>{it[1]}{it[0] === 'tickets' && <Chip tone="danger">2</Chip>}</button> : <div key={i} className="h-px my-2 bg-slate-900/10 dark:bg-white/10" />)}
+      </nav>
+      <main className="px-4 pt-4 pb-28 lg:pb-8 lg:px-6 w-full max-w-[1200px] mx-auto min-w-0">
+        <Page go={go} openSheet={() => setSheet(true)} theme={theme} setTheme={setTheme} font={font} setFont={setFont} aurora={aurora} setAurora={setAurora} env={env} setEnv={setEnv} />
+      </main>
+      <nav className="lg:hidden fixed left-3 right-3 bottom-3 z-30 grid grid-cols-5 rounded-3xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-900/10 dark:border-white/10 shadow-soft dark:shadow-softdark" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }} aria-label="เมนูมือถือ">
+        {NAV.map(([k, l, Icon]) => <button key={k} aria-current={active === k ? 'page' : undefined} onClick={() => go(k)} className={cx("relative h-[60px] flex flex-col items-center justify-center gap-0.5 text-[13px] rounded-3xl transition-colors duration-300 cursor-pointer", active === k ? "text-emerald-700 dark:text-emerald-300 font-semibold" : "text-slate-600 dark:text-slate-400")}><Icon className="w-[22px] h-[22px]" />{l}{k === 'tickets' && <span className="absolute top-2 right-[calc(50%-20px)] min-w-[18px] h-[18px] px-1 rounded-full bg-gradient-to-r from-red-600 to-rose-600 text-white text-[12px] leading-[18px] text-center">2</span>}</button>)}
+      </nav>
+      {sheet && <div className="fixed inset-0 z-40 bg-slate-950/55 flex items-end md:items-center justify-center" onClick={e => { if (e.target === e.currentTarget) setSheet(false); }}>
+        <div className="w-full max-w-[560px] max-h-[90dvh] overflow-auto bg-white dark:bg-slate-900 rounded-t-3xl md:rounded-3xl p-4" style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom))' }}>
+          <div className="flex items-center justify-between mb-2"><h2 className="text-[17px] font-semibold m-0">บันทึกรายการ (Paper)</h2><Btn variant="ghost" small onClick={() => setSheet(false)}><I.x className="w-4 h-4" /> ปิด</Btn></div>
+          <Field label="ชนิด"><select className={inputCls}><option>ซื้อ</option><option>ขาย</option><option>ปันผล</option><option>ค่าธรรมเนียม</option><option>ฝากเงิน</option><option>แลกเงิน THB→USD</option></select></Field>
+          <div className="grid grid-cols-2 gap-3"><Field label="สัญลักษณ์"><input className={inputCls} defaultValue="VOO" /></Field><Field label="จำนวน (เศษได้)"><input className={cx(inputCls, "num")} defaultValue="0.123456" /></Field><Field label="ราคา (USD)"><input className={cx(inputCls, "num")} defaultValue="527.40" /></Field><Field label="ค่าธรรมเนียม"><input className={cx(inputCls, "num")} defaultValue="0.00" /></Field><Field label="FX rate ที่ใช้"><input className={cx(inputCls, "num")} defaultValue="33.27" /></Field><Field label="วันเวลา"><input className={inputCls} defaultValue="17 ก.ย. 2569 21:35" /></Field></div>
+          <Field label="โน้ต"><input className={inputCls} placeholder="เช่น รอบ DCA ก.ย." /></Field>
+          <div className="flex items-center justify-between gap-2"><Muted className="num">มูลค่า ≈ $65.11 · ฿2,166</Muted><Btn variant="primary">บันทึก</Btn></div>
+        </div>
+      </div>}
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

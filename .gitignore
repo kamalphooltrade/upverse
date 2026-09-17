@@ -1,0 +1,27 @@
+# secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# node / next / vercel
+node_modules/
+.next/
+.vercel/
+out/
+*.tsbuildinfo
+
+# python
+__pycache__/
+.venv/
+*.pyc
+
+# raw data pulled from feeds (may contain account data)
+research/_raw/
+output/**/holdings*.csv
+journal/private/
+
+# os / editor
+.DS_Store
+*.log

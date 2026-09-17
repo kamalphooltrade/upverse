@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --font-th: var(--font-plex-thai), var(--font-plex), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+  --radius-4xl: 2rem;
+  --shadow-glow: 0 12px 40px -12px rgba(16, 185, 129, 0.45);
+  --shadow-soft: 0 8px 30px -12px rgba(2, 6, 23, 0.22);
+  --shadow-softdark: 0 14px 44px -14px rgba(0, 0, 0, 0.65);
+}
+
+html { font-size: 17.5px; overflow-x: hidden; max-width: 100%; }
+body {
+  font-family: var(--font-th);
+  line-height: 1.8;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden; max-width: 100%;
+  background: linear-gradient(160deg, #f3faf6 0%, #f6f7f9 40%, #eef6fb 100%);
+  color: #0f172a;
+}
+.dark body { background: #050a17; color: #f1f5f9; }
+.dark body[data-aurora="on"] {
+  background:
+    radial-gradient(900px 520px at 8% -10%, rgba(16, 185, 129, 0.16), transparent 60%),
+    radial-gradient(800px 480px at 96% 0%, rgba(14, 165, 233, 0.13), transparent 55%),
+    radial-gradient(700px 600px at 50% 120%, rgba(139, 92, 246, 0.11), transparent 60%),
+    #050a17;
+}
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.hidescroll { scrollbar-width: none; }
+.hidescroll::-webkit-scrollbar { display: none; }
+*:focus-visible { outline: 2px solid #10b981; outline-offset: 2px; }
+input[type="range"] { accent-color: #10b981; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

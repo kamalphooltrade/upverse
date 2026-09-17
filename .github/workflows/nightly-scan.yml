@@ -1,0 +1,19 @@
+# Nightly S&P 500 scan (SPEC §10.4). 22:30 UTC = 05:30 ICT, Tue–Sat (after US close).
+# Calls the deployed app's /api/v1/scans/run with CRON_SECRET. Set secrets: UPVERSE_URL, CRON_SECRET.
+name: nightly-scan
+on:
+  schedule:
+    - cron: "30 22 * * 1-5"
+  workflow_dispatch: {}
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Trigger scan
+        run: |
+          curl -sS -X POST "${{ secrets.UPVERSE_URL }}/api/v1/scans/run" \
+            -H "Content-Type: application/json" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            -d '{}' --max-time 900 | tee out.json
+          python3 -c "import json;d=json.load(open('out.json'));assert d.get('ok'),d"

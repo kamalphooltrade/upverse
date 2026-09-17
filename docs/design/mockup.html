@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="auto">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>UPVerse — ต้นแบบหน้าจอ (ข้อมูลสมมติ)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Prompt:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+/* ============ tokens ============ */
+:root{
+  --bg:#F6F7F9; --surface:#FFFFFF; --glass:rgba(255,255,255,.72); --line:rgba(15,23,42,.08);
+  --fg:#0F172A; --fg2:#475569; --accent:#15803D; --accent-fg:#FFFFFF;
+  --up:#15803D; --down:#B91C1C;
+  --warn-fg:#B45309; --warn-bg:#FEF3C7; --danger-bg:#B91C1C; --danger-fg:#FFFFFF;
+  --info-fg:#1D4ED8; --info-bg:#DBEAFE;
+  --s1:#16A34A; --s2:#7C3AED; --s3:#D97706; --s4:#0284C7; --s-other:#94A3B8;
+  --font-th:'IBM Plex Sans Thai','IBM Plex Sans',system-ui,sans-serif; --font-num:'IBM Plex Mono',ui-monospace,monospace;
+  --radius:16px; --shadow:0 6px 24px rgba(15,23,42,.08);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#050A17; --surface:#0F172A; --glass:rgba(255,255,255,.06); --line:rgba(255,255,255,.10);
+    --fg:#F1F5F9; --fg2:#A3B1C6; --accent:#22C55E; --accent-fg:#052E16;
+    --up:#4ADE80; --down:#F87171;
+    --warn-fg:#FCD34D; --warn-bg:rgba(252,211,77,.12); --danger-bg:#DC2626; --danger-fg:#FFFFFF;
+    --info-fg:#93C5FD; --info-bg:rgba(147,197,253,.14);
+    --shadow:0 8px 32px rgba(2,6,23,.55);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#050A17; --surface:#0F172A; --glass:rgba(255,255,255,.06); --line:rgba(255,255,255,.10);
+  --fg:#F1F5F9; --fg2:#A3B1C6; --accent:#22C55E; --accent-fg:#052E16;
+  --up:#4ADE80; --down:#F87171;
+  --warn-fg:#FCD34D; --warn-bg:rgba(252,211,77,.12); --danger-bg:#DC2626; --danger-fg:#FFFFFF;
+  --info-fg:#93C5FD; --info-bg:rgba(147,197,253,.14);
+  --shadow:0 8px 32px rgba(2,6,23,.55);
+  color-scheme:dark;
+}
+html[data-font="prompt"] body{ --font-th:'Prompt','IBM Plex Sans',system-ui,sans-serif; }
+
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font-th);font-size:17.5px;line-height:1.8;-webkit-font-smoothing:antialiased}
+body[data-aurora="on"]{background:
+  radial-gradient(900px 520px at 10% -10%, rgba(34,197,94,.14), transparent 60%),
+  radial-gradient(800px 480px at 95% 0%, rgba(2,132,199,.12), transparent 55%),
+  radial-gradient(700px 600px at 50% 120%, rgba(124,58,237,.10), transparent 60%), var(--bg);}
+@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]) body[data-aurora="on"]{background:var(--bg)} }
+:root[data-theme="light"] body[data-aurora="on"]{background:var(--bg)}
+.num{font-family:var(--font-num);font-variant-numeric:tabular-nums}
+a{color:var(--accent)}
+button{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* ============ layout ============ */
+.app{min-height:100dvh;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr auto}
+html,body{overflow-x:hidden;max-width:100%}
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.topbar h1{font-size:19px;margin:0;font-weight:600;flex:1}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:.2px}
+.brand .dot{width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(34,197,94,.18)}
+.main{padding:16px 16px 100px;max-width:1200px;width:100%;margin:0 auto;min-width:0;overflow-x:hidden}
+.page{min-width:0}
+.bottombar{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(5,1fr);background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.bottombar button{height:60px;border:0;background:transparent;color:var(--fg2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:13px;position:relative}
+.bottombar button[aria-current="page"]{color:var(--accent);font-weight:600}
+.bottombar svg{width:22px;height:22px}
+.bottombar .badge{position:absolute;top:8px;right:calc(50% - 20px);min-width:18px;height:18px;border-radius:9px;background:var(--danger-bg);color:#fff;font-size:12px;line-height:18px;text-align:center;padding:0 5px}
+.sidenav{display:none}
+@media (min-width:1024px){
+  .app{grid-template-columns:240px minmax(0,1fr);grid-template-rows:auto 1fr}
+  .topbar{grid-column:1/-1}
+  .sidenav{display:flex;flex-direction:column;gap:4px;padding:16px 12px;border-right:1px solid var(--line);background:var(--glass);position:sticky;top:64px;height:calc(100dvh - 64px)}
+  .sidenav button{display:flex;align-items:center;gap:10px;padding:10px 12px;border:0;border-radius:12px;background:transparent;color:var(--fg2);text-align:left}
+  .sidenav button[aria-current="page"]{background:rgba(34,197,94,.14);color:var(--fg);font-weight:600}
+  .sidenav svg{width:20px;height:20px}
+  .sidenav .sep{height:1px;background:var(--line);margin:8px 4px}
+  .bottombar{display:none}
+  .main{padding:24px 24px 40px}
+}
+
+/* ============ components ============ */
+.card{min-width:0;overflow-wrap:anywhere;background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:14px}
+.card h2{font-size:15px;font-weight:600;margin:0 0 8px;color:var(--fg)}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.between{justify-content:space-between}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr;gap:14px}
+@media (min-width:768px){.grid3{grid-template-columns:1fr 1fr}}
+@media (min-width:1024px){.grid3{grid-template-columns:1fr 1fr 1fr}}
+.big{font-size:34px;font-weight:600;line-height:1.2}
+.mid{font-size:22px;font-weight:600;line-height:1.3}
+.muted{color:var(--fg2);font-size:14px}
+.small{font-size:13px;color:var(--fg2)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;font-size:13px;font-weight:600;border:1px solid transparent;white-space:nowrap}
+.chip.up{color:var(--up);background:rgba(34,197,94,.12)}
+.chip.down{color:var(--down);background:rgba(220,38,38,.12)}
+.chip.warn{color:var(--warn-fg);background:var(--warn-bg)}
+.chip.info{color:var(--info-fg);background:var(--info-bg)}
+.chip.neutral{color:var(--fg2);background:rgba(148,163,184,.16)}
+.chip.danger{color:var(--danger-fg);background:var(--danger-bg)}
+.env{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;font-size:13px;font-weight:700}
+.env.uat{color:var(--info-fg);background:var(--info-bg)}
+.env.paper{color:var(--fg2);background:rgba(148,163,184,.18)}
+.prodbar{display:none;background:var(--danger-bg);color:var(--danger-fg);text-align:center;font-weight:700;padding:6px 16px}
+body[data-env="prod"] .prodbar{display:block}
+.src{font-size:13px;color:var(--fg2);display:inline-flex;align-items:center;gap:5px}
+.src svg{width:13px;height:13px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font-weight:600;transition:transform .2s,background .2s}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:transparent}
+.btn.danger{background:var(--danger-bg);color:var(--danger-fg);border-color:transparent}
+.btn.ghost{background:transparent}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.block{width:100%}
+.btn svg{width:18px;height:18px}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none;max-width:100%;min-width:0;-webkit-overflow-scrolling:touch}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;min-height:44px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--fg2);font-weight:600;font-size:15px}
+.tab[aria-selected="true"]{background:var(--accent);color:var(--accent-fg);border-color:transparent}
+.banner{display:flex;gap:10px;align-items:flex-start;padding:10px 14px;border-radius:12px;background:var(--warn-bg);color:var(--warn-fg);font-size:15px;margin-bottom:14px;border:1px solid rgba(252,211,77,.35)}
+.banner svg{width:18px;height:18px;flex:0 0 auto;margin-top:5px}
+.bar{height:10px;border-radius:999px;background:rgba(148,163,184,.22);overflow:hidden}
+.bar > i{display:block;height:100%;background:var(--accent)}
+.stack{display:flex;height:14px;border-radius:999px;overflow:hidden;gap:2px;background:var(--bg)}
+.stack > i{display:block;height:100%}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--fg2);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.hold{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.hold > div{min-width:0}
+.hold:first-of-type{border-top:0}
+.logo{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-weight:700;font-size:13px;background:rgba(148,163,184,.18);color:var(--fg)}
+.ring{--v:72;width:56px;height:56px;border-radius:50%;background:conic-gradient(var(--accent) calc(var(--v)*1%), rgba(148,163,184,.22) 0);display:grid;place-items:center;flex:0 0 auto}
+.ring b{width:42px;height:42px;border-radius:50%;background:var(--surface);display:grid;place-items:center;font-size:14px}
+.stock{display:grid;grid-template-columns:28px minmax(0,1fr) 56px;gap:12px;align-items:start;padding:14px 0;border-top:1px solid var(--line)}
+.stock > div{min-width:0}
+.why{overflow-wrap:anywhere}
+.stock:first-child{border-top:0}
+.stock .rank{font-weight:700;color:var(--fg2);padding-top:4px}
+.metrics{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0}
+.metrics span{font-size:13px;padding:2px 8px;border-radius:8px;background:rgba(148,163,184,.14);color:var(--fg)}
+.why{font-size:15px;color:var(--fg2);margin:4px 0 8px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.actions .btn{min-height:40px;padding:0 12px;font-size:14px}
+.check{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line);font-size:15px}
+.check:first-child{border-top:0}
+.check b{flex:0 0 26px;font-size:16px}
+.check.ok b{color:var(--up)} .check.warn b{color:var(--warn-fg)} .check.bad b{color:var(--down)}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.field label{font-size:14px;color:var(--fg2)}
+.field input,.field select,.field textarea{font:inherit;min-height:46px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--fg);width:100%;min-width:0}
+.field{min-width:0}
+.grid2 > *{min-width:0}
+.toggle{max-width:100%;flex-wrap:wrap}
+.field textarea{min-height:88px}
+.kv{display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-size:15px}
+.kv dt{color:var(--fg2)} .kv dd{margin:0;text-align:right}
+.timeline{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--fg2)}
+.timeline .st{padding:2px 10px;border-radius:999px;background:rgba(148,163,184,.16)}
+.timeline .st.done{background:rgba(34,197,94,.16);color:var(--up)}
+.sheet{position:fixed;inset:0;z-index:40;background:rgba(2,6,23,.55);display:none;align-items:flex-end;justify-content:center}
+.sheet[open]{display:flex}
+.sheet > div{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:560px;padding:16px 16px calc(16px + env(safe-area-inset-bottom));max-height:90dvh;overflow:auto}
+@media (min-width:768px){.sheet{align-items:center}.sheet > div{border-radius:20px}}
+.fab{position:fixed;right:16px;bottom:76px;z-index:25;min-height:52px;border-radius:999px;padding:0 18px;box-shadow:var(--shadow)}
+@media (min-width:1024px){.fab{bottom:24px}}
+.sample{display:block;text-align:center;font-size:12px;padding:2px 10px;background:var(--warn-bg);color:var(--warn-fg);font-weight:600}
+.page{display:none}.page[data-active]{display:block}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{padding:8px 6px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--fg2);font-weight:600;font-size:13px}
+.candles{width:100%;height:240px;display:block}
+@media (min-width:1024px){.candles{height:340px}}
+.toggle{display:inline-flex;gap:6px;background:rgba(148,163,184,.16);padding:3px;border-radius:999px}
+.toggle button{border:0;background:transparent;color:var(--fg2);min-height:36px;padding:0 12px;border-radius:999px;font-weight:600;font-size:14px}
+.toggle button[aria-pressed="true"]{background:var(--surface);color:var(--fg)}
+.emo{display:flex;gap:8px;flex-wrap:wrap}
+.emo button{min-height:44px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--fg)}
+.emo button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);border-color:transparent}
+.empty{text-align:center;padding:28px 12px;color:var(--fg2)}
+.empty svg{width:40px;height:40px;margin-bottom:8px;opacity:.7}
+.right{text-align:right}
+.hint{font-size:13px;color:var(--fg2)}
+.pill-row{display:flex;gap:8px;flex-wrap:wrap}
+.thesis details{border-top:1px solid var(--line);padding:8px 0}
+.thesis summary{cursor:pointer;font-weight:600}
+</style>
+</head>
+<body data-aurora="on" data-env="uat">
+<div class="prodbar">⚠ โหมดเงินจริง (PROD) — ทุกคำสั่งที่ยืนยันจะถูกส่งไปที่บัญชีจริง</div>
+<div class="sample">ตัวอย่าง · ข้อมูลสมมติทั้งหมด</div>
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><span class="dot"></span> UPVerse</div>
+    <h1 id="pageTitle">หน้าหลัก</h1>
+    <span class="env uat" id="envBadge" title="สภาพแวดล้อมทดสอบ ไม่ใช่เงินจริง">UAT</span>
+    <button class="btn ghost" style="min-height:40px;padding:0 10px" aria-label="สลับธีม" onclick="toggleTheme()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+    </button>
+  </header>
+
+  <nav class="sidenav" aria-label="เมนูหลัก">
+    <button data-go="home" aria-current="page">🏠︎ หน้าหลัก</button>
+    <button data-go="portfolio">พอร์ต</button>
+    <button data-go="scan">สแกน</button>
+    <button data-go="stock">หุ้น</button>
+    <button data-go="watch">Watchlist</button>
+    <button data-go="tickets">ตั๋วคำสั่ง <span class="chip danger" style="margin-left:auto">2</span></button>
+    <div class="sep"></div>
+    <button data-go="journal">สมุดบันทึก</button>
+    <button data-go="goal">เป้า / DCA</button>
+    <button data-go="settings">ตั้งค่า</button>
+  </nav>
+
+  <main class="main">
+
+  <!-- ================= HOME ================= -->
+  <section class="page" data-page="home" data-active>
+    <div class="row between" style="margin-bottom:10px">
+      <div><div class="muted">พุธ 17 ก.ย. 2569 · 19:42 ICT</div><div style="font-weight:600">ตลาดสหรัฐเปิดใน 48 นาที (20:30 ICT)</div></div>
+    </div>
+    <div class="grid3">
+      <div class="card" onclick="go('portfolio')" tabindex="0" role="link">
+        <h2>พอร์ตรวม</h2>
+        <div class="big num">$1,284.<span style="font-size:22px">17</span></div>
+        <div class="muted num">≈ ฿42,730 · 33.27 THB/USD</div>
+        <div class="row" style="margin:6px 0"><span class="chip up">▲ +$14.02 · +1.10% วันนี้</span></div>
+        <div class="row between small"><span>เป้า 3,000,000 ฿ · 31 ธ.ค. 2578</span><span class="num">1.4%</span></div>
+        <div class="bar" aria-label="ความคืบหน้าสู่เป้า 1.4%"><i style="width:1.4%"></i></div>
+        <div class="src" style="margin-top:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Webull UAT · 19:41:58 · ราคาปิดก่อนหน้า</div>
+      </div>
+      <div class="card" onclick="go('tickets')" tabindex="0" role="link">
+        <h2>ตั๋วรอยืนยัน <span class="chip danger">2</span></h2>
+        <div class="row between"><div><b>ซื้อ MSFT</b> <span class="chip info">🤖 agent</span><div class="muted num">0.25 หุ้น · $121.50 · LIMIT 486.00</div></div><span class="chip warn">หมดอายุใน 2 วัน</span></div>
+        <div class="row between" style="margin-top:8px"><div><b>ซื้อ VOO</b> <span class="chip neutral">DCA</span><div class="muted num">$200.00 · MARKET</div></div><span class="chip neutral">รอ</span></div>
+      </div>
+      <div class="card" onclick="go('scan')" tabindex="0" role="link">
+        <h2>สแกนคืนนี้ · เข้าใหม่</h2>
+        <div class="row between"><span><b>AVGO</b> <span class="muted">M4 ผู้นำแนวโน้ม</span></span><span class="num">84</span></div>
+        <div class="row between"><span><b>ELV</b> <span class="muted">M3 ของถูกมีเหตุผล</span></span><span class="num">79</span></div>
+        <div class="row between"><span><b>DE</b> <span class="muted">M1 กลับตัว+วอลุ่ม</span></span><span class="num">77</span></div>
+        <div class="src" style="margin-top:8px">รัน 05:31 ICT · จักรวาล 503 · v1.0</div>
+      </div>
+      <div class="card">
+        <h2>สัปดาห์นี้</h2>
+        <div class="row between"><span>📅 งบ <b>COST</b> (ถือ 2.1%)</span><span class="muted">พฤ 25 ก.ย. หลังปิด</span></div>
+        <div class="row between"><span>🔔 <b>AAPL</b> เข้าโซน 180–185</span><span class="muted">เมื่อคืน 22:14</span></div>
+        <div class="row between"><span>💵 วัน DCA ถัดไป</span><span class="muted">25 ก.ย. · ฿3,000</span></div>
+      </div>
+      <div class="card" style="border-color:rgba(252,211,77,.5)">
+        <h2>สมุดบันทึกค้าง</h2>
+        <div class="row between"><span>ซื้อ <b>SCHD</b> สำเร็จเมื่อวาน — ยังไม่ได้บันทึกความคิด</span><button class="btn" onclick="go('journal')">บันทึก</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PORTFOLIO ================= -->
+  <section class="page" data-page="portfolio">
+    <div class="tabs" role="tablist" style="margin-bottom:10px">
+      <button class="tab" role="tab" aria-selected="true">รวมทุกบัญชี</button>
+      <button class="tab" role="tab">Webull ••••1234 <span class="env uat">UAT</span></button>
+      <button class="tab" role="tab">Paper</button>
+    </div>
+    <div class="banner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg><div>ราคาค้าง 38 วินาที — ผู้ให้ราคาหลัก (Webull) ไม่ตอบ กำลังใช้สำรอง Finnhub (ดีเลย์ 15 นาที)</div></div>
+    <div class="grid3">
+      <div class="card">
+        <h2>มูลค่าพอร์ต</h2>
+        <div class="big num">$1,284.17</div>
+        <div class="muted num">≈ ฿42,730</div>
+        <dl class="kv" style="margin-top:8px">
+          <dt>กำไร/ขาดทุนจากหุ้น</dt><dd class="num" style="color:var(--up)">▲ +$61.40 (+5.0%)</dd>
+          <dt>กำไร/ขาดทุนจากค่าเงิน</dt><dd class="num" style="color:var(--down)">▼ −฿410 (−1.0%)</dd>
+          <dt>เงินสด</dt><dd class="num">$96.20 (7.5%)</dd>
+          <dt>กระสุน DCA รอบถัดไป</dt><dd class="num">฿3,000 · 25 ก.ย.</dd>
+          <dt>ค่าใช้จ่ายสะสม</dt><dd class="num">0.62% ของเงินที่ใส่</dd>
+        </dl>
+        <div class="src" style="margin-top:8px">FX: BOT 17 ก.ย. 33.27 · ราคา: Finnhub (สำรอง)</div>
+      </div>
+      <div class="card">
+        <h2>มูลค่า 90 วัน</h2>
+        <svg viewBox="0 0 320 140" class="candles" style="height:160px" role="img" aria-label="กราฟมูลค่าพอร์ต 90 วัน จาก 760 ไป 1284 ดอลลาร์">
+          <g stroke="var(--line)" stroke-width="1"><line x1="30" y1="20" x2="310" y2="20"/><line x1="30" y1="70" x2="310" y2="70"/><line x1="30" y1="120" x2="310" y2="120"/></g>
+          <text x="0" y="24" font-size="10" fill="var(--fg2)" class="num">1.3k</text><text x="0" y="74" font-size="10" fill="var(--fg2)" class="num">1.0k</text><text x="0" y="124" font-size="10" fill="var(--fg2)" class="num">0.7k</text>
+          <polyline fill="none" stroke="var(--s1)" stroke-width="2" stroke-linejoin="round" points="30,118 50,116 70,110 90,104 110,108 130,96 150,90 170,94 190,80 210,72 230,66 250,60 270,50 290,38 310,30"/>
+          <g fill="var(--s3)"><circle cx="70" cy="110" r="3"/><circle cx="150" cy="90" r="3"/><circle cx="230" cy="66" r="3"/></g>
+          <text x="236" y="62" font-size="10" fill="var(--fg2)">เติมเงิน</text>
+        </svg>
+        <div class="legend"><span><i style="background:var(--s1)"></i>มูลค่า</span><span><i style="background:var(--s3)"></i>วันเติมเงิน</span> <button class="btn ghost" style="min-height:32px;font-size:13px;margin-left:auto">ดูเป็นตาราง</button></div>
+      </div>
+      <div class="card">
+        <h2>สัดส่วน (จริง vs เป้า)</h2>
+        <div class="small">จริง</div>
+        <div class="stack" aria-label="สัดส่วนจริง แกน 64% ดาวเทียม 21% รายได้ 8% เงินสด 7%"><i style="width:64%;background:var(--s1)"></i><i style="width:21%;background:var(--s2)"></i><i style="width:8%;background:var(--s3)"></i><i style="width:7%;background:var(--s-other)"></i></div>
+        <div class="small" style="margin-top:8px">เป้า</div>
+        <div class="stack" aria-label="สัดส่วนเป้า แกน 70% ดาวเทียม 20% รายได้ 5% เงินสด 5%"><i style="width:70%;background:var(--s1);opacity:.55"></i><i style="width:20%;background:var(--s2);opacity:.55"></i><i style="width:5%;background:var(--s3);opacity:.55"></i><i style="width:5%;background:var(--s-other);opacity:.55"></i></div>
+        <div class="legend"><span><i style="background:var(--s1)"></i>แกน 64/70</span><span><i style="background:var(--s2)"></i>ดาวเทียม 21/20</span><span><i style="background:var(--s3)"></i>รายได้ 8/5</span><span><i style="background:var(--s-other)"></i>เงินสด 7/5</span></div>
+        <div class="row" style="margin-top:8px"><span class="chip warn">⚠ แกนต่ำกว่าเป้า 6 จุด — รอบ DCA ถัดไปเติมแกนก่อน</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>ถือครอง (6)</h2>
+      <div class="hold" onclick="go('stock')" tabindex="0"><div class="logo">VOO</div><div><b>VOO</b> <span class="chip neutral">แกน</span><div class="muted num">1.234567 หุ้น · ต้นทุน 512.10</div></div><div class="right"><div class="num">$651.20</div><div class="small num">50.7% · <span style="color:var(--up)">▲ +3.1%</span></div></div></div>
+      <div class="hold" onclick="go('stock')" tabindex="0"><div class="logo">MSFT</div><div><b>MSFT</b> <span class="chip neutral">ดาวเทียม</span><div class="muted num">0.410000 หุ้น · ต้นทุน 455.00</div></div><div class="right"><div class="num">$199.34</div><div class="small num">15.5% · <span style="color:var(--up)">▲ +6.9%</span></div></div></div>
+      <div class="hold" onclick="go('stock')" tabindex="0"><div class="logo">SCHD</div><div><b>SCHD</b> <span class="chip neutral">รายได้</span><div class="muted num">3.500000 หุ้น · ต้นทุน 28.90</div></div><div class="right"><div class="num">$102.55</div><div class="small num">8.0% · <span style="color:var(--up)">▲ +1.4%</span></div></div></div>
+      <div class="hold" onclick="go('stock')" tabindex="0"><div class="logo">COST</div><div><b>COST</b> <span class="chip neutral">ดาวเทียม</span> <span class="chip warn">งบ 25 ก.ย.</span><div class="muted num">0.030000 หุ้น · ต้นทุน 905.00</div></div><div class="right"><div class="num">$27.60</div><div class="small num">2.1% · <span style="color:var(--up)">▲ +1.7%</span></div></div></div>
+      <div class="hold" onclick="go('stock')" tabindex="0"><div class="logo">AAPL</div><div><b>AAPL</b> <span class="chip neutral">ดาวเทียม</span><div class="muted num">0.550000 หุ้น · ต้นทุน 201.40</div></div><div class="right"><div class="num">$104.28</div><div class="small num">8.1% · <span style="color:var(--down)">▼ −5.9%</span></div></div></div>
+      <div class="hold"><div class="logo">USD</div><div><b>เงินสด</b><div class="muted">รอรอบ DCA</div></div><div class="right"><div class="num">$96.20</div><div class="small num">7.5%</div></div></div>
+    </div>
+    <button class="btn primary fab" onclick="openSheet('txSheet')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg> บันทึกรายการ</button>
+  </section>
+
+  <!-- ================= SCAN ================= -->
+  <section class="page" data-page="scan">
+    <div class="tabs" role="tablist" style="margin-bottom:10px">
+      <button class="tab" role="tab" aria-selected="true">M1 กลับตัว+วอลุ่ม</button>
+      <button class="tab" role="tab">M2 ดาวรุ่ง VI</button>
+      <button class="tab" role="tab">M3 ของถูกมีเหตุผล</button>
+      <button class="tab" role="tab">M4 ผู้นำแนวโน้ม</button>
+      <button class="tab" role="tab">M5 เครื่องจ่ายเงิน</button>
+      <button class="tab" role="tab">✦ ซ้ำหลายโมเดล</button>
+      <button class="tab" role="tab">⛔ หลีกเลี่ยง</button>
+    </div>
+    <div class="card" style="padding:12px 16px">
+      <div class="row between"><div class="small">รัน 05:31 ICT (17 ก.ย.) · จักรวาล 503 · ผ่านตะแกรง 23 · โมเดล v1.0</div><div class="row"><button class="btn ghost" style="min-height:36px;font-size:14px">รอบก่อน</button><button class="btn ghost" style="min-height:36px;font-size:14px">ความแม่น</button></div></div>
+    </div>
+    <div class="card">
+      <h2>M1 · หุ้นเด่นที่กำลังกลับตัว + วอลุ่มผิดปกติ — Top 10</h2>
+      <div class="stock"><div class="rank">1</div><div><div class="row"><b>DE</b> <span class="muted">Deere &amp; Co</span> <span class="chip up">▲ +4.8%</span></div><div class="metrics"><span>วอลุ่ม 3.4×</span><span>ปิดที่ 88% ของช่วง</span><span>เหนือ EMA20 ครั้งแรกใน 27 วัน</span></div><div class="why">ปิดเหนือ EMA20 ครั้งแรกใน 27 วันด้วยปริมาณ 3.4× ค่าเฉลี่ย · แข็งกว่า SPY 6.1% ใน 20 วัน · F-score 7 · งบถัดไป 19 พ.ย. (ไม่ชน)</div><div class="actions"><button class="btn" onclick="go('stock')">ดูหุ้น</button><button class="btn">★ Watchlist</button><button class="btn ghost">ขอ thesis 🤖</button></div></div><div class="ring" style="--v:77"><b class="num">77</b></div></div>
+      <div class="stock"><div class="rank">2</div><div><div class="row"><b>NKE</b> <span class="muted">Nike</span> <span class="chip up">▲ +6.2%</span></div><div class="metrics"><span>วอลุ่ม 2.9×</span><span>ต่ำกว่า 52w-high 31%</span><span>RSI 54</span></div><div class="why">กลับมายืนเหนือ EMA20 หลังลง 31% จากจุดสูง 52 สัปดาห์ · ปริมาณ 2.9× · ⚠ ยังต่ำกว่า SMA200 — รอ follow-through 1–3 วัน</div><div class="actions"><button class="btn" onclick="go('stock')">ดูหุ้น</button><button class="btn">★ Watchlist</button><button class="btn ghost">ขอ thesis 🤖</button></div></div><div class="ring" style="--v:71"><b class="num">71</b></div></div>
+      <div class="stock"><div class="rank">3</div><div><div class="row"><b>TGT</b> <span class="muted">Target</span> <span class="chip up">▲ +3.9%</span></div><div class="metrics"><span>วอลุ่ม 2.2×</span><span>ปิดที่ 74% ของช่วง</span><span>FCF บวก</span></div><div class="why">แท่งกลับตัวหลังพักฐาน 6 สัปดาห์ · ปริมาณ 2.2× · เหนือ EMA20 และ SMA50 · หัก −10: งบภายใน 5 วัน</div><div class="actions"><button class="btn" onclick="go('stock')">ดูหุ้น</button><button class="btn">★ Watchlist</button><button class="btn ghost">ขอ thesis 🤖</button></div></div><div class="ring" style="--v:64"><b class="num">64</b></div></div>
+      <div class="stock"><div class="rank">4</div><div><div class="row"><b>PFE</b> <span class="muted">Pfizer</span> <span class="chip up">▲ +2.7%</span></div><div class="metrics"><span>วอลุ่ม 2.0×</span><span>RS20 +3.2%</span><span>ปันผล 6.1%</span></div><div class="why">ปริมาณแตะเกณฑ์ 2.0× พอดี · ยืนเหนือ EMA20 แต่ยังต่ำกว่า SMA50/200 · คะแนนพื้นฐาน 10/20</div><div class="actions"><button class="btn" onclick="go('stock')">ดูหุ้น</button><button class="btn">★ Watchlist</button><button class="btn ghost">ขอ thesis 🤖</button></div></div><div class="ring" style="--v:58"><b class="num">58</b></div></div>
+      <div class="muted" style="padding:10px 0 0">… อันดับ 5–10 (ย่อในต้นแบบ)</div>
+      <details style="margin-top:8px"><summary class="small" style="cursor:pointer">ตัดออกเพราะข้อมูลไม่ครบ (12) · ดูรายการเต็มที่ผ่านตะแกรง (23)</summary><div class="small">BRK.B (ไม่มี EBITDA) · ... — ไม่ประมาณค่าแทน</div></details>
+    </div>
+  </section>
+
+  <!-- ================= STOCK ================= -->
+  <section class="page" data-page="stock">
+    <div class="card">
+      <div class="row between">
+        <div><div class="row"><span class="mid">DE</span><span class="muted">Deere &amp; Co · Industrials</span></div>
+          <div class="row"><span class="big num">$412.80</span><span class="chip up">▲ +$18.90 · +4.8%</span></div>
+          <div class="src">Webull · 03:59:58 ET ปิดตลาด · 17 ก.ย.</div></div>
+        <div class="pill-row"><span class="chip neutral">ไม่ได้ถือ</span><span class="chip info">M1 #1</span><span class="chip info">M3 #6</span></div>
+      </div>
+      <div class="row" style="margin-top:8px"><div class="toggle"><button aria-pressed="true">1Y</button><button>3M</button><button>1W</button></div><div class="toggle"><button aria-pressed="true">EMA20</button><button aria-pressed="true">SMA50</button><button aria-pressed="true">SMA200</button></div></div>
+      <svg viewBox="0 0 360 260" class="candles" role="img" aria-label="กราฟแท่งเทียนรายวัน 1 ปี พร้อมเส้นค่าเฉลี่ย">
+        <g stroke="var(--line)"><line x1="34" y1="30" x2="350" y2="30"/><line x1="34" y1="90" x2="350" y2="90"/><line x1="34" y1="150" x2="350" y2="150"/><line x1="34" y1="210" x2="350" y2="210"/></g>
+        <g font-size="10" fill="var(--fg2)" class="num"><text x="2" y="34">460</text><text x="2" y="94">420</text><text x="2" y="154">380</text><text x="2" y="214">340</text></g>
+        <polyline fill="none" stroke="var(--s2)" stroke-width="2" points="40,140 80,138 120,134 160,128 200,124 240,120 280,116 320,112 350,110"/>
+        <polyline fill="none" stroke="var(--s4)" stroke-width="2" points="40,150 80,120 120,100 160,110 200,130 240,150 280,160 320,150 350,135"/>
+        <polyline fill="none" stroke="var(--s3)" stroke-width="2" points="40,160 80,110 120,95 160,120 200,150 240,170 280,175 320,165 350,120"/>
+        <g id="candles"></g>
+        <line x1="290" y1="20" x2="290" y2="215" stroke="var(--fg2)" stroke-dasharray="3 3"/>
+        <rect x="200" y="12" width="150" height="34" rx="6" fill="var(--surface)" stroke="var(--line)"/>
+        <text x="208" y="26" font-size="10" fill="var(--fg2)">15 ก.ย. · O 388.1 H 395.0 L 384.2 C 393.9</text><text x="208" y="40" font-size="10" fill="var(--fg2)">Vol 4.1M (2.0×) · RSI 58</text>
+        <g id="vols"></g>
+      </svg>
+      <div class="legend"><span><i style="background:var(--s3)"></i>EMA20</span><span><i style="background:var(--s4)"></i>SMA50</span><span><i style="background:var(--s2)"></i>SMA200</span><span><i style="background:var(--s-other)"></i>ปริมาณ</span><button class="btn ghost" style="min-height:32px;font-size:13px;margin-left:auto">ดูเป็นตาราง</button></div>
+    </div>
+    <div class="grid3">
+      <div class="card"><h2>พื้นฐาน <span class="src">EDGAR FY2025 · ดึง 14 ก.ย.</span></h2>
+        <dl class="kv"><dt>รายได้ (TTM)</dt><dd class="num">$45.8B</dd><dt>รายได้โต 3 ปี</dt><dd class="num">+6.2%/ปี</dd><dt>FCF margin</dt><dd class="num">11.4%</dd><dt>ROIC</dt><dd class="num">17.9%</dd><dt>หนี้สุทธิ/EBITDA</dt><dd class="num">1.6</dd><dt>จำนวนหุ้น (3 ปี)</dt><dd class="num">−4.1%</dd><dt>P/E · EV/EBITDA · P/FCF</dt><dd class="num">18.2 · 12.1 · 16.0</dd><dt>ปันผล · payout</dt><dd class="num">1.5% · 24%</dd><dt>F-score</dt><dd class="num">7 / 9</dd><dt>งบถัดไป</dt><dd>19 พ.ย. <span class="small">(Finnhub · ชั้น 2)</span></dd><dt>Beta</dt><dd class="num">— <span class="small">ไม่มีข้อมูล</span></dd></dl></div>
+      <div class="card thesis"><h2>Thesis <span class="chip info">🤖 draft · 17 ก.ย.</span></h2>
+        <details open><summary>1. ทำอะไร หาเงินจากไหน</summary><div class="why">ขายเครื่องจักรเกษตร/ก่อสร้าง + บริการการเงินให้ลูกค้าซื้อเครื่อง · รายได้จากขาย 78% การเงิน 22%</div></details>
+        <details><summary>2. คูเมือง</summary></details><details><summary>3. ตัวเลข 5–10 ปี</summary></details>
+        <details><summary>4. มูลค่า 3 ฉากทัศน์</summary><table><thead><tr><th>ฉากทัศน์</th><th>มูลค่า</th><th>vs ราคา</th></tr></thead><tbody><tr><td>Bear</td><td class="num">$340</td><td class="num" style="color:var(--down)">−18%</td></tr><tr><td>Base</td><td class="num">$470</td><td class="num" style="color:var(--up)">+14%</td></tr><tr><td>Bull</td><td class="num">$560</td><td class="num" style="color:var(--up)">+36%</td></tr></tbody></table><div class="small">ราคาน่าซื้อ (base − 25%) ≈ $352 · ราคาปัจจุบันสูงกว่า</div></details>
+        <details><summary>5. ความเสี่ยง 3 ข้อ + สัญญาณออก</summary></details><details><summary>6. อะไรจะทำให้ผมคิดผิด</summary></details><details><summary>7. บทบาทในพอร์ต</summary></details>
+        <div class="row" style="margin-top:10px"><button class="btn primary">✅ ยืนยัน thesis</button><button class="btn ghost">ขอใหม่</button></div>
+        <div class="hint" style="margin-top:6px">เสียงค้าน 3 ข้อแรก (persona): cfp — "ยังไม่มี margin of safety" · retail-VI — "วัฏจักรเกษตรกำลังลง" · trader — "รอ follow-through"</div></div>
+      <div class="card"><h2>ทำอะไรได้</h2>
+        <button class="btn block" style="margin-bottom:8px">★ เพิ่ม Watchlist · โซน 380–395</button>
+        <button class="btn primary block" style="margin-bottom:8px" onclick="go('ticket')">สร้างตั๋วคำสั่ง</button>
+        <button class="btn block" onclick="go('journal')">บันทึก journal</button>
+        <div class="hint" style="margin-top:8px">ไม่ใช่คำแนะนำจากผู้มีใบอนุญาต · ตัวเลขต้อง verify ก่อนลงมือ</div></div>
+    </div>
+  </section>
+
+  <!-- ================= WATCHLIST ================= -->
+  <section class="page" data-page="watch">
+    <div class="card"><h2>Watchlist (4)</h2>
+      <div class="hold"><div class="logo">AAPL</div><div><b>AAPL</b> <span class="chip up">ในโซน 180–185</span><div class="muted">จาก M3 · ตัดขาดทุน 172 · แจ้ง LINE เมื่อคืน</div></div><div class="right"><div class="num">$183.10</div><div class="small">งบ 30 ต.ค.</div></div></div>
+      <div class="hold"><div class="logo">DE</div><div><b>DE</b> <span class="chip neutral">สูงกว่าโซน +5.7%</span><div class="muted">จาก M1 · โซน 380–395 · รอ follow-through</div></div><div class="right"><div class="num">$412.80</div><div class="small">งบ 19 พ.ย.</div></div></div>
+      <div class="hold"><div class="logo">ELV</div><div><b>ELV</b> <span class="chip neutral">ต่ำกว่าโซน −3.1%</span><div class="muted">จาก M3 · โซน 310–320</div></div><div class="right"><div class="num">$300.40</div><div class="small">งบ 21 ต.ค.</div></div></div>
+      <div class="hold"><div class="logo">AVGO</div><div><b>AVGO</b> <span class="chip warn">ไล่ราคาแล้ว +12%</span><div class="muted">จาก M4 · รอกลับมาใกล้ EMA21</div></div><div class="right"><div class="num">$1,742</div><div class="small">งบ 11 ธ.ค.</div></div></div>
+    </div>
+    <div class="card"><h2>กฎแจ้งเตือน</h2>
+      <div class="check ok"><b>✅</b><div>AAPL เข้าโซน 180–185 → LINE · ยิงแล้ว 16 ก.ย. 22:14 · เงียบ 6 ชม.</div></div>
+      <div class="check ok"><b>✅</b><div>COST งบใน 5 วัน → LINE (ปลุกได้)</div></div>
+      <div class="check warn"><b>⏸</b><div>DE ปริมาณ ≥ 2× → LINE · ชั่วโมงเงียบ 23:30–06:30</div></div>
+      <button class="btn block" style="margin-top:10px">+ เพิ่มกฎ</button></div>
+  </section>
+
+  <!-- ================= TICKETS LIST ================= -->
+  <section class="page" data-page="tickets">
+    <div class="tabs" style="margin-bottom:10px"><button class="tab" aria-selected="true">รอยืนยัน (2)</button><button class="tab">ส่งแล้ว (1)</button><button class="tab">สำเร็จ (7)</button><button class="tab">หมดอายุ/ปฏิเสธ (3)</button></div>
+    <div class="card" onclick="go('ticket')" tabindex="0" role="link">
+      <div class="row between"><div><b>ซื้อ MSFT</b> <span class="chip info">🤖 agent</span> <span class="env uat">UAT</span></div><span class="chip warn">หมดอายุใน 2 วัน</span></div>
+      <div class="row between"><span class="muted num">0.25 หุ้น · LIMIT 486.00 · ≈ $121.50 / ฿4,042</span><span class="small">✅ 6 · ⚠ 1 · ⛔ 0</span></div>
+    </div>
+    <div class="card" onclick="go('ticket')" tabindex="0" role="link">
+      <div class="row between"><div><b>ซื้อ VOO</b> <span class="chip neutral">DCA ก.ย.</span> <span class="env uat">UAT</span></div><span class="chip neutral">รอ</span></div>
+      <div class="row between"><span class="muted num">มูลค่า $200.00 · MARKET · เศษหุ้น</span><span class="small">✅ 7 · ⚠ 0 · ⛔ 0</span></div>
+    </div>
+    <div class="empty" style="display:none"><div>ยังไม่มีตั๋ว — สร้างจากหน้าหุ้น หรือให้ agent เสนอ</div></div>
+  </section>
+
+  <!-- ================= TICKET DETAIL ================= -->
+  <section class="page" data-page="ticket">
+    <div class="card">
+      <div class="row between"><span class="mid">ซื้อ MSFT</span><span class="env uat" style="font-size:15px;padding:6px 14px">จะส่งไปที่ UAT — ไม่ใช่เงินจริง</span></div>
+      <div class="timeline" style="margin-top:6px"><span class="st done">เสนอ 16 ก.ย. 22:40</span>›<span class="st">ยืนยัน</span>›<span class="st">ส่ง</span>›<span class="st">สำเร็จ</span></div>
+    </div>
+    <div class="card"><h2>คำสั่ง</h2>
+      <dl class="kv"><dt>จำนวน</dt><dd class="num">0.250000 หุ้น</dd><dt>ชนิด · ราคา</dt><dd class="num">LIMIT · 486.00</dd><dt>ราคาตลาดตอนนี้</dt><dd class="num">489.12 <span class="src">Webull · 19:41:58</span></dd><dt>มูลค่า</dt><dd class="num">$121.50 · ฿4,042</dd><dt>ตัดขาดทุน · เป้า</dt><dd class="num">452.00 · 560.00</dd><dt>R : R</dt><dd class="num">1 : 2.2</dd><dt>% พอร์ตหลังทำ (MSFT)</dt><dd class="num">15.5% → <b>24.9%</b></dd><dt>หมดอายุ</dt><dd>19 ก.ย. 23:59</dd><dt>กฎที่ใช้ตรวจ</dt><dd>v3 (17 ก.ย.)</dd></dl></div>
+    <div class="card"><h2>ผลตรวจกฎ</h2>
+      <div class="check ok"><b>✅</b><div>มูลค่า $121.50 ≤ เพดาน $500</div></div>
+      <div class="check ok"><b>✅</b><div>MSFT อยู่ใน whitelist</div></div>
+      <div class="check ok"><b>✅</b><div>ราคาใหม่กว่า 60 วิ (12 วิ)</div></div>
+      <div class="check ok"><b>✅</b><div>เงินสดหลังซื้อ $−25.30 → <span style="color:var(--down)">ไม่พอ</span> — <i>ต้นแบบ: แสดงตัวอย่างข้อความ ⛔ ด้านล่าง</i></div></div>
+      <div class="check warn"><b>⚠</b><div>น้ำหนัก MSFT หลังทำ 24.9% &gt; เพดานเตือน 8% และ <b>เกินเพดานแข็ง 10%</b></div></div>
+      <div class="check bad"><b>⛔</b><div>ผิดกฎ "น้ำหนักหุ้นเดี่ยว ≤ 10%" — ยืนยันไม่ได้จนกว่าจะลดจำนวนหรือแก้กฎ (สร้างเวอร์ชันใหม่)</div></div>
+      <div class="check ok"><b>✅</b><div>ตั๋วต่อวัน 1/5 · ไม่มีตั๋ว MSFT ซ้ำ · ไม่หมดอายุ</div></div></div>
+    <div class="card"><h2>เหตุผล · ทางเลือกที่ 0 · อะไรจะทำให้คิดผิด</h2>
+      <div class="why"><b>เหตุผล (agent):</b> ผ่าน M2 อันดับ 4 (ROIC 32% · FCF margin 33%) · ราคาพักลงมาใกล้ EMA20 ครั้งแรกใน 3 สัปดาห์ · อ้าง thesis MSFT v2 (✅ ยืนยัน 10 ก.ย.)</div>
+      <div class="why"><b>ทางเลือกที่ 0 (ไม่ทำ):</b> ถือเงินสดรอรอบ DCA 25 ก.ย. · เสียโอกาสถ้าราคาไปต่อ แต่ไม่ทำให้พอร์ตกระจุกเกิน 10%</div>
+      <div class="why"><b>อะไรจะทำให้คิดผิด:</b> หลุด 452 (swing low) · งบ 28 ต.ค. โตช้ากว่า 12% · ดอกเบี้ยขึ้นกด multiple</div>
+      <div class="hint">เสียงค้าน: lucifer — "นี่คือการเพิ่มตัวที่ถืออยู่แล้ว 15% ไม่ใช่ไอเดียใหม่ — ถามว่าทำไมไม่ใช่แกน" · cfp — "ลดเหลือ 0.08 หุ้นจะไม่ชนเพดาน"</div></div>
+    <div class="card"><h2>ยืนยัน</h2>
+      <div class="field"><label>พิมพ์ประโยคนี้ให้ตรงทุกตัวอักษร: <b class="num">ยืนยัน ซื้อ MSFT 0.25</b></label><input id="phrase" placeholder="พิมพ์ที่นี่" oninput="checkPhrase()" /></div>
+      <button class="btn primary block" id="confirmBtn" disabled>ยืนยันและส่ง UAT</button>
+      <div class="hint" style="margin-top:6px">ปุ่มจะเปิดเมื่อประโยคตรงและไม่มี ⛔ · การยืนยันนี้ใช้กับตั๋วใบนี้ใบเดียว · API token ยืนยันแทนไม่ได้</div>
+      <div class="row" style="margin-top:10px"><button class="btn ghost">แก้จำนวน (สร้างเวอร์ชันใหม่)</button><button class="btn ghost" style="color:var(--down)">ปฏิเสธ + บันทึกเหตุผล</button></div></div>
+    <div class="card"><h2>รางส่งมือ (ถ้าไม่ได้เชื่อม API)</h2>
+      <div class="kv"><dt>สัญลักษณ์</dt><dd class="num">MSFT <button class="btn ghost" style="min-height:32px;font-size:13px">คัดลอก</button></dd><dt>จำนวน</dt><dd class="num">0.25</dd><dt>LIMIT</dt><dd class="num">486.00</dd></div>
+      <div class="row" style="margin-top:8px"><button class="btn">เปิดแอป Webull</button><button class="btn primary">ทำแล้ว → กรอกราคา/จำนวนจริง</button></div></div>
+  </section>
+
+  <!-- ================= JOURNAL ================= -->
+  <section class="page" data-page="journal">
+    <div class="card"><h2>บันทึกการตัดสินใจ · ซื้อ SCHD (สำเร็จ 16 ก.ย.)</h2>
+      <div class="field"><label>การตัดสินใจ</label><div class="toggle"><button aria-pressed="true">ซื้อ</button><button>ขาย</button><button>ไม่ทำ</button><button>รอ</button></div></div>
+      <div class="field"><label>อารมณ์ตอนตัดสินใจ</label><div class="emo"><button>กลัว</button><button>โลภ</button><button>เบื่อ</button><button aria-pressed="true">มั่นใจ</button><button>ลังเล</button></div></div>
+      <div class="field"><label>thesis ย่อ (1–2 บรรทัด)</label><textarea>เติมส่วน "รายได้" ตามแผน DCA · yield 3.4% · ไม่ได้ดูจังหวะ</textarea></div>
+      <div class="field"><label>คาดหวังอะไร</label><input value="ปันผลไตรมาสหน้า ≈ $0.9 · ราคาไม่สำคัญใน 12 เดือน" /></div>
+      <div class="field"><label>ย้อนมาดูผลเมื่อ</label><div class="toggle"><button aria-pressed="true">30 วัน</button><button>90 วัน</button></div></div>
+      <button class="btn primary block">บันทึก</button></div>
+    <div class="card"><h2>สรุปไตรมาสนี้ (7 การตัดสินใจ)</h2>
+      <table><thead><tr><th>อารมณ์</th><th>ครั้ง</th><th>ผลเฉลี่ย 30 วัน</th></tr></thead><tbody><tr><td>มั่นใจ</td><td class="num">3</td><td class="num" style="color:var(--up)">+2.1%</td></tr><tr><td>ลังเล</td><td class="num">2</td><td class="num" style="color:var(--up)">+0.4%</td></tr><tr><td>โลภ</td><td class="num">1</td><td class="num" style="color:var(--down)">−4.8%</td></tr><tr><td>ไม่ทำ</td><td class="num">1</td><td class="num">—</td></tr></tbody></table>
+      <div class="hint">ตัวเลขจริงจากผลตอบแทนหลังตัดสินใจ · ไม่ตีความให้ — ต้นอ่านเอง</div></div>
+  </section>
+
+  <!-- ================= GOAL / DCA ================= -->
+  <section class="page" data-page="goal">
+    <div class="grid3">
+      <div class="card"><h2>เป้าหมาย</h2>
+        <div class="field"><label>ยอดเป้า (บาท)</label><input class="num" value="3,000,000" /></div>
+        <div class="field"><label>วันเป้า</label><input value="31 ธ.ค. 2578" /></div>
+        <div class="grid2"><div class="field"><label>เงินตั้งต้น</label><input class="num" value="฿42,730" /></div><div class="field"><label>เติมต่อเดือน</label><input class="num" id="monthly" value="3,000" oninput="calcGoal()" /></div></div>
+        <div class="field"><label>วัน DCA</label><input value="25 ของทุกเดือน" /></div></div>
+      <div class="card"><h2>ต้องได้ผลตอบแทนเท่าไร</h2>
+        <div class="big num" id="needRate">≈ 27.9% / ปี</div>
+        <div class="muted">ด้วยเติม ฿3,000/เดือน ใน 9.3 ปี — สูงกว่าที่ตลาดให้ตามประวัติ (agent จะดึงตัวเลขจริงมาเทียบ) → คันโยกจริงคือ "เติมเพิ่ม" หรือ "ยืดเวลา" ไม่ใช่ "เสี่ยงเพิ่ม"</div>
+        <div class="field" style="margin-top:10px"><label>ลองเติมเพิ่ม: <b class="num" id="mLabel">฿3,000</b>/เดือน</label><input type="range" min="1000" max="30000" step="500" value="3000" oninput="slide(this.value)" /></div>
+        <div class="field"><label>ลองยืดเวลา: <b id="yLabel">9.3</b> ปี</label><input type="range" min="5" max="25" step="0.5" value="9.3" oninput="slideY(this.value)" /></div>
+        <div class="hint">สูตร: หาอัตรา r ที่ทำให้ FV(เงินตั้งต้น) + FV(เงินเติมรายเดือน) = เป้า · ตัวเลขต้นแบบคำนวณจริงในหน้านี้</div></div>
+      <div class="card"><h2>เส้นทาง 3 ฉากทัศน์</h2>
+        <div class="muted">กรอกผลตอบแทนสมมติเอง (ระบบไม่ใส่ตัวเลขประวัติศาสตร์ให้)</div>
+        <div class="grid2" style="margin:8px 0"><div class="field"><label>ต่ำ</label><input class="num" placeholder="เช่น 4%" /></div><div class="field"><label>กลาง</label><input class="num" placeholder="เช่น 8%" /></div></div>
+        <div class="field"><label>สูง</label><input class="num" placeholder="เช่น 12%" /></div>
+        <div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg><div>กราฟจะแสดงเมื่อกรอกครบ 3 ค่า</div></div>
+        <button class="btn block">สร้างตั๋วชุด DCA เดือนนี้ (ยืนยันทีละใบ)</button></div>
+    </div>
+  </section>
+
+  <!-- ================= SETTINGS ================= -->
+  <section class="page" data-page="settings">
+    <div class="grid3">
+      <div class="card"><h2>เชื่อม Webull</h2>
+        <div class="row between"><div><span class="chip up">● เชื่อมแล้ว</span> <span class="env uat">UAT</span><div class="muted">บัญชี ••••1234 · App Key ••••7Q2F · token หมด 15 ต.ค. · ตรวจล่าสุด 19:41</div></div></div>
+        <div class="row" style="margin-top:10px"><button class="btn">ทดสอบเชื่อม</button><button class="btn">เปลี่ยนกุญแจ</button><button class="btn ghost" style="color:var(--down)">ตัดการเชื่อมต่อ</button></div>
+        <div class="hint" style="margin-top:8px">กุญแจถูกเข้ารหัสฝั่งเซิร์ฟเวอร์ · ไม่แสดงเต็ม · ไม่ส่งให้ AI · ไม่อยู่ใน log</div>
+        <details style="margin-top:8px"><summary class="small" style="cursor:pointer">ขั้นตอนเชื่อม (wizard)</summary><ol class="small"><li>ใส่ App Key + App Secret (จาก developer.webull.co.th)</li><li>ระบบขอ token → Webull ส่งรหัส 2FA → กรอก</li><li>ทดสอบ account/list → แสดงการ์ดสถานะ</li></ol></details></div>
+      <div class="card"><h2>สภาพแวดล้อม (Environment)</h2>
+        <div class="row"><div class="toggle"><button aria-pressed="true" onclick="setEnv('uat')">UAT (ทดสอบ)</button><button onclick="setEnv('prod')">PROD (เงินจริง)</button></div></div>
+        <div class="hint" style="margin-top:8px">เฟส 1: PROD ปิดใช้จนผ่านประตูเฟส 2 (SPEC §14.3) · เปิดต้องพิมพ์ "เปิดเงินจริง" และจะมีแถบแดงทุกหน้า (ลองกดดูในต้นแบบ)</div>
+        <div class="row between" style="margin-top:12px;padding:12px;border-radius:12px;background:var(--warn-bg)"><b style="color:var(--warn-fg)">Kill switch</b><button class="btn danger">หยุดส่งคำสั่งทั้งหมด</button></div>
+        <div class="hint">env TRADING_ENABLED = true · settings.trading_enabled = true — ตัวใดตัวหนึ่งปิด = ส่งไม่ได้</div></div>
+      <div class="card"><h2>กฎความเสี่ยง <span class="chip neutral">v3 · 17 ก.ย.</span></h2>
+        <div class="grid2"><div class="field"><label>เพดานมูลค่า/คำสั่ง (USD)</label><input class="num" value="500" /></div><div class="field"><label>เพดานจำนวน/คำสั่ง</label><input class="num" value="100" /></div><div class="field"><label>หุ้นเดี่ยวสูงสุด %</label><input class="num" value="10" /></div><div class="field"><label>กลุ่มสูงสุด %</label><input class="num" value="25" /></div><div class="field"><label>เงินสดขั้นต่ำ %</label><input class="num" value="5" /></div><div class="field"><label>เสี่ยง/ไม้ %</label><input class="num" value="1" /></div><div class="field"><label>ราคาใหม่กว่า (วิ)</label><input class="num" value="60" /></div><div class="field"><label>ตั๋ว/วัน</label><input class="num" value="5" /></div></div>
+        <div class="field"><label>Whitelist (ว่าง = ห้ามส่งทุกตัว)</label><input value="VOO, MSFT, SCHD, COST, AAPL" /></div>
+        <button class="btn primary block">บันทึกเป็นเวอร์ชันใหม่ (v4)</button><div class="hint" style="margin-top:6px">ตั๋วเดิมยังอ้าง v3 และต้องตรวจใหม่ก่อนยืนยัน</div></div>
+      <div class="card"><h2>ผู้ให้ราคา</h2>
+        <div class="check ok"><b>1</b><div>Webull Market Data · 24 ชม.: สำเร็จ 98.7%</div></div>
+        <div class="check ok"><b>2</b><div>Finnhub (สำรอง · ดีเลย์ 15 นาที) · 100%</div></div>
+        <div class="check warn"><b>3</b><div>yfinance (งานกลางคืนเท่านั้น · ห้ามใช้ตรวจตั๋ว)</div></div></div>
+      <div class="card"><h2>แจ้งเตือน LINE</h2>
+        <div class="row between"><span>เปิดใช้</span><span class="chip up">เปิด</span></div>
+        <div class="row between"><span>ชั่วโมงเงียบ</span><span class="num">23:30–06:30</span></div>
+        <div class="row between"><span>ซ่อนยอดเงินในข้อความ</span><span class="chip neutral">ปิด</span></div>
+        <div class="row between"><span>บรีฟเช้า 07:00</span><span class="chip neutral">P1 — ยังไม่เปิด</span></div></div>
+      <div class="card"><h2>API token</h2>
+        <div class="row between"><div><b>agent-upverse-advisor</b><div class="muted num">upv_8f3a2c1d… · ใช้ล่าสุด 19:40</div><div class="pill-row" style="margin-top:4px"><span class="chip neutral">portfolio:read</span><span class="chip neutral">scan:read</span><span class="chip neutral">quotes:read</span><span class="chip neutral">theses:write</span><span class="chip neutral">tickets:propose</span><span class="chip neutral">journal:write</span></div></div><button class="btn ghost" style="color:var(--down)">เพิกถอน</button></div>
+        <button class="btn block" style="margin-top:10px">+ สร้าง token</button>
+        <div class="hint" style="margin-top:6px">ไม่มี scope "tickets:confirm" ให้เลือก — ยืนยันได้จากหน้าจอนี้เท่านั้น</div></div>
+      <div class="card"><h2>ธีม / ฟอนต์</h2>
+        <div class="row" style="gap:12px"><div class="toggle"><button aria-pressed="true" onclick="setTheme('auto')">ตามเครื่อง</button><button onclick="setTheme('dark')">มืด</button><button onclick="setTheme('light')">สว่าง</button></div></div>
+        <div class="row" style="gap:12px;margin-top:8px"><div class="toggle"><button aria-pressed="true" onclick="setFont('plex')">A · Plex Sans Thai</button><button onclick="setFont('prompt')">B · Prompt</button></div><div class="toggle"><button aria-pressed="true" onclick="setAurora('on')">มืดแบบ aurora</button><button onclick="setAurora('off')">มืดแบบเรียบ</button></div></div>
+        <div class="hint" style="margin-top:6px">ทางเลือกให้ต้นเลือก (DESIGN.md §6) — ลองสลับดูได้ในต้นแบบนี้</div></div>
+    </div>
+  </section>
+
+  </main>
+
+  <nav class="bottombar" aria-label="เมนูมือถือ">
+    <button data-go="home" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11 12 3l9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>หน้าหลัก</button>
+    <button data-go="portfolio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>พอร์ต</button>
+    <button data-go="scan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>สแกน</button>
+    <button data-go="tickets"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4z"/></svg>ตั๋ว<span class="badge">2</span></button>
+    <button data-go="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>เพิ่มเติม</button>
+  </nav>
+</div>
+
+<!-- sheet: บันทึกรายการ -->
+<div class="sheet" id="txSheet" onclick="if(event.target===this)this.removeAttribute('open')">
+  <div>
+    <div class="row between"><h2 style="margin:0">บันทึกรายการ (Paper)</h2><button class="btn ghost" onclick="document.getElementById('txSheet').removeAttribute('open')">ปิด</button></div>
+    <div class="field"><label>ชนิด</label><select><option>ซื้อ</option><option>ขาย</option><option>ปันผล</option><option>ค่าธรรมเนียม</option><option>ฝากเงิน</option><option>แลกเงิน THB→USD</option></select></div>
+    <div class="grid2"><div class="field"><label>สัญลักษณ์</label><input value="VOO" /></div><div class="field"><label>จำนวน (เศษได้)</label><input class="num" value="0.123456" /></div><div class="field"><label>ราคา (USD)</label><input class="num" value="527.40" /></div><div class="field"><label>ค่าธรรมเนียม</label><input class="num" value="0.00" /></div><div class="field"><label>FX rate ที่ใช้</label><input class="num" value="33.27" /></div><div class="field"><label>วันเวลา</label><input value="17 ก.ย. 2569 21:35" /></div></div>
+    <div class="field"><label>โน้ต</label><input placeholder="เช่น รอบ DCA ก.ย." /></div>
+    <div class="row between"><span class="muted num">มูลค่า ≈ $65.11 · ฿2,166</span><button class="btn primary">บันทึก</button></div>
+  </div>
+</div>
+
+<script>
+/* ---------- nav ---------- */
+const titles={home:'หน้าหลัก',portfolio:'พอร์ต',scan:'สแกน Top 10',stock:'หุ้น · DE',watch:'Watchlist',tickets:'ตั๋วคำสั่ง',ticket:'ตั๋ว · ซื้อ MSFT',journal:'สมุดบันทึก',goal:'เป้า / DCA',settings:'ตั้งค่า'};
+function go(p){document.querySelectorAll('.page').forEach(s=>s.toggleAttribute('data-active',s.dataset.page===p));document.getElementById('pageTitle').textContent=titles[p]||p;
+  document.querySelectorAll('[data-go]').forEach(b=>{const t=b.dataset.go;const active=t===p||(p==='ticket'&&t==='tickets')||(p==='stock'&&t==='scan'&&false);b.toggleAttribute('aria-current',active);if(active)b.setAttribute('aria-current','page')});
+  window.scrollTo({top:0});location.hash=p}
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));
+if(location.hash&&titles[location.hash.slice(1)])go(location.hash.slice(1));
+window.addEventListener('hashchange',()=>{const p=location.hash.slice(1);if(titles[p])go(p)});
+function openSheet(id){document.getElementById(id).setAttribute('open','')}
+/* ---------- theme / options ---------- */
+function setTheme(t){document.documentElement.setAttribute('data-theme',t)}
+function toggleTheme(){const cur=document.documentElement.getAttribute('data-theme');const dark=cur==='dark'||(cur!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);setTheme(dark?'light':'dark')}
+function setFont(f){document.documentElement.setAttribute('data-font',f)}
+function setAurora(v){document.body.setAttribute('data-aurora',v)}
+function setEnv(e){document.body.setAttribute('data-env',e);const b=document.getElementById('envBadge');b.textContent=e.toUpperCase();b.className='env '+(e==='prod'?'danger chip':'uat')}
+/* ---------- confirm phrase (ticket has a ⛔ so button stays disabled by design) ---------- */
+function checkPhrase(){const ok=document.getElementById('phrase').value.trim()==='ยืนยัน ซื้อ MSFT 0.25';const hasBlock=true;document.getElementById('confirmBtn').disabled=!(ok&&!hasBlock);document.getElementById('confirmBtn').textContent=ok&&hasBlock?'ประโยคตรงแล้ว แต่ยังมี ⛔ — ยืนยันไม่ได้':'ยืนยันและส่ง UAT'}
+/* ---------- goal math (real calc for the mockup) ---------- */
+const GOAL={target:3000000,start:42730};let years=9.3,monthly=3000;
+function needRate(){let lo=0,hi=2;for(let i=0;i<80;i++){const r=(lo+hi)/2,m=Math.pow(1+r,1/12)-1,n=Math.round(years*12);const fv=GOAL.start*Math.pow(1+r,years)+monthly*((Math.pow(1+m,n)-1)/m);if(fv<GOAL.target)lo=r;else hi=r}return (lo+hi)/2}
+function calcGoal(){const v=parseFloat(String(document.getElementById('monthly').value).replace(/,/g,''));if(v>0)monthly=v;document.getElementById('needRate').textContent='≈ '+(needRate()*100).toFixed(1)+'% / ปี'}
+function slide(v){monthly=+v;document.getElementById('mLabel').textContent='฿'+(+v).toLocaleString();document.getElementById('monthly').value=(+v).toLocaleString();calcGoal()}
+function slideY(v){years=+v;document.getElementById('yLabel').textContent=v;calcGoal()}
+/* ---------- fake candles (deterministic sample) ---------- */
+(function(){const g=document.getElementById('candles'),vg=document.getElementById('vols');if(!g)return;let p=370,seed=7;const rnd=()=>{seed=(seed*9301+49297)%233280;return seed/233280};
+  for(let i=0;i<40;i++){const x=42+i*7.7;const o=p,c=p+(rnd()-0.45)*14;const h=Math.max(o,c)+rnd()*5,l=Math.min(o,c)-rnd()*5;p=c;const y=v=>210-(v-340)*1.5;const up=c>=o;
+    g.insertAdjacentHTML('beforeend',`<line x1="${x}" y1="${y(h)}" x2="${x}" y2="${y(l)}" stroke="${up?'var(--up)':'var(--down)'}" stroke-width="1"/><rect x="${x-2.5}" y="${Math.min(y(o),y(c))}" width="5" height="${Math.max(1.5,Math.abs(y(o)-y(c)))}" rx="1" fill="${up?'var(--up)':'var(--surface)'}" stroke="${up?'var(--up)':'var(--down)'}" stroke-width="1"/>`);
+    vg.insertAdjacentHTML('beforeend',`<rect x="${x-2.5}" y="${252-rnd()*30-(i===38?12:0)}" width="5" height="${i===38?42:rnd()*30}" fill="var(--s-other)" opacity=".55"/>`)}
+})();
+</script>
+</body>
+</html>
