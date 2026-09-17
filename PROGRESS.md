@@ -7,6 +7,8 @@
 - ✅ ผล sync จริง: 7 ตำแหน่ง (NVDA INTC TSLA AXON GOOG AAPL USB เศษหุ้น) · เงินสด $46.09 · มูลค่าหุ้น $20.40 · Webull รายงานรวม ฿2,210.58 · fills นำเข้า 4 รายการ
 - ⚠️ **ข้อจำกัด Webull TH**: historical-orders คืนเฉพาะช่วงล่าสุด (start_time ทุกรูปแบบ → 417 · ยิงถี่ → 429) → ledger ของบัญชี Webull ไม่ครบ **positions snapshot = ความจริง** · market-data host timeout/ต้อง subscription → ใช้ last_price จาก positions
 - ✅ กัน dev ปน prod: `UPVERSE_USE_SUPABASE=1` เท่านั้นถึงใช้ Supabase นอก Vercel (ผมเปิดชั่วคราวเพื่อทดสอบ sync จริง แล้วปิดคืน)
+- ✅ **GitHub Actions nightly ตั้ง secrets แล้ว** (`UPVERSE_URL` · `CRON_SECRET`) รันจริงผ่าน: สแกนทั้ง S&P 500 + sync Webull + keep-alive token · 05:30 ICT อ.–ส.
+- ✅ แก้บั๊ก prod: cache EDGAR/universe เขียนดิสก์ไม่ได้บน Vercel (เงียบ → M2/M3/M5 excluded 440) → ย้ายไป `/tmp` + best-effort · ตอนนี้ excluded 0
 
 ## สถานะก่อนหน้า: 18 ก.ย. 2569 (00:45) — เปลี่ยนรหัสผ่านในแอปได้ · 2FA Webull ตามเอกสารทางการ
 - ✅ **เปลี่ยนรหัสผ่านเจ้าของในแอป** (ตั้งค่า › รหัสผ่านเจ้าของ): เก็บ scrypt hash ใน DB · env `UPVERSE_OWNER_PASSPHRASE` เป็นแค่ค่าตั้งต้น (เมื่อตั้งในแอปแล้ว env ไม่ถูกใช้) · ต้องใส่รหัสเดิม · API token เปลี่ยนไม่ได้ (403) · หมุนเซสชัน · ทดสอบผ่าน UI แล้ว
