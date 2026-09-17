@@ -1,6 +1,16 @@
 # PROGRESS — UPVerse (Personal Financial Advisor)
 
-## สถานะล่าสุด: 18 ก.ย. 2569 (00:xx) — 🟢 แอปพร้อมใช้ในเครื่อง (โหมด paper) · /goal "dev ให้พร้อมใช้เลย"
+## สถานะล่าสุด: 18 ก.ย. 2569 (00:20) — 🟢 LIVE บน Vercel + Supabase · https://upverse-app.vercel.app
+- ✅ **push** `kamalphooltrade/upverse` main (c358664 → 0de20b0) · repo public · secret scanning + push protection เปิด
+- ✅ **Vercel** โปรเจกต์ `ultimatepassion/upverse` (team upwellness · ต้น login device-code เอง) · rootDirectory=`app` · deploy จาก CLI (root ของ repo) · alias ถาวร **https://upverse-app.vercel.app** (+ upverse-ultimatepassion.vercel.app · upverse-weld.vercel.app) · ปิด SSO deployment protection (แอปมี passphrase เอง)
+- ⚠️ **git auto-deploy ยังไม่ผูก**: Vercel GitHub App ของบัญชี upwellness ไม่มีสิทธิ์ repo ของ `kamalphooltrade` (repo_no_access) → deploy ด้วย `vercel deploy --prod --scope ultimatepassion` จาก root ของ repo ไปก่อน · แก้ถาวร: ต้นเพิ่ม repo ใน GitHub App ของ Vercel (บัญชี kamalphooltrade) แล้วผูกใน Project → Git
+- ✅ **Supabase** `aqklpnjzgtpqotxebthn` (org ของ kamalphooltrade · ap-southeast-2 · ต้น login CLI เอง) · migration `upverse_state` applied · RLS on · 0 policy (service role เท่านั้น — anon อ่านได้ `[]`) · env `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` ใน Vercel (Sensitive) และ `app/.env.local`
+- ✅ **env production ครบ 9 ตัว** (passphrase · session secret · master key · cron secret · TRADING_ENABLED=false · owner id · SEC UA · supabase ×2) — ค่าอยู่ใน `app/OWNER-SECRETS.local.md` (git-ignored) **ต้นเก็บลง password manager แล้วลบไฟล์**
+- ✅ **พิสูจน์บน production**: health `storage: supabase · owner_auth: passphrase · master_key: true · api_rail_possible: false` · login ผิด 401/ถูก 200 · เขียน deposit+buy → อ่านพอร์ตราคาจริง → แถวอยู่ใน Supabase → ลบข้อมูลทดสอบแล้ว (พอร์ตว่างพร้อมใช้)
+- ✅ แก้ระหว่างทาง: บน Vercel ไม่มี Supabase → เดิม 500 EROFS · ตอนนี้ health 503 + ข้อความชัด (`storage: none`) · ทุก route มี error boundary (`safe()`)
+- ⏳ ยังไม่ทำ: cron กลางคืน (ตั้งใน `vercel.json` แล้ว แต่ Hobby plan รัน cron ได้วันละครั้งและเวลาไม่แน่นอน — ใช้ GitHub Actions `nightly-scan.yml` แทน: ต้องใส่ secrets `UPVERSE_URL` + `CRON_SECRET` ใน repo) · LINE alerts · Webull sync
+
+## สถานะก่อนหน้า: 18 ก.ย. 2569 (00:xx) — แอปพร้อมใช้ในเครื่อง (โหมด paper)
 - ✅ **Next.js 16.3 + TypeScript + Tailwind v4** ที่ `app/` · build ผ่าน · lint/tsc ผ่าน · 31 routes
 - ✅ **API v1 ครบ** (`docs/API-UPVerse.md` มี curl ที่รันแล้วจริง): health · auth · portfolio · transactions · quotes · instruments · scans(+run) · watchlist · tickets (propose/get/confirm/fill/reject) · journal · goal · settings(+rules/tokens) · broker(connect/status/disconnect) · openapi.json · query
 - ✅ **หน้าจอ 10 หน้า** ตามดีไซน์ v2 gradient: หน้าหลัก · พอร์ต (+ชีทบันทึก paper) · สแกน · หุ้น (แท่งเทียนจริง+EMA/SMA/RSI+EDGAR) · watchlist · ตั๋ว (รายการ+สร้าง) · ตั๋ว/ยืนยัน · journal · เป้า/DCA · ตั้งค่า · login — ทดสอบ 375px มืด: ไม่ล้น · ปุ่ม ≥ 44px
@@ -58,7 +68,10 @@
 | 4 | Portfolio Review + Scan Report ฉบับแรก (S&P 500 · scorecard v1) | upverse-advisor | หลังได้ข้อ 1–2 |
 | 0 | **regenerate Webull App Key/Secret** (OpenAPI Management) แล้วใส่ใน **หน้าตั้งค่าของแอป** (ไม่ใช่แชท) หลังตั้ง `UPVERSE_MASTER_KEY` | ต้น | **ทันที** |
 | 0b | รันแอปในเครื่อง: `cd app && npm run dev -- -p 3777` → บันทึกพอร์ตจริงในหน้า "พอร์ต" (paper) · กด "รันเร็ว" ในหน้าสแกน | ต้น | วันนี้ |
-| 0c | commit + push (`gh auth switch -u kamalphooltrade`) · deploy Vercel (บัญชี upwellness · root=app · env 5 ตัว) · รัน migration Supabase | ต้น สั่ง → metatron | เมื่อพร้อม |
+| 0c | ~~commit + push + deploy + migration~~ ✅ LIVE https://upverse-app.vercel.app | — | เสร็จ 18 ก.ย. |
+| 0d | เก็บ `app/OWNER-SECRETS.local.md` ลง password manager แล้วลบไฟล์ · เข้า /login ด้วย passphrase | ต้น | วันนี้ |
+| 0e | ผูก git auto-deploy: GitHub → Settings → Applications → Vercel → เพิ่ม repo `upverse` (บัญชี kamalphooltrade) แล้ว Vercel Project → Settings → Git → Connect | ต้น | เมื่อสะดวก |
+| 0f | ใส่ GitHub secrets `UPVERSE_URL=https://upverse-app.vercel.app` + `CRON_SECRET` (จากไฟล์ secrets) เพื่อให้สแกนกลางคืนรันเอง | ต้น | เมื่อสะดวก |
 | 5 | ~~เขียน `docs/SPEC.md`~~ ✅ v0.1 → ต้นรีวิว + เลือกทางเลือกดีไซน์ที่เหลือ 4 ข้อ (DESIGN §6 · สไตล์เคาะแล้ว = gradient v2) | ต้น | สัปดาห์นี้ |
 | 5b | lucifer ทุบ SPEC v0.1 (เติม §19) | lucifer | ก่อน Sprint 0 |
 | 6 | Sprint 0: พิสูจน์ Webull TH API ด้วยบัญชีทดสอบ (SPEC §14.1 S0.1–S0.6) → แล้ว scaffold Next.js + Supabase + `/api/v1/health` | metatron | หลังต้นตอบ Q1–Q7 |

@@ -15,9 +15,9 @@
 ## Stack + บัญชี (ตรวจแล้ว 17 ก.ย. 2569)
 | ของ | ค่า | ก่อนใช้ต้อง |
 |---|---|---|
-| GitHub | `kamalphooltrade/upverse` (public · main · ว่าง) — remote `origin` ตั้งแล้ว | `gh auth switch -u kamalphooltrade` ก่อน push · commit author ให้ตรงบัญชีที่ผูก Vercel |
-| Vercel | บัญชี `upwellness` (ต้นระบุ) | CLI ตอนนี้เป็น `kimprojecttpl` → `vercel login`/switch · ยืนยันชื่อ team |
-| Supabase | `https://aqklpnjzgtpqotxebthn.supabase.co` | ไม่อยู่ใน MCP ปัจจุบัน → กุญแจใน `app/.env.local` (ดู `.env.example`) |
+| GitHub | `kamalphooltrade/upverse` (public · main · 🟢 pushed) | `gh auth switch -u kamalphooltrade` ก่อน push · ยังไม่ผูก auto-deploy (GitHub App ของ Vercel upwellness ไม่เห็น repo) |
+| Vercel | 🟢 **https://upverse-app.vercel.app** · team `ultimatepassion` (upwellness) · project `upverse` · rootDirectory=app | deploy: `vercel deploy --prod --scope ultimatepassion` **จาก root ของ repo** (ไม่ใช่ใน app/) · env 9 ตัวใน production |
+| Supabase | 🟢 `aqklpnjzgtpqotxebthn` (org kamalphooltrade · CLI login แล้ว) · ตาราง `upverse_state` RLS on · service role only | SQL: `supabase db query --linked --project-ref aqklpnjzgtpqotxebthn "..."` · กุญแจใน `app/.env.local` + Vercel env |
 | Webull OpenAPI | region `th` · SDK Python/Java · https://developer.webull.co.th | ขอ App Key/Secret (รีวิว 1–2 วันทำการ) · `WEBULL_ENVIRONMENT=uat` ก่อน |
 | Web | Next.js 16.3 App Router + Tailwind v4 · เก็บข้อมูลไฟล์ JSON หรือ Supabase (`upverse_state`) สลับด้วย env | ก่อนแก้โค้ดอ่าน `app/AGENTS.md` (Next 16 ต่างจากที่รู้) · `docs/API-UPVerse.md` มี curl จริง |
 
