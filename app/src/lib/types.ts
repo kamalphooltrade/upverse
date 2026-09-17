@@ -259,7 +259,14 @@ export interface DataFile {
     status: "connected" | "needs_2fa" | "expired" | "error" | "unset";
     lastOkAt: string | null;
     lastError: string | null;
+    accessTokenEnc: string | null; // Webull access token (encrypted). PENDING until verified in Webull app.
+    tokenStatus: "PENDING" | "NORMAL" | "INVALID" | "EXPIRED" | null;
+    tokenCreatedAt: string | null; // 2FA window = 5 minutes from here
+    tokenExpires: string | null; // as reported by Webull ("expires")
+    tokenLastUsedAt: string | null; // INVALID after 15 days without calls
+    accounts: Array<{ account_id: string; account_number?: string; account_type?: string }> | null;
   } | null;
+  owner: { passphraseHash: string; salt: string; changedAt: string } | null; // null = use env UPVERSE_OWNER_PASSPHRASE
 }
 
 export const API_SCOPES = [

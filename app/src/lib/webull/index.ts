@@ -69,6 +69,7 @@ export async function callWebull<T = unknown>(opts: { host?: "api" | "data"; met
 export interface AccessToken { token: string; expires: number | string; status: "NORMAL" | "PENDING" | string }
 export const createToken = (creds: WebullCreds, existing?: string | null) => callWebull<AccessToken>({ method: "POST", uri: "/auth/tokens/create", body: existing ? { token: existing } : {}, creds });
 export const checkToken = (creds: WebullCreds, token: string) => callWebull<AccessToken>({ method: "POST", uri: "/auth/tokens/check", body: { token }, creds });
+export const refreshToken = (creds: WebullCreds, token: string) => callWebull<AccessToken>({ method: "POST", uri: "/openapi/auth/token/refresh", body: { token }, creds });
 
 // ---------- account ----------
 export interface WebullAccount { account_id: string; account_type?: string; account_number?: string; [k: string]: unknown }

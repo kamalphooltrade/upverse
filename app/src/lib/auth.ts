@@ -12,6 +12,10 @@ const SECRET = () => process.env.UPVERSE_SESSION_SECRET || process.env.UPVERSE_O
 export function ownerConfigured() {
   return !!process.env.UPVERSE_OWNER_PASSPHRASE;
 }
+async function ownerConfiguredAny() {
+  if (process.env.UPVERSE_OWNER_PASSPHRASE) return true;
+  try { return !!(await readData()).owner; } catch { return false; }
+}
 
 function sign(payload: string) {
   return createHmac("sha256", SECRET()).update(payload).digest("hex");
@@ -34,16 +38,33 @@ export function verifySessionToken(tok: string | undefined | null): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-export function checkPassphrase(p: string): boolean {
+import { scryptSync } from "node:crypto";
+export function hashPassphrase(p: string, salt?: string) {
+  const s = salt ?? randomBytes(16).toString("hex");
+  return { salt: s, hash: scryptSync(p.normalize("NFKC"), s, 32, { N: 16384, r: 8, p: 1 }).toString("hex") };
+}
+/** Owner passphrase: DB hash wins (set via "เปลี่ยนรหัสผ่าน"); env UPVERSE_OWNER_PASSPHRASE is the bootstrap value. */
+export async function checkPassphrase(p: string): Promise<boolean> {
+  const d = await readData();
+  if (d.owner) {
+    const { hash } = hashPassphrase(p, d.owner.salt);
+    const a = Buffer.from(hash, "hex"), b = Buffer.from(d.owner.passphraseHash, "hex");
+    return a.length === b.length && timingSafeEqual(a, b);
+  }
   const want = process.env.UPVERSE_OWNER_PASSPHRASE;
   if (!want) return false;
   const a = Buffer.from(p), b = Buffer.from(want);
   return a.length === b.length && timingSafeEqual(a, b);
 }
+export async function ownerPassphraseSource(): Promise<"db" | "env" | "none"> {
+  const d = await readData();
+  if (d.owner) return "db";
+  return process.env.UPVERSE_OWNER_PASSPHRASE ? "env" : "none";
+}
 
 export async function isOwnerSession(): Promise<boolean> {
-  // Dev convenience: when no passphrase configured, local requests are treated as owner (paper mode only).
-  if (!ownerConfigured()) return true;
+  // Dev convenience: when no passphrase configured anywhere (env or DB), local requests are treated as owner (paper mode only).
+  if (!(await ownerConfiguredAny())) return true;
   const c = await cookies();
   return verifySessionToken(c.get(COOKIE)?.value);
 }

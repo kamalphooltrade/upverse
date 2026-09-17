@@ -8,7 +8,8 @@ import { isOwnerSession } from "@/lib/auth";
 import { readData, withData, uid, nowIso, audit } from "@/lib/store";
 import { evaluate } from "../../route";
 import { hasBlock, confirmPhraseFor } from "@/lib/risk";
-import { decryptSecret, placeOrder } from "@/lib/webull";
+import { placeOrder } from "@/lib/webull";
+import { credsFrom } from "@/lib/webull/session";
 
 async function _POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const g = await gate(req, null);
@@ -46,9 +47,11 @@ async function _POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   if (d.settings.environment !== "prod") return json({ error: { code: "uat_no_send", message: "environment=uat: ไม่มี sandbox ฝั่ง Webull TH — ใช้รางส่งมือ หรือเปิด prod ตามประตูเฟส 2" } }, { status: 422 });
   if (!d.settings.tradingEnabled || process.env.TRADING_ENABLED !== "true") return json({ error: { code: "kill_switch", message: "kill switch ปิดอยู่" } }, { status: 422 });
   if (!d.brokerCredentials || d.brokerCredentials.status !== "connected") return json({ error: { code: "broker", message: "ยังไม่ได้เชื่อม Webull" } }, { status: 422 });
-  const creds = { appKey: decryptSecret(d.brokerCredentials.appKeyEnc), appSecret: decryptSecret(d.brokerCredentials.appSecretEnc), region: "th" as const, token: null };
+  const creds = credsFrom(d);
+  if (!creds?.token) return json({ error: { code: "broker", message: "token Webull ยังไม่พร้อม — ตรวจสถานะในหน้าตั้งค่า" } }, { status: 422 });
   const acc = d.accounts.find((a) => a.id === t.accountId);
   if (!acc?.brokerAccountMasked) return json({ error: { code: "account", message: "บัญชีนี้ไม่ใช่บัญชี Webull" } }, { status: 422 });
+  if (d.brokerCredentials.tokenStatus !== "NORMAL") return json({ error: { code: "broker", message: `token สถานะ ${d.brokerCredentials.tokenStatus ?? "—"} (ต้อง NORMAL)` } }, { status: 422 });
   const clientOrderId = `upv-${id.slice(0, 8)}-${Date.now().toString(36)}`;
   const order = { client_order_id: clientOrderId, side: (t.side === "buy" ? "BUY" : "SELL") as "BUY" | "SELL", tif: "DAY" as const, extended_hours_trading: false, symbol: t.symbol, market: "US" as const, instrument_type: "EQUITY" as const, order_type: t.orderType, limit_price: t.limitPrice != null ? String(t.limitPrice) : undefined, qty: ev.qty != null ? String(ev.qty) : undefined, entrust_type: "QTY" as const, trading_session: "CORE" as const };
   try {

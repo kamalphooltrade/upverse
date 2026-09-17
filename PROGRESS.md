@@ -1,6 +1,13 @@
 # PROGRESS — UPVerse (Personal Financial Advisor)
 
-## สถานะล่าสุด: 18 ก.ย. 2569 (00:20) — 🟢 LIVE บน Vercel + Supabase · https://upverse-app.vercel.app
+## สถานะล่าสุด: 18 ก.ย. 2569 (00:45) — เปลี่ยนรหัสผ่านในแอปได้ · 2FA Webull ตามเอกสารทางการ
+- ✅ **เปลี่ยนรหัสผ่านเจ้าของในแอป** (ตั้งค่า › รหัสผ่านเจ้าของ): เก็บ scrypt hash ใน DB · env `UPVERSE_OWNER_PASSPHRASE` เป็นแค่ค่าตั้งต้น (เมื่อตั้งในแอปแล้ว env ไม่ถูกใช้) · ต้องใส่รหัสเดิม · API token เปลี่ยนไม่ได้ (403) · หมุนเซสชัน · ทดสอบผ่าน UI แล้ว
+- ✅ **2FA Webull ทำตามเอกสาร `authentication/token`**: create → PENDING + **Webull ส่ง SMS** → ผู้ใช้ไป **แอป Webull → Menu → Messages → OpenAPI Notifications → Check Now → กรอก SMS** (5 นาที) → เรากด "ตรวจสถานะ" → NORMAL · token เก็บเข้ารหัส (ไม่สร้างใหม่ทุกครั้ง = ไม่ SMS ซ้ำ) · ปุ่ม "ขอรหัสใหม่" แยก · INVALID หลัง 15 วันไม่ใช้ → สแกนกลางคืนเรียก refresh ต่ออายุ · **แอปเราไม่มีช่องกรอก SMS โดยเจตนา**
+- ✅ ยิงจริงถึง `api.webull.co.th` ด้วยกุญแจปลอม → `401 UNAUTHORIZED: Invalid credentials` (ลายเซ็น/endpoint ถูกรับที่ปลายทาง)
+- ✅ กัน dev ในเครื่องปนข้อมูล prod: นอก Vercel ใช้ Supabase เฉพาะ `UPVERSE_USE_SUPABASE=1`
+- 🔵 **ที่ต้นต้องมี:** เบอร์โทรที่ผูกบัญชี Webull รับ SMS ได้ · บัญชี OpenAPI อนุมัติแล้ว (Developer Tool → API Management)
+
+## สถานะก่อนหน้า: 18 ก.ย. 2569 (00:20) — 🟢 LIVE บน Vercel + Supabase · https://upverse-app.vercel.app
 - ✅ **push** `kamalphooltrade/upverse` main (c358664 → 0de20b0) · repo public · secret scanning + push protection เปิด
 - ✅ **Vercel** โปรเจกต์ `ultimatepassion/upverse` (team upwellness · ต้น login device-code เอง) · rootDirectory=`app` · deploy จาก CLI (root ของ repo) · alias ถาวร **https://upverse-app.vercel.app** (+ upverse-ultimatepassion.vercel.app · upverse-weld.vercel.app) · ปิด SSO deployment protection (แอปมี passphrase เอง)
 - ⚠️ **git auto-deploy ยังไม่ผูก**: Vercel GitHub App ของบัญชี upwellness ไม่มีสิทธิ์ repo ของ `kamalphooltrade` (repo_no_access) → deploy ด้วย `vercel deploy --prod --scope ultimatepassion` จาก root ของ repo ไปก่อน · แก้ถาวร: ต้นเพิ่ม repo ใน GitHub App ของ Vercel (บัญชี kamalphooltrade) แล้วผูกใน Project → Git

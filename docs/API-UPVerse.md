@@ -66,6 +66,7 @@ curl -s -o /dev/null -w "%{http_code}\n" -X POST $B/tickets/<ID>/confirm -H "$J"
 | GET `/health` | — | environment · trading_enabled (setting+env) · api_rail_possible · broker status · กฎที่ใช้ · last_scan_at |
 | GET `/openapi.json` · GET `/meta` | — / any | สคีมา · scope ของ token |
 | POST `/auth/login` · POST `/auth/logout` | — | เซสชันเจ้าของ |
+| GET/PUT `/auth/passphrase` | **เซสชันเจ้าของเท่านั้น** | ดูที่มาของรหัส (env/db/none) · PUT `{current,next}` เปลี่ยนรหัส (scrypt hash ใน DB · env ไม่ถูกใช้อีก · หมุนเซสชัน) |
 | GET `/portfolio?account=all\|<id>` | portfolio:read | positions ที่ราคาล่าสุด + cash + P&L (หุ้น / ค่าเงิน) + caveats |
 | GET/POST/DELETE `/transactions` | portfolio:read / write | บันทึกมือ (paper) · `{rows:[…]}` นำเข้า · ลบด้วย `?id=` |
 | GET `/quotes?symbols=` | quotes:read | source · as_of · market_state · stale |
@@ -80,11 +81,21 @@ curl -s -o /dev/null -w "%{http_code}\n" -X POST $B/tickets/<ID>/confirm -H "$J"
 | GET/PUT `/goal?current_thb=` | portfolio:read / เจ้าของ | อัตราที่จำเป็น · เส้นทาง 3 ฉากทัศน์ (ตัวเลขผู้ใช้กรอก) |
 | GET/PATCH `/settings` · PUT `/settings/rules` | เจ้าของ | PROD ต้อง `confirmProdPhrase:"เปิดเงินจริง"` · กฎเป็นเวอร์ชันใหม่เสมอ |
 | GET/POST/DELETE `/settings/tokens` | เจ้าของ | token แสดงครั้งเดียว · เพิกถอนได้ |
-| POST `/broker/connect` · GET `/broker/status?check=1` · POST `/broker/disconnect` | เจ้าของ | กุญแจเข้ารหัส AES-256-GCM ด้วย `UPVERSE_MASTER_KEY` · 2FA: สร้าง token → อนุมัติในแอป Webull → ตรวจสถานะ |
+| POST `/broker/connect` | เจ้าของ | บันทึกกุญแจ (เข้ารหัส) + สร้าง token → **Webull ส่ง SMS** · คืน `instructions` |
+| GET `/broker/status` · `?check=1` | เจ้าของ | มุมมองที่เก็บไว้ / ตรวจ token กับ Webull (ไม่ส่ง SMS) · `twoFaSecondsLeft` นับถอยหลัง 5 นาที |
+| POST `/broker/status {action:"resend"}` · POST `/broker/disconnect` | เจ้าของ | สร้าง token ใหม่ (ส่ง SMS ใหม่) เมื่อ EXPIRED/INVALID · ลบกุญแจ+token |
 | POST `/query {q}` | any (ตาม scope ที่ใช้) | ตัวแปลเจตนาแบบกฎ ไม่มี LLM |
 
 ## กฎความเสี่ยงที่ตรวจทุกตั๋ว (ค่าเริ่มต้น v1)
 quote สด (≤ 60 วิ ตอนตลาดเปิด · fail-closed) · มูลค่า ≤ $500 · จำนวน ≤ 100 · whitelist (ราง API) · น้ำหนักหลังทำ: หุ้นเดี่ยว ≤ 10% (เตือน 8%) / แกน ETF (VOO SPY IVV VTI QQQ SCHD) ≤ 80% · เงินสดพอ + ขั้นต่ำ 5% · ความเสี่ยงต่อไม้ ≤ 1% (ยกเว้น tag DCA) · ตั๋ว/วัน ≤ 5 · ตั๋วซ้ำ · หมดอายุ · ราง API: kill switch (setting + env) · environment ตรง · เชื่อม Webull แล้ว · ขายไม่เกินที่ถือ
+
+## 2FA ของ Webull — กรอกที่ไหน (จากเอกสารทางการ `authentication/token`)
+1. กด "เชื่อม" ในหน้าตั้งค่า → แอปเรียก `POST /auth/tokens/create` → token สถานะ **PENDING** และ **Webull ส่ง SMS** ไปเบอร์ที่ผูกบัญชี
+2. **ในแอป Webull:** Menu → Messages → **OpenAPI Notifications** → เปิดข้อความล่าสุด → กด **"Check Now"** → กรอกรหัส SMS → ยืนยัน (ภายใน **5 นาที** ไม่งั้น EXPIRED)
+3. กลับมาที่หน้าตั้งค่า กด "ตรวจสถานะ" (หน้าจะตรวจให้เองทุก 5 วิ) → `POST /auth/tokens/check` → **NORMAL** = เชื่อมแล้ว
+4. token จะ **INVALID ถ้าไม่มีการเรียก 15 วันติดต่อกัน** → งานสแกนกลางคืนเรียก refresh ให้ · ถ้าหลุดให้กด "ขอรหัสใหม่"
+
+**แอป UPVerse ไม่มีช่องกรอกรหัส SMS โดยเจตนา** — รหัสกรอกในแอป Webull เท่านั้น (เราแค่รอสถานะ)
 
 ## ข้อค้นพบสำคัญ (จากซอร์ส SDK ทางการ 3.0.1)
 - ลายเซ็น HMAC-SHA256 ของ Webull ถูกพอร์ตเป็น TypeScript และ **ตรวจเทียบกับ Python SDK แล้วตรงทั้ง GET/POST** (`x-version` ส่งแต่ไม่ถูก sign)

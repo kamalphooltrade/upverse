@@ -65,6 +65,7 @@ export function emptyData(): DataFile {
     apiTokens: [],
     audit: [],
     brokerCredentials: null,
+    owner: null,
   };
 }
 
@@ -99,6 +100,8 @@ function supabaseBackend(): Backend | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
+  // Outside Vercel, never touch the shared database unless explicitly opted in (protects prod data from local dev/tests).
+  if (!process.env.VERCEL && process.env.UPVERSE_USE_SUPABASE !== "1") return null;
   const headers = {
     apikey: key,
     Authorization: `Bearer ${key}`,
