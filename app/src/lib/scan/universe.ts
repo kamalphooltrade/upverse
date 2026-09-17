@@ -1,11 +1,12 @@
 // S&P 500 universe (SPEC §7.0 / §9.6). Source: Wikipedia constituents table (public), cached on disk with fetch date.
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { cacheDir } from "../cachedir";
 
 export interface Constituent { symbol: string; name: string; sector: string; industry: string }
 export interface Universe { source: string; fetchedAt: string; count: number; items: Constituent[] }
 
-const CACHE = path.join(process.env.UPVERSE_DATA_DIR || path.join(process.cwd(), "data"), "sp500.json");
+const CACHE = path.join(cacheDir(), "sp500.json");
 const URL = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies";
 
 function strip(c: string) {
@@ -29,8 +30,7 @@ export async function fetchUniverse(): Promise<Universe> {
   }
   if (items.length < 450 || items.length > 520) throw new Error(`unexpected constituent count ${items.length}`);
   const u: Universe = { source: URL, fetchedAt: new Date().toISOString(), count: items.length, items };
-  await fs.mkdir(path.dirname(CACHE), { recursive: true });
-  await fs.writeFile(CACHE, JSON.stringify(u, null, 1), "utf8");
+  try { await fs.mkdir(path.dirname(CACHE), { recursive: true }); await fs.writeFile(CACHE, JSON.stringify(u, null, 1), "utf8"); } catch { /* cache is best-effort */ }
   return u;
 }
 

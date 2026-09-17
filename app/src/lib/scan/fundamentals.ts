@@ -2,9 +2,10 @@
 // Only what M2/M3/M5 need. Missing data stays null — never estimated (SPEC §7.0).
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { cacheDir } from "../cachedir";
 
 const UA = process.env.SEC_USER_AGENT || "UPVerse personal portfolio tool (contact: owner)";
-const DIR = path.join(process.env.UPVERSE_DATA_DIR || path.join(process.cwd(), "data"), "edgar");
+const DIR = cacheDir("edgar");
 
 export interface Fundamentals {
   symbol: string;
@@ -48,8 +49,7 @@ export async function cikFor(symbol: string): Promise<string | null> {
       const j = (await r.json()) as Record<string, { cik_str: number; ticker: string }>;
       tickerMap = {};
       for (const v of Object.values(j)) tickerMap[v.ticker.toUpperCase()] = String(v.cik_str).padStart(10, "0");
-      await fs.mkdir(DIR, { recursive: true });
-      await fs.writeFile(p, JSON.stringify({ fetchedAt: new Date().toISOString(), map: tickerMap }), "utf8");
+      try { await fs.mkdir(DIR, { recursive: true }); await fs.writeFile(p, JSON.stringify({ fetchedAt: new Date().toISOString(), map: tickerMap }), "utf8"); } catch { /* best-effort */ }
     }
   }
   return tickerMap[symbol.toUpperCase().replace("-", ".")] ?? tickerMap[symbol.toUpperCase()] ?? null;
@@ -149,7 +149,6 @@ export async function getFundamentals(symbol: string, maxAgeDays = 7): Promise<F
     fScore: computed >= 6 ? f : null,
     fScoreNote: computed >= 6 ? `คำนวณได้ ${computed}/9 สัญญาณ` : fy == null ? "ไม่มีงบปี (10-K) ใต้ CIK นี้ — เช่น บริษัทเพิ่งจดนิติบุคคลใหม่ · ไม่ประมาณจาก 10-Q" : `ข้อมูลไม่พอ (${computed}/9)`,
   };
-  await fs.mkdir(DIR, { recursive: true });
-  await fs.writeFile(p, JSON.stringify(out), "utf8");
+  try { await fs.mkdir(DIR, { recursive: true }); await fs.writeFile(p, JSON.stringify(out), "utf8"); } catch { /* best-effort */ }
   return out;
 }

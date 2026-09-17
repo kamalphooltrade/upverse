@@ -41,6 +41,7 @@ export async function runScan(opts: RunOptions = {}): Promise<ScanRun[]> {
   const items = opts.limit ? universe.items.slice(0, opts.limit) : universe.items;
   running = { startedAt, done: 0, total: items.length, phase: "ราคา" };
   const excluded: string[] = [];
+  const fundErrors: string[] = [];
   try {
     // 1) bars + snapshot
     const snaps = await pool(items, opts.concurrency ?? 6, async (c) => {
@@ -70,7 +71,7 @@ export async function runScan(opts: RunOptions = {}): Promise<ScanRun[]> {
       ? withSnap.map(() => null)
       : await pool(withSnap, 4, async (x) => {
           try { return await getFundamentals(x.c.symbol); }
-          catch { return null; }
+          catch (e) { fundErrors.push(`${x.c.symbol}: ${e instanceof Error ? e.message.slice(0, 80) : "error"}`); return null; }
           finally { running!.done++; opts.onProgress?.(running!.done, running!.total, "งบ EDGAR"); }
         });
 
@@ -83,7 +84,7 @@ export async function runScan(opts: RunOptions = {}): Promise<ScanRun[]> {
     for (const key of Object.keys(MODELS) as ModelKey[]) {
       const m = MODELS[key];
       const { results, passed } = runModel(key, cands);
-      const missing = m.needsFundamentals ? [...excluded, ...noFund.map((s) => `${s} (ไม่มีงบ EDGAR)`)] : excluded;
+      const missing = m.needsFundamentals ? [...excluded, ...noFund.map((s) => `${s} (ไม่มีงบ EDGAR${fundErrors.find((f) => f.startsWith(s + ":")) ? " — " + fundErrors.find((f) => f.startsWith(s + ":"))!.split(": ")[1] : ""})`)] : excluded;
       runs.push({ id: uid(), modelKey: key, modelVersion: MODEL_VERSION, runAt, universeSize: items.length, passedCount: passed, excludedMissing: missing, status: opts.limit ? "partial" : "ok", results, note: `${m.name} · จักรวาล ${items.length} (${universe.source.includes("wikipedia") ? "Wikipedia" : universe.source} · ดึง ${universe.fetchedAt.slice(0, 10)}) · ราคา yahoo (ชั้น 2) · งบ SEC EDGAR` });
     }
     // multi-model overlap + avoid
@@ -101,7 +102,7 @@ export async function runScan(opts: RunOptions = {}): Promise<ScanRun[]> {
       // keep last 90 days
       const cutoff = Date.now() - 90 * 86400e3;
       d.scanRuns = d.scanRuns.filter((r) => new Date(r.runAt).getTime() > cutoff);
-      d.audit.push({ id: uid(), ts: nowIso(), actor: "system", action: "scan.run", entity: "scan", entityId: null, meta: { models: runs.length, universe: items.length, excluded: excluded.length, startedAt } });
+      d.audit.push({ id: uid(), ts: nowIso(), actor: "system", action: "scan.run", entity: "scan", entityId: null, meta: { models: runs.length, universe: items.length, excluded: excluded.length, fundamentalsErrors: fundErrors.length, fundamentalsErrorSample: fundErrors.slice(0, 3), startedAt } });
     });
     return runs;
   } finally {
