@@ -2,7 +2,7 @@
 import { gate, json, safe } from "@/lib/api";
 import { readData } from "@/lib/store";
 import { getQuotes, getUsdThb } from "@/lib/prices";
-import { positionsFrom, cashFrom, realizedFrom, thbInvested, valuePositions } from "@/lib/portfolio";
+import { assemblePortfolio, realizedFrom, thbInvested, valuePositions } from "@/lib/portfolio";
 
 async function _GET(req: Request) {
   const g = await gate(req, "portfolio:read");
@@ -10,32 +10,11 @@ async function _GET(req: Request) {
   const url = new URL(req.url);
   const account = url.searchParams.get("account") ?? "all";
   const d = await readData();
-  const wanted = account === "all" ? d.accounts.filter((a) => a.isActive) : d.accounts.filter((a) => a.id === account);
-  // --- build positions + cash per account: webull_live from last snapshot, manual_paper from ledger ---
-  type Row = { symbol: string; qty: number; avgCost: number; costBasis: number; accountId: string; brokerLast: number | null; brokerUnrealized: number | null };
-  const rows: Row[] = [];
-  let cash = 0;
-  let liveAsOf = null as string | null;
-  for (const a of wanted) {
-    if (a.kind === "webull_live") {
-      const snap = (d.liveSnapshots ?? []).find((s) => s.accountId === a.id);
-      if (!snap) continue;
-      if (liveAsOf === null || snap.asOf > liveAsOf) liveAsOf = snap.asOf;
-      cash += snap.cashUsd;
-      for (const p of snap.positions) rows.push({ symbol: p.symbol, qty: p.qty, avgCost: p.costPrice, costBasis: Math.round(p.costPrice * p.qty * 100) / 100, accountId: a.id, brokerLast: p.lastPrice, brokerUnrealized: p.unrealized });
-    } else {
-      for (const p of positionsFrom(d.transactions, a.id)) rows.push({ ...p, accountId: a.id, brokerLast: null, brokerUnrealized: null });
-      cash += cashFrom(d.transactions, a.id);
-    }
-  }
-  // merge same symbol across accounts
-  const merged = new Map<string, Row & { accounts: string[] }>();
-  for (const r of rows) {
-    const cur = merged.get(r.symbol);
-    if (!cur) merged.set(r.symbol, { ...r, accounts: [r.accountId] });
-    else { const qty = cur.qty + r.qty; cur.costBasis = Math.round((cur.costBasis + r.costBasis) * 100) / 100; cur.qty = Math.round(qty * 1e6) / 1e6; cur.avgCost = Math.round((cur.costBasis / qty) * 100) / 100; cur.brokerLast = cur.brokerLast ?? r.brokerLast; cur.accounts.push(r.accountId); }
-  }
-  const positions = [...merged.values()].sort((a, b) => a.symbol.localeCompare(b.symbol));
+  const asm = assemblePortfolio(d, account);
+  const { wanted, liveAsOf } = asm;
+  const cash = asm.cash;
+  const merged = new Map(asm.rows.map((r) => [r.symbol, r]));
+  const positions = asm.rows;
   const quotes = await getQuotes(positions.map((p) => p.symbol));
   // prefer Webull last_price when the snapshot is fresher than the yahoo quote (tier 1 over tier 2)
   for (const p of positions) {

@@ -67,6 +67,13 @@ export async function syncWebull(): Promise<{ snapshots: LiveSnapshot[]; importe
       } catch (e) { errors.push(`orders ${a.account_number ?? a.account_id}: ${e instanceof Error ? e.message : String(e)}`); }
     }
     d.liveSnapshots = snapshots;
+    // equity history: one point per day from broker-reported cash + market value (nightly sync keeps it growing)
+    if (snapshots.length) {
+      const date = nowIso().slice(0, 10);
+      const cashUsd = Math.round(snapshots.reduce((n, s) => n + s.cashUsd, 0) * 100) / 100;
+      const mv = Math.round(snapshots.reduce((n, s) => n + s.marketValueUsd, 0) * 100) / 100;
+      d.equityHistory = [...(d.equityHistory ?? []).filter((p) => p.date !== date), { date, totalUsd: Math.round((cashUsd + mv) * 100) / 100, cashUsd, investedUsd: mv, fxRate: d.settings.fxUsdThb?.rate ?? null }].slice(-1500);
+    }
     bc.tokenLastUsedAt = nowIso(); bc.lastOkAt = nowIso();
     audit(d, "owner", "webull.sync", "broker", null, { accounts: snapshots.length, importedFills, errors: errors.length });
     return { snapshots, importedFills, errors };

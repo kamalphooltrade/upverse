@@ -5,6 +5,7 @@ import Link from "next/link";
 import { fetcher, api } from "@/components/shell";
 import { Card, H2, Muted, Src, Chip, Btn, Tabs, Field, inputCls, KV, Banner, Empty, Skeleton, PlusIcon, XIcon, RefreshIcon, usd, thb, pctf, fmtTime, cx } from "@/components/ui";
 import { useHealth } from "@/components/shell";
+import { PortfolioReview } from "@/components/review";
 
 type Portfolio = {
   live: { as_of: string; accounts: Array<{ accountId: string; cash_usd: number; buying_power_usd: number; market_value_usd: number; unrealized_usd: number; total_thb_reported: number | null; positions: number }> } | null;
@@ -97,6 +98,7 @@ export default function PortfolioPage() {
         {txs?.transactions.length === 0 && <Empty>ยังไม่มีรายการ</Empty>}
         {txs?.transactions.map((t) => <div key={t.id} className="flex justify-between gap-2 py-2 border-t first:border-t-0 border-slate-900/10 dark:border-white/10 text-[15px]"><div className="min-w-0"><b>{TYPES.find(([k]) => k === t.type)?.[1] ?? t.type}</b> {t.symbol && <span>{t.symbol}</span>} <Muted className="inline num">{t.qty ? `${t.qty} @ ${t.price}` : ""} {t.note}</Muted><Muted className="text-[13px]">{fmtTime(t.ts)} · {t.source}</Muted></div><div className="text-right flex items-center gap-2"><span className={cx("num", t.amountUsd >= 0 ? "text-green-700 dark:text-green-400" : "")}>{usd(t.amountUsd)}</span><button aria-label="ลบ" className="min-h-[44px] min-w-[44px] grid place-items-center rounded-2xl text-red-700 dark:text-red-400 cursor-pointer" onClick={async () => { if (!confirm("ลบรายการนี้?")) return; await api(`/api/v1/transactions?id=${t.id}`, { method: "DELETE" }); mutTx(); mutate(); }}><XIcon className="w-4 h-4" /></button></div></div>)}
       </Card>}
+      {p && p.holdings.length > 0 && <PortfolioReview account={acct} />}
       {p?.caveats && <Muted className="mt-4 text-[13px]">{p.caveats.join(" · ")}</Muted>}
       {sheet && <TxSheet accounts={p?.accounts ?? []} onClose={() => setSheet(false)} onSaved={() => { setSheet(false); mutate(); mutTx(); }} />}
     </>

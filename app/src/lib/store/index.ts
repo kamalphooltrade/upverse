@@ -36,6 +36,7 @@ export const DEFAULT_SETTINGS: Settings = {
   hideAmountsInLine: false,
   fxUsdThb: null,
   theme: "auto",
+  fxSpreadPct: null,
 };
 
 export function emptyData(): DataFile {

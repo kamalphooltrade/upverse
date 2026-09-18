@@ -147,3 +147,41 @@ export function projectPath(start: number, monthly: number, years: number, annua
   }
   return out;
 }
+
+// ---------------------------------------------------------------------------
+// Assemble holdings across accounts: webull_live → last broker snapshot (qty/cost/last from Webull = tier 1),
+// manual_paper → ledger. Shared by /portfolio and /portfolio/review so both show the same numbers.
+import type { DataFile, Account } from "../types";
+export interface AssembledRow extends Position { accountId: string; brokerLast: number | null; brokerUnrealized: number | null }
+export interface Assembled { rows: Array<AssembledRow & { accounts: string[] }>; cash: number; liveAsOf: string | null; wanted: Account[] }
+export function assemblePortfolio(d: DataFile, account = "all"): Assembled {
+  const wanted = account === "all" ? d.accounts.filter((a) => a.isActive) : d.accounts.filter((a) => a.id === account);
+  const rows: AssembledRow[] = [];
+  let cash = 0;
+  let liveAsOf: string | null = null;
+  for (const a of wanted) {
+    if (a.kind === "webull_live") {
+      const snap = (d.liveSnapshots ?? []).find((s) => s.accountId === a.id);
+      if (!snap) continue;
+      if (liveAsOf === null || snap.asOf > liveAsOf) liveAsOf = snap.asOf;
+      cash += snap.cashUsd;
+      for (const p of snap.positions) rows.push({ symbol: p.symbol, qty: p.qty, avgCost: p.costPrice, costBasis: r2(p.costPrice * p.qty), accountId: a.id, brokerLast: p.lastPrice, brokerUnrealized: p.unrealized });
+    } else {
+      for (const p of positionsFrom(d.transactions, a.id)) rows.push({ ...p, accountId: a.id, brokerLast: null, brokerUnrealized: null });
+      cash += cashFrom(d.transactions, a.id);
+    }
+  }
+  const merged = new Map<string, AssembledRow & { accounts: string[] }>();
+  for (const r of rows) {
+    const cur = merged.get(r.symbol);
+    if (!cur) merged.set(r.symbol, { ...r, accounts: [r.accountId] });
+    else { const qty = cur.qty + r.qty; cur.costBasis = r2(cur.costBasis + r.costBasis); cur.qty = r6(qty); cur.avgCost = r2(cur.costBasis / qty); cur.brokerLast = cur.brokerLast ?? r.brokerLast; cur.accounts.push(r.accountId); }
+  }
+  return { rows: [...merged.values()].sort((a, b) => a.symbol.localeCompare(b.symbol)), cash: r2(cash), liveAsOf, wanted };
+}
+
+/** Earliest buy timestamp per symbol from the ledger (Webull fills are a recent window only → may be null). */
+export function firstBuyTs(txs: Transaction[], symbol: string): string | null {
+  const t = txs.filter((x) => x.symbol?.toUpperCase() === symbol && x.type === "buy").sort((a, b) => a.ts.localeCompare(b.ts))[0];
+  return t?.ts ?? null;
+}

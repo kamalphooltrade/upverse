@@ -187,6 +187,7 @@ export interface Settings {
   hideAmountsInLine: boolean;
   fxUsdThb: { rate: number; asOf: string; source: string } | null;
   theme: "auto" | "dark" | "light";
+  fxSpreadPct?: number | null; // THB↔USD conversion cost per leg (%). null = not published by broker → treated as 0 with a caveat
 }
 
 export interface ScanResult {
@@ -295,6 +296,7 @@ export interface DataFile {
   owner: { passphraseHash: string; salt: string; changedAt: string } | null; // null = use env UPVERSE_OWNER_PASSPHRASE
   theses?: Thesis[];
   liveSnapshots?: Array<{ accountId: string; brokerAccountId: string; asOf: string; currency: "USD"; cashUsd: number; buyingPowerUsd: number; marketValueUsd: number; unrealizedUsd: number; totalThbReported: number | null; positions: Array<{ symbol: string; qty: number; costPrice: number; lastPrice: number; unrealized: number; positionId: string }> }>;
+  equityHistory?: Array<{ date: string; totalUsd: number; cashUsd: number; investedUsd: number; fxRate: number | null }>; // one point per day (upserted by sync / review)
 }
 
 export const API_SCOPES = [
