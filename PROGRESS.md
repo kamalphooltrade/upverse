@@ -1,6 +1,11 @@
 # PROGRESS — UPVerse (Personal Financial Advisor)
 
-## สถานะล่าสุด: 19 ก.ย. 2569 (00:30) — 🔌 MCP server + preview คำสั่งจริงผ่าน + SPEC v0.2 · ราง API รอต้นเคาะ D-001 (`db97f6e` · prod)
+## สถานะล่าสุด: 19 ก.ย. 2569 (01:00) — 🧾 ขาย AXON: ตั๋วพร้อม รอต้นกดเอง (agent ส่งคำสั่งไม่ได้โดยกฎ) · บันทึกอัตโนมัติหลังขาย · PRD.html (`16d0967` · prod)
+- ⛔ **ต้นสั่ง "ลองสั่งขาย AXON จริง"** — ผมส่งคำสั่งซื้อขายเองไม่ได้ (กฎเหล็กข้อ 2 + กฎของ agent: ไม่ทำธุรกรรมการเงินแทน) · ทำให้แทน: ตั๋ว `403fe81e` พร้อมยืนยัน · **หลังต้นขายในแอป Webull → กด "ดึงจาก Webull แล้วจับคู่ fill อัตโนมัติ" ในหน้าตั๋ว → ระบบจับคู่ fill กับตั๋ว → ตั๋ว filled + transaction + เตือน journal** (sync reconciliation ใหม่ · ดีดซ้ำทั้ง order_id/client_order_id · ไม่นับซ้ำกับ fill ที่พิมพ์มือ)
+- ✅ ราง API เพิ่มชั้นที่ lucifer ขอ: **confirm ต้องมี preview ของ body เดียวกันภายใน 10 นาที** · หลังส่ง **poll `orderDetail` 6 รอบ (12 วิ)** → fill ลงพอร์ตเอง · `client_order_id` คงที่ต่อตั๋ว · log ก่อนยิง — ยังเหลือ: ทดสอบบน UAT จริง + kill switch 3 กรณี (ประตู 14.3) ก่อนยิงจริงครั้งแรก
+- ✅ `docs/PRD.html` = SPEC v0.2 + API v1 + MCP + หลักการ + DECISIONS ในหน้าเดียว (สร้างจาก markdown ด้วย `python3 docs/build-prd.py` — แก้ .md แล้ว build ใหม่)
+
+## สถานะก่อนหน้า: 19 ก.ย. 2569 (00:30) — 🔌 MCP server + preview คำสั่งจริงผ่าน + SPEC v0.2 · ราง API รอต้นเคาะ D-001 (`db97f6e` · prod)
 - ✅ **ตั๋วขาย AXON** `403fe81e` เสนอแล้ว (รางส่งมือ · กฎผ่าน 6/6 · หมดอายุ 23 ก.ย.) — ต้นยังไม่ยืนยัน
 - ✅ **"api สั่งขายให้เลยได้ไหม" → ได้ในเชิงเทคนิค แต่ยังไม่เปิด**: `POST /tickets/{id}/preview` เรียก Webull จริง → **รับเศษหุ้น 0.00639 · estimated fee $0.02** · พบว่า body เดิม (แบบ US `stock_order`) ผิด — Webull ตอบ "Orders can not be empty." → แก้เป็น TH v3 `new_orders[]` แล้ว (`src/lib/webull/orders.ts` ตัวเดียวสำหรับ preview+place) · หน้าตั๋วมีปุ่ม preview + ป้ายประตู 4 ชั้น + เลือกส่งผ่าน API ตอนยืนยัน · `client_order_id` คงที่ต่อตั๋ว + log ก่อนยิง (กันส่งซ้ำ)
 - 🔴 **lucifer ทุบ (D-001 ใน `docs/DECISIONS.md`)**: ห้ามยิงจริงจนกว่า (1) poll `orderDetail` + reconcile fill + dedupe sync (2) confirm บังคับ preview (3) ทดสอบ kill switch 3 กรณี + คำสั่งที่ fill ไม่ได้ → cancel (4) ไม้แรก = SELL · MARKET · ตลาดเปิด · whitelist 1 ตัว · เพดาน ≤ $10 · ต้นนั่งดู · ปิด kill switch คืน — **คำแนะนำ: ขาย AXON ทางรางส่งมือวันนี้ · ราง API เป็นโปรเจกต์แยก ทดสอบบน UAT ก่อน**

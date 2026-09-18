@@ -1,0 +1,2021 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UPVerse PRD v0.2</title>
+<meta name="description" content="ข้อกำหนดผลิตภัณฑ์ UPVerse (SPEC v0.2) + สเปก API v1 + MCP + หลักการวิเคราะห์ + บันทึกการตัดสินใจ — สร้างจาก markdown ในโปรเจกต์">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F6F8FA;--card:#FFFFFF;--ink:#0F172A;--muted:#475569;--line:rgba(15,23,42,.10);--accent:#059669;--accent2:#14B8A6;--code:#F1F5F9;--warn:#B45309}
+:root:not([data-theme="light"]){@media (prefers-color-scheme:dark){--bg:#0B1220;--card:#111A2E;--ink:#E5EAF2;--muted:#94A3B8;--line:rgba(255,255,255,.10);--code:#0F172A;--warn:#FBBF24}}
+:root[data-theme="dark"]{--bg:#0B1220;--card:#111A2E;--ink:#E5EAF2;--muted:#94A3B8;--line:rgba(255,255,255,.10);--code:#0F172A;--warn:#FBBF24}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.65 "IBM Plex Sans Thai",system-ui,sans-serif}
+.top{position:sticky;top:0;z-index:5;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#fff;padding:12px 16px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between}
+.top b{font-size:18px}.top span{font-size:13px;opacity:.9}
+.wrap{display:grid;grid-template-columns:280px minmax(0,1fr);gap:24px;max-width:1280px;margin:0 auto;padding:16px}
+nav{position:sticky;top:64px;align-self:start;max-height:calc(100vh - 80px);overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:12px 14px;font-size:14px}
+nav details{margin:4px 0}nav summary{cursor:pointer;font-weight:600;padding:6px 4px;list-style:none}nav summary::-webkit-details-marker{display:none}
+nav ul{list-style:none;margin:0 0 8px;padding:0 0 0 10px;border-left:2px solid var(--line)}nav li{margin:2px 0}nav a{color:var(--muted);text-decoration:none;display:block;padding:3px 6px;border-radius:10px}nav a:hover{background:var(--code);color:var(--ink)}
+main{min-width:0}
+.doc{background:var(--card);border:1px solid var(--line);border-radius:28px;padding:20px 22px;margin-bottom:24px;box-shadow:0 10px 30px -20px rgba(2,6,23,.35)}
+.doc-head{border-bottom:1px solid var(--line);margin:-4px 0 12px;padding-bottom:10px}.kicker{font:13px "IBM Plex Mono",monospace;color:var(--muted)}
+.doc h1{font-size:26px;margin:4px 0 0;line-height:1.3}.doc h2{font-size:22px;margin:32px 0 10px;padding-top:14px;border-top:1px dashed var(--line)}.doc h3{font-size:18px;margin:22px 0 8px}.doc h4{font-size:16px;margin:16px 0 6px}
+.doc p,.doc li{max-width:80ch}.doc a{color:var(--accent)}.doc blockquote{margin:12px 0;padding:10px 14px;border-left:4px solid var(--accent2);background:var(--code);border-radius:0 16px 16px 0;color:var(--muted)}
+.doc code{font:14px "IBM Plex Mono",monospace;background:var(--code);padding:1px 6px;border-radius:8px}.doc pre{background:var(--code);padding:12px 14px;border-radius:18px;overflow:auto;font-size:13.5px;line-height:1.5}.doc pre code{padding:0;background:none}
+.doc table{display:block;width:100%;overflow:auto;border-collapse:collapse;font-size:15px;margin:10px 0 16px;border-radius:18px}.doc th,.doc td{border:1px solid var(--line);padding:8px 10px;vertical-align:top;text-align:left}.doc th{background:var(--code);font-weight:600;white-space:nowrap}.doc tr:nth-child(even) td{background:color-mix(in srgb,var(--code) 55%,transparent)}
+.doc hr{border:0;border-top:1px dashed var(--line);margin:22px 0}
+.foot{color:var(--muted);font-size:13px;text-align:center;padding:12px 16px 32px}
+@media (max-width:900px){.wrap{grid-template-columns:1fr;padding:10px 12px}nav{position:static;max-height:none}.doc{padding:16px 14px;border-radius:22px}.doc h1{font-size:22px}.doc h2{font-size:19px}body{font-size:16px}}
+</style></head>
+<body>
+<div class="top"><b>UPVerse · PRD v0.2</b><span>ที่ปรึกษาการลงทุนส่วนตัวของต้น · Webull TH · หุ้นสหรัฐเศษหุ้น · สร้าง 2026-09-19 00:22 จาก markdown ใน repo (<code style="color:#fff">python3 docs/build-prd.py</code>)</span></div>
+<div class="wrap"><nav><details open><summary><a href="#spec">SPEC — ข้อกำหนดผลิตภัณฑ์ v0.2</a></summary><ul><li><a href="#0-tldr">0. บทสรุปผู้บริหาร (TL;DR)</a></li><li><a href="#1-problem-goal">1. ปัญหาและเป้าหมาย (Problem &amp; Goal)</a></li><li><a href="#2">2. ผู้ใช้และบทบาท</a></li><li><a href="#3-principles-8">3. หลักการออกแบบ (Principles) — ทุกข้อกำหนดด้านล่างต้องไม่ขัด 8 ข้อนี้</a></li><li><a href="#4">4. ขอบเขตตามเฟสและลำดับความสำคัญ</a></li><li><a href="#5-user-stories">5. เรื่องราวผู้ใช้ (User Stories) — เรียงตามความสำคัญ</a></li><li><a href="#6-functional-requirements">6. ข้อกำหนดเชิงหน้าที่ (Functional Requirements) + เกณฑ์ตรวจรับ</a></li><li><a href="#7-top-10">7. โมเดลสแกน Top 10 (รายละเอียด)</a></li><li><a href="#8-supabase-postgres">8. แบบจำลองข้อมูล (Supabase · Postgres)</a></li><li><a href="#9-integrations">9. การเชื่อมต่อภายนอก (Integrations)</a></li><li><a href="#10">10. สถาปัตยกรรมและลำดับการทำงาน</a></li><li><a href="#11_1">11. ความปลอดภัยและการกำกับ</a></li><li><a href="#12-docsdesignmd">12. ประสบการณ์ผู้ใช้และหน้าจอ (สรุป — รายละเอียดใน docs/DESIGN.md)</a></li><li><a href="#13-non-functional">13. ข้อกำหนดที่ไม่ใช่หน้าที่ (Non-functional)</a></li><li><a href="#14-gates">14. ประตูเฟส (Gates) และแผนงาน</a></li><li><a href="#15">15. ตัวชี้วัดความสำเร็จ</a></li><li><a href="#16">16. ความเสี่ยงและการรับมือ</a></li><li><a href="#17">17. คำถามเปิด</a></li><li><a href="#18-parking-lot-v1">18. ที่จอดไอเดีย (Parking lot — ไม่อยู่ใน v1)</a></li><li><a href="#19-lucifer-red-team">19. ผลการทุบโดย lucifer (red-team)</a></li><li><a href="#20">20. ประวัติการแก้ไข</a></li></ul></details><details ><summary><a href="#api">API v1 — สเปกและตัวอย่างจริง</a></summary><ul><li><a href="#_1">การยืนยันตัวตน</a></li><li><a href="#_2">ตัวอย่างที่รันได้จริง</a></li><li><a href="#endpoint">Endpoint ทั้งหมด</a></li><li><a href="#srclibfeests-webullcothpricing-18-2569">แบบจำลองค่าธรรมเนียม (src/lib/fees.ts · webull.co.th/pricing อ่าน 18 ก.ย. 2569)</a></li><li><a href="#v1">กฎความเสี่ยงที่ตรวจทุกตั๋ว (ค่าเริ่มต้น v1)</a></li><li><a href="#2fa-webull-authenticationtoken">2FA ของ Webull — กรอกที่ไหน (จากเอกสารทางการ authentication/token)</a></li><li><a href="#endpoint-webull-th-18-2569">Endpoint ของ Webull TH ที่ยืนยันด้วยบัญชีจริง (18 ก.ย. 2569)</a></li><li><a href="#sdk-301">ข้อค้นพบสำคัญ (จากซอร์ส SDK ทางการ 3.0.1)</a></li></ul></details><details ><summary><a href="#mcp">MCP — ดึงข้อมูล/สั่งงานจาก Claude Code</a></summary><ul><li><a href="#_1">ติดตั้ง (ครั้งเดียว)</a></li><li><a href="#claude-code">ใช้กับ Claude Code</a></li><li><a href="#claude-desktop">ใช้กับ Claude Desktop</a></li><li><a href="#_2">ทดสอบ</a></li><li><a href="#_3">เครื่องมือ</a></li></ul></details><details ><summary><a href="#techniques">หลักการวิเคราะห์ที่ใช้</a></summary><ul><li><a href="#1">1 · เลือกอะไร (พื้นฐาน)</a></li><li><a href="#2">2 · ซื้อเมื่อไร / ออกตรงไหน (เทคนิค)</a></li><li><a href="#3">3 · เท่าไร / จัดพอร์ต (ความเสี่ยง)</a></li><li><a href="#4">4 · พฤติกรรม (ที่ทำให้ทุกอย่างข้างบนใช้ได้จริง)</a></li><li><a href="#0100-agent-2b">คะแนน 0–100 ที่หน้าพอร์ตใช้ (agent §2B · ต้นปรับน้ำหนักได้)</a></li><li><a href="#_1">ข้อจำกัดที่ต้องรู้</a></li></ul></details><details ><summary><a href="#decisions">บันทึกการตัดสินใจ</a></summary><ul><li><a href="#d-001-18-2569-webull-api-axon-000639-288">D-001 · 18 ก.ย. 2569 · เปิดรางส่งคำสั่งผ่าน Webull API ครั้งแรก (ไม้เสนอ: ขาย AXON 0.00639 ≈ $2.88)</a></li></ul></details></nav><main><section id="spec" class="doc"><div class="doc-head"><span class="kicker">docs/SPEC.md</span><h1>SPEC — ข้อกำหนดผลิตภัณฑ์ v0.2</h1></div><h1 id="upverse-spec-prd">UPVerse — ข้อกำหนดผลิตภัณฑ์ (SPEC / PRD)</h1>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>เวอร์ชัน</strong></td>
+<td>0.2 (18 ก.ย. 2569 — เพิ่ม F15–F18 · แก้ข้อค้นพบ Webull TH · MCP · ประตูเฟส 2 ฉบับใหม่ · ส่วนที่ต้นยังไม่เคาะยังคงมีป้าย)</td>
+</tr>
+<tr>
+<td><strong>วันที่</strong></td>
+<td>17 ก.ย. 2569 (v0.1) · 18 ก.ย. 2569 (v0.2)</td>
+</tr>
+<tr>
+<td><strong>เจ้าของ</strong></td>
+<td>ต้น (Chaiwat) = Product Owner · <code>upverse-advisor</code> = เจ้าของโดเมนการลงทุน · <code>sandalphon</code> = PM · <code>metatron</code> = ผู้สร้าง</td>
+</tr>
+<tr>
+<td><strong>เอกสารคู่กัน</strong></td>
+<td><code>docs/DESIGN.md</code> · <code>docs/API-UPVerse.md</code> (curl จริง + endpoint Webull TH ที่ยืนยัน) · <code>docs/TECHNIQUES.md</code> (หลักการวิเคราะห์ที่ใช้/ยังไม่ใช้) · <code>mcp/README.md</code> (MCP server) · <code>~/.claude/agents/upverse-advisor.md</code> · <code>PROGRESS.md</code></td>
+</tr>
+<tr>
+<td><strong>Stack</strong></td>
+<td>Next.js (App Router) + Supabase + Vercel · GitHub <code>kamalphooltrade/upverse</code> · Webull OpenAPI (region <code>th</code>)</td>
+</tr>
+<tr>
+<td><strong>หลักการอ่าน</strong></td>
+<td>ตัวเลขเกณฑ์ทุกตัวในเอกสารนี้คือ <strong>ค่าเริ่มต้น v1 ที่ต้นปรับได้</strong> ไม่ใช่ความจริงตายตัว · สิ่งที่ยังไม่ยืนยันมีป้าย <strong>[ยังไม่ยืนยัน]</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>ศัพท์:</strong> VI = Value Investing (ลงทุนตามมูลค่าพื้นฐาน) · DCA = Dollar-Cost Averaging (ทยอยซื้อสม่ำเสมอ) · UAT = สภาพแวดล้อมทดสอบของ Webull TH (<code>th-api.uat.webullbroker.com</code> + บัญชีทดสอบร่วมที่ Webull เผยแพร่ — <strong>ยืนยันจากเอกสารทางการ 18 ก.ย. 2569</strong> · v0.1 เคยเข้าใจผิดว่าไม่มี) · RLS = Row Level Security (กฎสิทธิ์ระดับแถวของ Supabase) · ICT = เวลาไทย · ET = เวลานิวยอร์ก · OHLCV = ราคาเปิด/สูง/ต่ำ/ปิด/ปริมาณ</p>
+</blockquote>
+<hr />
+<h2 id="0-tldr">0. บทสรุปผู้บริหาร (TL;DR)</h2>
+<ul>
+<li><strong>UPVerse คืออะไร:</strong> แอปเว็บ (mobile-first, ติดตั้งเป็น PWA ได้) ที่เป็น <strong>"ระบบบันทึกจริง + แดชบอร์ด + รางส่งคำสั่งที่ต้องมีคนกดยืนยัน"</strong> ของพอร์ตหุ้นสหรัฐของต้นผ่าน Webull ประเทศไทย</li>
+<li><strong>สมองวิเคราะห์ไม่ได้อยู่ในแอป</strong> — อยู่ที่ agent <code>upverse-advisor</code> (Claude Code) ซึ่งเขียนผล (thesis · ตั๋วเสนอ · บันทึก) เข้าแอปผ่าน <code>/api/v1</code> · ตัวแอปคำนวณสิ่งที่เป็นสูตรตายตัว (สแกน · ตัวชี้วัด · กฎความเสี่ยง) โดยไม่มี LLM ฝั่งเซิร์ฟเวอร์</li>
+<li><strong>MVP (เฟส 1):</strong> พอร์ต (ดึงจริงจาก Webull เมื่อใส่กุญแจในแอป + สมุดบันทึกมือ/paper) · ราคาใกล้เรียลไทม์ · สแกน Top 10 ใน <strong>5 โมเดล</strong> · หน้าหุ้น · watchlist · ตั๋วคำสั่ง 2 ขั้น (ส่งจริงเฉพาะ UAT) · สมุดบันทึกการตัดสินใจ · ตั้งค่า · API</li>
+<li><strong>ไม่ทำใน v1:</strong> ส่งคำสั่งเงินจริงอัตโนมัติ · ออปชัน (เฟส 2) · หลายผู้ใช้ · HK/A-shares · คำนวณภาษี</li>
+<li><strong>ประมาณการงานสร้าง:</strong> 4 สปรินต์ (~6 สัปดาห์ของ metatron) หลัง Sprint 0 พิสูจน์ Webull API ด้วยบัญชีทดสอบ</li>
+</ul>
+<hr />
+<h2 id="1-problem-goal">1. ปัญหาและเป้าหมาย (Problem &amp; Goal)</h2>
+<h3 id="11">1.1 ปัญหา</h3>
+<p>ต้นลงทุนหุ้นสหรัฐผ่าน Webull ไทยแบบเศษหุ้นด้วยทุนหลักพันบาท ตั้งใจเติมทุกเดือนจนเป็นพอร์ตหลักหลายล้านบาท แต่ตอนนี้
+1. <strong>ไม่มีที่เดียว</strong> ที่เห็นพอร์ตจริง + แผน + เหตุผลของทุกการตัดสินใจ (ข้อมูลอยู่ในแอปโบรกเกอร์ ความคิดอยู่ในหัว)
+2. <strong>ไม่มีเครื่องสแกน</strong> ที่ตรงสไตล์ตัวเอง (พื้นฐานแนว VI ระยะกลาง + จังหวะเทคนิค + เตรียมขายออปชันในอนาคต) — screener ทั่วไปให้ลิสต์ แต่ไม่บอก "ทำไม"
+3. <strong>ไม่มีวินัยเชิงระบบ</strong> กันการตัดสินใจด้วยอารมณ์ (ไล่ราคา · ถัวขาลง · ไม้ใหญ่เกิน) และไม่มี track record ไว้เรียนรู้
+4. อยากให้ AI ช่วยคิด <strong>แต่ต้องไม่ให้ AI กดซื้อเอง</strong> และไม่ให้ AI เห็นกุญแจบัญชี</p>
+<p><strong>ต้นทุนถ้าไม่แก้:</strong> ตัดสินใจกระจัดกระจาย · ความเสี่ยงซ้อนโดยไม่รู้ตัว · ไม่มีหลักฐานว่าวิธีไหนได้ผล → พอร์ตโตด้วยโชคมากกว่าระบบ</p>
+<h3 id="12">1.2 เป้าหมาย (วัดได้)</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>เป้าหมาย</th>
+<th>วัดอย่างไร</th>
+<th>เมื่อไร</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>G1</td>
+<td>เห็นพอร์ตจริง (Webull) หรือสมุดบันทึกมือ พร้อมราคาใกล้เรียลไทม์บนมือถือ</td>
+<td>ราคาเก่ากว่า 15 วินาทีในช่วงตลาดเปิดต้องมีป้าย "ค้าง" · หน้าเปิดใน &lt; 2.5 วิ บน 4G</td>
+<td>จบเฟส 1</td>
+</tr>
+<tr>
+<td>G2</td>
+<td>มีรายการ Top 10 จาก 5 โมเดล อัปเดตทุกคืนหลังปิดตลาดสหรัฐ</td>
+<td>งานกลางคืนสำเร็จ ≥ 95% ของวันทำการ · ทุกรายการมี "ทำไม"</td>
+<td>จบเฟส 1</td>
+</tr>
+<tr>
+<td>G3</td>
+<td>ทุกคำสั่งที่ผ่านระบบมีตั๋ว + การยืนยันของต้น + audit log</td>
+<td>100% ไม่มีทางลัด (ทดสอบด้วยการพยายามข้าม)</td>
+<td>จบเฟส 1</td>
+</tr>
+<tr>
+<td>G4</td>
+<td>ทุกการตัดสินใจ (รวม "ไม่ทำ") มีบันทึกในสมุด</td>
+<td>≥ 80% ของตั๋วที่ปิดแล้วมี journal ภายใน 7 วัน</td>
+<td>3 เดือนหลังใช้</td>
+</tr>
+<tr>
+<td>G5</td>
+<td>วัดผลโมเดลสแกนได้ด้วยตัวเลขจริง</td>
+<td>hit-rate / ผลตอบแทนล่วงหน้า 20-60 วัน เทียบ SPY ต่อโมเดล</td>
+<td>90 วันหลังสแกนรอบแรก</td>
+</tr>
+</tbody>
+</table>
+<p><strong>เป้าธุรกิจ (รอง):</strong> เป็นต้นแบบ (POC) ที่ต่อยอดเป็นเครื่องมือสอนหรือขายได้ในอนาคต — ไม่ใช่เป้าของ v1 และห้ามให้เป้านี้ขยาย scope</p>
+<h3 id="13-non-goals-v1">1.3 Non-goals (ไม่ทำใน v1 และเหตุผล)</h3>
+<table>
+<thead>
+<tr>
+<th>ไม่ทำ</th>
+<th>เหตุผล</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ส่งคำสั่งเงินจริงอัตโนมัติ / โดยไม่มีคนยืนยัน</td>
+<td>กฎเหล็กของสภาและของ Webull เอง ("Always review order details proposed by the AI before confirming") · prod เปิดได้ด้วยมือต้นและยืนยันรายตั๋วเท่านั้น</td>
+</tr>
+<tr>
+<td>Robo-advisor สาธารณะ / หลายผู้ใช้</td>
+<td>ผู้ใช้ 1 คน (ต้น) + ผู้ดูอย่างเดียว 1 คน (ถ้าต้องการ) · multi-tenant ทำให้ scope บวมและมีประเด็นใบอนุญาต</td>
+</tr>
+<tr>
+<td>LLM ฝั่งเซิร์ฟเวอร์</td>
+<td>ข้อความวิเคราะห์มาจาก agent ผ่าน API พร้อมป้าย 🤖 และต้องยืนยัน · แอปเก็บของจริงและคำนวณสูตรตายตัวเท่านั้น</td>
+</tr>
+<tr>
+<td>ออปชัน (สแกน/ตั๋ว/wheel)</td>
+<td>1 สัญญา = 100 หุ้น · ด้วยทุนตอนนี้ยังใช้ไม่ได้ → เฟส 2 (ออกแบบ schema เผื่อไว้แล้ว)</td>
+</tr>
+<tr>
+<td>HK / A-shares / หุ้นไทย</td>
+<td>เริ่มที่ S&amp;P 500 ตามที่ต้นระบุ · ค่อยขยายเมื่อโมเดลนิ่ง</td>
+</tr>
+<tr>
+<td>Backtest เต็มรูปแบบ</td>
+<td>ทำแค่ "วัดผลย้อนหลังของสแกนที่รันจริง" (hit-rate) · backtest เต็มเป็นโปรเจกต์แยก</td>
+</tr>
+<tr>
+<td>คำนวณภาษี</td>
+<td>ส่ง sachiel + skill <code>thai-tax-advisor</code> · แอปแค่เก็บข้อมูลที่ต้องใช้ (ปันผล · หัก ณ ที่จ่าย · วันนำเงินกลับ)</td>
+</tr>
+<tr>
+<td>แอปมือถือ native</td>
+<td>PWA พอสำหรับ v1 · ถ้าจำเป็นค่อยส่ง mobileappdev</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2">2. ผู้ใช้และบทบาท</h2>
+<table>
+<thead>
+<tr>
+<th>ผู้ใช้</th>
+<th>ลักษณะ</th>
+<th>ใช้เมื่อไร/ที่ไหน</th>
+<th>ต้องการอะไร</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ต้น</strong> (เจ้าของพอร์ต · PO)</td>
+<td>ทุนเริ่มหลักพัน เติมทุกเดือน · DISC C-D ชอบเหตุผลและตัวเลข · ใช้มือถือเป็นหลัก</td>
+<td>เช้า (ตลาดสหรัฐปิด ~03:00–04:00 ICT) ดูสรุป · คืน (เปิด 20:30 หรือ 21:30 ICT ตามเวลาออมแสง) ยืนยันตั๋ว</td>
+<td>เห็นพอร์ต+แผนใน 10 วินาที · รายการหุ้นพร้อม "ทำไม" · กดยืนยันได้ในมือถือ · ไม่มีอะไรเกิดขึ้นโดยไม่รู้</td>
+</tr>
+<tr>
+<td><strong><code>upverse-advisor</code></strong> (agent)</td>
+<td>สมองวิเคราะห์ใน Claude Code</td>
+<td>เมื่อต้นเรียก หรือรอบประจำ</td>
+<td>อ่านพอร์ต/สแกน · เขียน thesis · เสนอตั๋ว · เขียน journal ผ่าน API ด้วย token ที่มี scope จำกัด</td>
+</tr>
+<tr>
+<td><strong>ผู้ดู</strong> (ทางเลือก เช่น จิ้น)</td>
+<td>อ่านอย่างเดียว</td>
+<td>นาน ๆ ครั้ง</td>
+<td>ดูพอร์ต/เป้า ไม่เห็นกุญแจ ไม่ยืนยันตั๋วได้</td>
+</tr>
+<tr>
+<td><strong>ระบบภายนอก</strong> (ChatGPT · n8n)</td>
+<td>ผ่าน <code>/api/v1</code> + <code>openapi.json</code></td>
+<td>อัตโนมัติ</td>
+<td>อ่านข้อมูล · เสนอตั๋ว (proposed เท่านั้น) — <strong>ยืนยันไม่ได้</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-principles-8">3. หลักการออกแบบ (Principles) — ทุกข้อกำหนดด้านล่างต้องไม่ขัด 8 ข้อนี้</h2>
+<ol>
+<li><strong>คนกด ไม่ใช่เครื่องกด</strong> — ตั๋วทุกใบผ่าน proposed → ต้นยืนยันในหน้าจอ → ส่ง · การยืนยัน 1 ครั้งใช้กับ 1 ตั๋ว · API token ยืนยันไม่ได้</li>
+<li><strong>UAT ก่อนเสมอ</strong> — ค่าเริ่มต้นของทุก environment คือ Webull UAT · prod เปิดได้เฉพาะจากหน้าตั้งค่าด้วยประโยคยืนยัน และมี kill switch</li>
+<li><strong>กุญแจไม่ออกจากเซิร์ฟเวอร์</strong> — เข้ารหัสก่อนเก็บ · แสดงแค่ 4 ตัวท้าย · ไม่ลง log · ไม่คืนผ่าน API · repo เป็น public จึงห้ามมีข้อมูลจริงในโค้ด</li>
+<li><strong>ตัวเลขมีที่มาและเวลา</strong> — ทุกค่าที่แสดงมี <code>source</code> + <code>as_of</code> · ข้อมูลไม่ครบ = แสดง "ไม่ครบ" ไม่เติมค่า ไม่ประมาณเงียบ ๆ</li>
+<li><strong>ค่าจาก AI ต้องมีคนยืนยัน</strong> — thesis/ตั๋ว/บันทึกที่ agent เขียนมีป้าย 🤖 และสถานะ draft จนต้นกดยืนยัน (<code>feedback_ai_estimate_needs_human_confirm</code>)</li>
+<li><strong>ทุกข้อเสนอมีทางเลือกที่ 0</strong> — ตั๋วต้องมีช่อง "ถ้าไม่ทำจะเป็นอย่างไร" และ "อะไรจะทำให้คิดผิด"</li>
+<li><strong>ตรวจสอบย้อนหลังได้</strong> — audit log ทุกการกระทำสำคัญ (รวมที่ถูกปฏิเสธ) · <code>/api/v1/health</code> บอกค่าที่บังคับใช้จริง ไม่ใช่ที่ตั้งไว้</li>
+<li><strong>มือถือก่อน</strong> — ทุกหน้าใช้ได้ที่ 375px ด้วยนิ้วโป้งข้างเดียว · ตัวอักษรไทย ≥ 17.5px · คอนทราสต์ ≥ 4.5:1 · มืด/สว่างตามเครื่อง</li>
+</ol>
+<hr />
+<h2 id="4">4. ขอบเขตตามเฟสและลำดับความสำคัญ</h2>
+<table>
+<thead>
+<tr>
+<th>รหัส</th>
+<th>ฟีเจอร์</th>
+<th>P</th>
+<th>เฟส</th>
+<th>หมายเหตุ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>F1</td>
+<td>บัญชี · เข้าสู่ระบบ · ตั้งค่า (เชื่อม Webull ในแอป · environment · กฎความเสี่ยง · ผู้ให้ราคา · แจ้งเตือน · API token)</td>
+<td>P0</td>
+<td>1</td>
+<td></td>
+</tr>
+<tr>
+<td>F2</td>
+<td>พอร์ต: Webull sync + สมุดบันทึกมือ/paper + ราคาใกล้เรียลไทม์ + วิเคราะห์ + ติดตามเป้า</td>
+<td>P0</td>
+<td>1</td>
+<td></td>
+</tr>
+<tr>
+<td>F3</td>
+<td>สแกน Top 10 — 5 โมเดล (M1–M5) + มุม "ซ้ำหลายโมเดล"</td>
+<td>P0</td>
+<td>1</td>
+<td>M6 เป็น P1</td>
+</tr>
+<tr>
+<td>F4</td>
+<td>หน้าหุ้น (กราฟ · ตัวเลข · thesis · ป้ายสแกน · วันงบ)</td>
+<td>P0</td>
+<td>1</td>
+<td></td>
+</tr>
+<tr>
+<td>F5</td>
+<td>Watchlist + แจ้งเตือน (ราคา/ระดับ/วอลุ่ม/วันงบ) → LINE</td>
+<td>P0 (watchlist) / P1 (LINE)</td>
+<td>1</td>
+<td></td>
+</tr>
+<tr>
+<td>F6</td>
+<td>ตั๋วคำสั่ง 2 ขั้น + ตรวจกฎความเสี่ยง + คำนวณขนาดไม้ + ส่ง UAT + รางส่งมือ</td>
+<td>P0</td>
+<td>1</td>
+<td>ส่ง prod = เฟส 2 gate</td>
+</tr>
+<tr>
+<td>F7</td>
+<td>สมุดบันทึกการตัดสินใจ + วัดผลตัวเอง</td>
+<td>P0</td>
+<td>1</td>
+<td></td>
+</tr>
+<tr>
+<td>F8</td>
+<td>แผน DCA + ติดตามเป้า (สถานการณ์ 3 แบบ)</td>
+<td>P0</td>
+<td>1</td>
+<td></td>
+</tr>
+<tr>
+<td>F9</td>
+<td>บรีฟเช้าอัตโนมัติ (LINE)</td>
+<td>P1</td>
+<td>1.5</td>
+<td>ใช้โครง <code>line-morning-brief</code> เดิม</td>
+</tr>
+<tr>
+<td>F10</td>
+<td>ออปชัน (สแกน CSP/CC · ตั๋วออปชัน · wheel tracker)</td>
+<td>P2</td>
+<td>2</td>
+<td>schema เผื่อไว้</td>
+</tr>
+<tr>
+<td>F11</td>
+<td>API-first <code>/api/v1</code> + <code>openapi.json</code> + token scope</td>
+<td>P0</td>
+<td>1</td>
+<td>กติกาบ้านนี้</td>
+</tr>
+<tr>
+<td>F12</td>
+<td>Ops: health · audit · jobs monitor · สำรองข้อมูล · kill switch</td>
+<td>P0</td>
+<td>1</td>
+<td></td>
+</tr>
+<tr>
+<td>F13</td>
+<td>สตรีมราคาแบบ MQTT ผ่าน worker</td>
+<td>P2</td>
+<td>3</td>
+<td>เฟส 1 ใช้ polling</td>
+</tr>
+<tr>
+<td>F14</td>
+<td>ผู้ดูอย่างเดียว (คนที่ 2)</td>
+<td>P1</td>
+<td>1.5</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-user-stories">5. เรื่องราวผู้ใช้ (User Stories) — เรียงตามความสำคัญ</h2>
+<p><strong>ต้น — เจ้าของพอร์ต</strong>
+1. ในฐานะเจ้าของพอร์ต ผมอยากใส่ App Key/Secret ของ Webull ในหน้าตั้งค่าแล้วกด "ทดสอบเชื่อม" เพื่อให้แอปดึงพอร์ตจริงได้โดยไม่ต้องแตะโค้ดหรือไฟล์ env
+2. ในฐานะเจ้าของพอร์ต ผมอยากบันทึกซื้อ/ขาย/ปันผล/ฝากเงินด้วยมือ (เศษหุ้นได้) ระหว่างที่ยังไม่มี API เพื่อให้พอร์ตในแอปตรงกับของจริง
+3. ในฐานะเจ้าของพอร์ต ผมอยากเห็นมูลค่าพอร์ตเป็น USD และ THB พร้อมราคาที่อัปเดตเองระหว่างตลาดเปิด เพื่อรู้สถานะโดยไม่ต้องเปิดแอปโบรกเกอร์
+4. ในฐานะเจ้าของพอร์ต ผมอยากเห็น Top 10 ของแต่ละโมเดลพร้อม "ทำไม" 1 ย่อหน้า เพื่อเลือกตัวที่จะไปศึกษาต่อ ไม่ใช่ได้แค่ลิสต์
+5. ในฐานะเจ้าของพอร์ต ผมอยากเห็นตั๋วคำสั่งที่ครบทุกช่อง (ราคา · จำนวน · ตัดขาดทุน · % พอร์ตหลังทำ · เหตุผล · ทางเลือกที่ 0) และผ่านกฎความเสี่ยงหรือไม่ ก่อนพิมพ์ยืนยัน เพื่อไม่ตัดสินใจด้วยอารมณ์
+6. ในฐานะเจ้าของพอร์ต ผมอยากให้ระบบไม่ยอมส่งตั๋วที่ผิดกฎ (เกินเพดาน · หุ้นนอก whitelist · ราคาค้าง) เพื่อกันตัวเองในวันที่ใจร้อน
+7. ในฐานะเจ้าของพอร์ต ผมอยากบันทึกว่าตอนตัดสินใจรู้สึกอย่างไรและคาดหวังอะไร แล้วให้ระบบเตือนย้อนมาดูผลใน 30/90 วัน เพื่อเรียนรู้จากตัวเอง
+8. ในฐานะเจ้าของพอร์ต ผมอยากใส่เป้า (บาท · ปี · เติมต่อเดือน) แล้วเห็นว่าต้องได้ผลตอบแทนเท่าไรและตอนนี้อยู่ตรงไหน เพื่อรู้ว่าคันโยกจริงคือเติมเพิ่มหรือยืดเวลา
+9. ในฐานะเจ้าของพอร์ต ผมอยากตั้ง watchlist พร้อมโซนราคาที่จะเข้า และรับแจ้งเตือนทาง LINE เมื่อราคาถึง เพื่อไม่ต้องเฝ้าจอ
+10. ในฐานะเจ้าของพอร์ต ผมอยากเห็นว่าโมเดลสแกนไหน "แม่น" จริงจากผลย้อนหลัง เพื่อปรับน้ำหนักด้วยหลักฐาน
+11. ในฐานะเจ้าของพอร์ต ผมอยากสลับ UAT/เงินจริงได้จากหน้าตั้งค่าเท่านั้น และเห็นชัดตลอดเวลาว่าอยู่โหมดไหน เพื่อไม่ส่งเงินจริงโดยไม่ตั้งใจ
+12. ในฐานะเจ้าของพอร์ต ผมอยากให้แอปใช้ได้ดีบนมือถือขณะนั่งดูตอนกลางคืน (โหมดมืด · ตัวหนังสือใหญ่พอ) เพื่อไม่ต้องเปิดคอม</p>
+<p><strong><code>upverse-advisor</code> — agent</strong>
+13. ในฐานะ agent ผมอยากอ่านพอร์ต/สแกน/ราคาผ่าน API ด้วย token ที่อ่านได้อย่างเดียว เพื่อวิเคราะห์โดยไม่แตะกุญแจโบรกเกอร์
+14. ในฐานะ agent ผมอยากเขียน thesis และตั๋วสถานะ proposed เข้าแอป เพื่อให้ต้นเห็นและยืนยันในที่เดียว
+15. ในฐานะ agent ผมอยากรู้ว่าตั๋วถูกปฏิเสธเพราะกฎข้อไหน เพื่อปรับข้อเสนอ ไม่ใช่เดา</p>
+<p><strong>กรณีขอบ (edge cases)</strong>
+16. ถ้า Webull token หมดอายุหรือ 2FA ต้องทำใหม่ ระบบต้องแสดงสถานะ "ต้องเชื่อมใหม่" และไม่ทำงานเงียบ ๆ ด้วยข้อมูลเก่า
+17. ถ้าผู้ให้ราคาหลักล่ม ระบบต้องสลับไปตัวสำรองและติดป้าย "ราคาสำรอง/ดีเลย์" ทุกจุด
+18. ถ้างานสแกนกลางคืนล้ม หน้าสแกนต้องบอกว่า "ข้อมูลของคืนก่อน" ไม่ใช่โชว์เหมือนใหม่
+19. ถ้าพอร์ตว่างเปล่า (ยังไม่มีอะไร) ทุกหน้าต้องมี empty state ที่บอกขั้นถัดไป</p>
+<hr />
+<h2 id="6-functional-requirements">6. ข้อกำหนดเชิงหน้าที่ (Functional Requirements) + เกณฑ์ตรวจรับ</h2>
+<h3 id="f1-p0">F1 บัญชี · เข้าสู่ระบบ · ตั้งค่า (P0)</h3>
+<p><strong>F1.1 เข้าสู่ระบบ</strong> — Supabase Auth แบบอีเมล (magic link/OTP) · อนุญาตเฉพาะอีเมลใน allow-list (ต้น + ผู้ดู) · เซสชัน 30 วัน · หน้าที่มีตั๋ว/ตั้งค่าต้องล็อกอินเสมอ
+- [ ] อีเมลนอก allow-list เข้าไม่ได้และไม่มีข้อความบอกว่ามีบัญชีหรือไม่
+- [ ] ออกจากระบบทุกอุปกรณ์ได้จากหน้าตั้งค่า</p>
+<p><strong>F1.2 เชื่อม Webull ในแอป (Connect wizard)</strong>
+- ขั้นตอน: (1) ใส่ App Key + App Secret (2) ระบบเข้ารหัสด้วย <code>UPVERSE_MASTER_KEY</code> (AES-256-GCM · กุญแจหลักอยู่ใน Vercel env เท่านั้น) และเก็บ ciphertext (3) ระบบขอ token จาก Webull — <strong>Webull บังคับ 2FA ในการเรียกครั้งแรก</strong> [ที่มา: developer.webull.co.th/authentication] → หน้าจอขอรหัส 2FA จากต้น (4) ได้ access token → เข้ารหัสเก็บ + วันหมดอายุ (5) ทดสอบ <code>account/list</code> → แสดงการ์ด "เชื่อมแล้ว · UAT · บัญชี ••••1234 · ตรวจล่าสุด hh:mm"
+- แสดงกุญแจแค่ 4 ตัวท้าย · ปุ่ม "เปลี่ยนกุญแจ" (rotate) และ "ตัดการเชื่อมต่อ" (ลบ ciphertext ทั้งหมด) · ทุกขั้นลง <code>audit_log</code> โดยไม่มีค่ากุญแจ
+- Environment: ตัวเลือก <code>uat</code> (ค่าเริ่มต้น) / <code>prod</code> · การเปลี่ยนเป็น prod ต้องพิมพ์ประโยค "เปิดเงินจริง" + มีป้ายสีแดงบนทุกหน้าเมื่อเป็น prod · เฟส 1 ปุ่ม prod <strong>ปิดใช้ (disabled)</strong> จนผ่าน gate เฟส 2
+- [ ] ค่ากุญแจไม่ปรากฏใน response ใด ๆ, log, Sentry, หรือ HTML (ทดสอบด้วย grep บน network capture)
+- [ ] ใส่กุญแจผิด → ข้อความชัด ไม่ค้าง · token หมดอายุ → การ์ดขึ้น "ต้องเชื่อมใหม่" และ sync หยุดพร้อมป้ายบนหน้าพอร์ต
+- [ ] <code>GET /api/v1/health</code> รายงาน <code>webull.environment</code>, <code>webull.connected</code>, <code>webull.token_expires_at</code> ตามที่บังคับใช้จริง
+- <strong>[ยังไม่ยืนยัน]</strong> รูปแบบ 2FA ของ Webull ผ่าน SDK (โค้ดส่งทางไหน · อายุ token) — Sprint 0 ทดสอบด้วยบัญชีทดสอบร่วมของ Webull</p>
+<p><strong>F1.3 กฎความเสี่ยง (มีเวอร์ชัน)</strong> — แก้ได้ในหน้าตั้งค่า · ทุกการเปลี่ยนสร้างเวอร์ชันใหม่ (ไม่แก้ทับ) · ตั๋วทุกใบอ้างอิงเวอร์ชันที่ใช้ตรวจ</p>
+<table>
+<thead>
+<tr>
+<th>กฎ</th>
+<th>ค่าเริ่มต้น v1</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>เพดานมูลค่าต่อคำสั่ง (<code>max_order_notional_usd</code>)</td>
+<td>500</td>
+</tr>
+<tr>
+<td>เพดานจำนวนต่อคำสั่ง (<code>max_order_qty</code>)</td>
+<td>100</td>
+</tr>
+<tr>
+<td>Whitelist สัญลักษณ์ (ว่าง = ห้ามส่งทุกตัว)</td>
+<td>ว่าง</td>
+</tr>
+<tr>
+<td>น้ำหนักหุ้นเดี่ยวสูงสุดหลังทำรายการ</td>
+<td>10% (เตือนที่ 8%)</td>
+</tr>
+<tr>
+<td>น้ำหนักกลุ่มอุตสาหกรรมสูงสุด</td>
+<td>25% (เตือนที่ 20%)</td>
+</tr>
+<tr>
+<td>เงินสดขั้นต่ำหลังซื้อ</td>
+<td>5% ของพอร์ต</td>
+</tr>
+<tr>
+<td>ความเสี่ยงต่อไม้เก็งจังหวะ (จำนวน × (ราคาเข้า − ตัดขาดทุน))</td>
+<td>≤ 1% ของมูลค่าพอร์ต (ตั๋ว DCA แกนได้รับยกเว้น)</td>
+</tr>
+<tr>
+<td>ราคาที่ใช้ตรวจต้องใหม่กว่า</td>
+<td>60 วินาที</td>
+</tr>
+<tr>
+<td>จำนวนตั๋วส่งต่อวัน</td>
+<td>5</td>
+</tr>
+<tr>
+<td>เตือนวันงบภายใน</td>
+<td>5 วันทำการ</td>
+</tr>
+</tbody>
+</table>
+<p><strong>F1.4 ผู้ให้ราคา (Price provider)</strong> — ลำดับ: <code>webull</code> → <code>finnhub</code> → <code>yfinance_delayed</code> · ตั้งได้ว่าอันไหนเปิด · แสดงสถานะสุขภาพ (สำเร็จ/ล้มเหลว 24 ชม.) · ทุก quote เก็บ <code>source</code>
+<strong>F1.5 การแจ้งเตือน</strong> — ช่องทาง LINE (OA เดิมของบ้านนี้ผ่าน skill <code>line-push</code>) · ชั่วโมงเงียบ (ค่าเริ่มต้น 23:30–06:30 ICT ยกเว้นแจ้งเตือนที่ต้นติ๊ก "ปลุกได้")
+<strong>F1.6 API token</strong> — สร้าง/เพิกถอน · แสดงเต็มครั้งเดียว · เก็บ prefix 8 ตัว + SHA-256 · scope เป็น allow-list: <code>portfolio:read</code> <code>scan:read</code> <code>quotes:read</code> <code>theses:write</code> <code>tickets:propose</code> <code>journal:write</code> · <strong>ไม่มี scope <code>tickets:confirm</code> ให้เลือก</strong> (ยืนยันได้จากเซสชันคนในหน้าจอเท่านั้น)</p>
+<h3 id="f2-p0">F2 พอร์ต (P0)</h3>
+<p><strong>F2.1 แหล่งพอร์ต (accounts)</strong> — บัญชี 2 ชนิด: <code>webull_live</code> (sync จาก API) และ <code>manual_paper</code> (สมุดบันทึกมือ) · มีได้หลายบัญชี · หน้าพอร์ตมีสวิตช์ "รวมทุกบัญชี / ทีละบัญชี" และป้ายชนิดบัญชีเสมอ
+<strong>F2.2 Webull sync</strong> — ดึง balance + positions + orders ทุก 5 นาทีในช่วงตลาดเปิด และเมื่อกด "ดึงตอนนี้" · เก็บ snapshot รายวัน (<code>holdings_snapshots</code>) · orders ที่ fill แล้ว → สร้าง <code>transactions</code> (source <code>webull_fill</code>) กันซ้ำด้วย broker order id
+- [ ] กด "ดึงตอนนี้" แล้วเห็นเวลา as_of เปลี่ยนภายใน 10 วินาที
+- [ ] ถ้า API ล้ม แสดง snapshot ล่าสุดพร้อมป้าย "ข้อมูลเมื่อ hh:mm" ไม่ใช่หน้าว่าง
+<strong>F2.3 สมุดบันทึกมือ / paper</strong> — เพิ่มรายการ: ซื้อ · ขาย · ปันผล · ค่าธรรมเนียม · ฝาก · ถอน · แลกเงิน (บันทึก USD/THB rate) · แตกหุ้น · จำนวนเป็นทศนิยม 6 ตำแหน่ง (เศษหุ้น) · คำนวณต้นทุนเฉลี่ยและล็อต (FIFO) · แก้/ลบได้พร้อม audit · นำเข้าไฟล์ CSV จาก Webull <strong>[ยังไม่ยืนยันรูปแบบไฟล์ — ต้นส่งตัวอย่าง]</strong> · ตั๋วที่ fill ในโหมดรางส่งมือ (F6.6) กดสร้างรายการได้ทันที
+- [ ] ซื้อ 0.123456 หุ้น @ 100.00 → มูลค่า 12.35 USD · ต้นทุนเฉลี่ยถูกต้องหลังซื้อซ้ำ 3 ครั้ง (ทดสอบหน่วย)
+<strong>F2.4 ราคาใกล้เรียลไทม์</strong> — หน้าพอร์ต/หุ้น/ตั๋ว poll <code>GET /api/v1/quotes?symbols=</code> ทุก 10 วินาที (ตลาดเปิด) · 60 วินาที (ก่อน/หลังตลาด) · หยุดเมื่อปิด · เซิร์ฟเวอร์แคช 5 วินาทีต่อสัญลักษณ์ · แสดงสถานะตลาด (ก่อนเปิด/เปิด/หลังปิด/ปิด) และเวลา ET+ICT · quote เก่ากว่า 15 วินาทีในช่วงเปิด → ป้าย "ค้าง"
+<strong>F2.5 วิเคราะห์</strong> (คำนวณในแอป ไม่ใช่ AI)
+- มูลค่ารวม USD + THB (อัตรา <code>fx_rates</code> ล่าสุด + ที่มา) · เปลี่ยนแปลงวัน · กำไร/ขาดทุนรวม <strong>แยก "จากหุ้น" กับ "จากค่าเงิน"</strong> (ต้องเก็บ rate ณ วันซื้อจากรายการแลกเงิน/ฝาก)
+- น้ำหนักรายตัว · แกน/ดาวเทียม/รายได้/เงินสด เทียบเป้าที่ตั้ง (Core–Satellite) · กลุ่มอุตสาหกรรม · ป้ายเตือนเมื่อชนกฎ F1.3
+- เงินสดคงเหลือและ "กระสุนสำหรับรอบ DCA ถัดไป" · ปันผลรับปีนี้ · วันงบถัดไปของหุ้นที่ถือ (ภายใน 14 วันขึ้นบนสุด)
+- ค่าใช้จ่ายสะสม (ค่าธรรมเนียม + FX spread ที่บันทึก) เป็น % ของเงินที่ใส่
+- [ ] ทุกตัวเลขในหน้ามี tooltip "ที่มา · เวลา" · ข้อมูลไม่ครบ = "—" พร้อมคำอธิบาย ไม่ใช่ 0
+<strong>F2.6 ติดตามเป้า</strong> → ดู F8</p>
+<h3 id="f3-top-10-p0-7">F3 สแกน Top 10 (P0) → รายละเอียดโมเดล §7</h3>
+<ul>
+<li>หน้าสแกน: แท็บตามโมเดล (M1–M5 + "ซ้ำหลายโมเดล") · การ์ดละ 1 ตัว: อันดับ · สัญลักษณ์/ชื่อ · ราคา · คะแนน 0–100 · ตัวชี้วัดหลัก 3 ตัวของโมเดลนั้น · "ทำไม" 2–3 บรรทัด · ปุ่ม: ดูหุ้น · เพิ่ม watchlist · ขอ thesis (สร้าง task ให้ agent)</li>
+<li>ส่วนหัว: รันเมื่อไร · จักรวาลกี่ตัว · ผ่านตะแกรงกี่ตัว · เวอร์ชันโมเดล · ปุ่ม "ดูผลรอบก่อน" (ย้อนได้ 90 วัน)</li>
+<li>ตัวที่ <strong>ข้อมูลไม่ครบ</strong> ไม่ถูกจัดอันดับ แต่แสดงในส่วน "ตัดออกเพราะข้อมูลไม่ครบ (n)" — ไม่ประมาณค่าแทน</li>
+<li>[ ] ทุกรายการ Top 10 มี why-text ไม่ว่าง และตัวเลขใน why ตรงกับ <code>metrics</code> ที่เก็บ</li>
+<li>[ ] ถ้างานกลางคืนล้ม ส่วนหัวขึ้น "ข้อมูลของ {วันที่}" สีเตือน</li>
+</ul>
+<h3 id="f4-p0">F4 หน้าหุ้น (P0)</h3>
+<ul>
+<li>ส่วนบน: ราคา · เปลี่ยนแปลง · สถานะตลาด · ป้ายโมเดลที่ติด (เช่น "M4 ผู้นำแนวโน้ม #3") · ถืออยู่กี่หุ้น/น้ำหนัก</li>
+<li>กราฟ: แท่งเทียนรายวัน 1 ปี (สลับรายสัปดาห์) + EMA20 · SMA50 · SMA200 · ปริมาณ · RSI14 แผงล่าง · <strong>ห้ามใช้ spline</strong> (เส้นตรง/monotone เท่านั้น — <code>feedback_clinical_chart_smoothing</code>) · แกนเดียว · tooltip/crosshair</li>
+<li>ตัวเลขพื้นฐาน (จาก <code>fundamentals</code> + ที่มา/วัน): รายได้ · กำไร · FCF · ROIC · หนี้สุทธิ/EBITDA · จำนวนหุ้น · P/E · EV/EBITDA · P/FCF · ปันผล/payout · F-score · 52 สัปดาห์สูง/ต่ำ · วันงบถัดไป</li>
+<li>Thesis: แสดงเวอร์ชันล่าสุด (draft 🤖 / ยืนยันแล้ว ✅ / เก่า ⚠️ เมื่อมีงบใหม่หลังวันเขียน) · ปุ่ม "ยืนยัน" (ต้นเท่านั้น) · ปุ่ม "ขอ thesis ใหม่" สร้าง task</li>
+<li>ปุ่มลัด: เพิ่ม watchlist · สร้างตั๋ว (พรีฟิลราคา/ATR) · บันทึก journal</li>
+<li>[ ] เปิดหน้าหุ้นที่ไม่มีข้อมูลพื้นฐาน → แสดงส่วนราคา/กราฟได้ และส่วนพื้นฐานขึ้น "ยังไม่มีข้อมูล (แหล่ง: —)"</li>
+</ul>
+<h3 id="f5-watchlist-watchlist-p0-line-p1">F5 Watchlist + แจ้งเตือน (watchlist P0 · LINE P1)</h3>
+<ul>
+<li>รายการ: สัญลักษณ์ · เหตุผล · โซนเข้า (ต่ำ–สูง) · ตัดขาดทุนที่วางไว้ · โน้ต · โมเดลที่มา · ระยะจากโซน (%) · วันงบ</li>
+<li>กฎแจ้งเตือน: ราคาเข้าโซน · ราคาหลุดระดับ · ปริมาณ ≥ x เท่า · เหลือ n วันก่อนงบ · thesis เก่า · ตั๋ว proposed ค้าง &gt; 24 ชม.</li>
+<li>ส่ง LINE ผ่านงานตรวจทุก 5 นาที (ตลาดเปิด) · ยุบซ้ำ (ไม่ส่งซ้ำภายใน 6 ชม.) · ลิงก์เปิดหน้าหุ้น</li>
+<li>[ ] ตั้งกฎ "AAPL เข้าโซน 180–185" → เมื่อ quote เข้าโซน มีข้อความ LINE ภายใน 5 นาที และ alert สถานะ <code>fired</code> พร้อมเวลา</li>
+</ul>
+<h3 id="f6-p0">F6 ตั๋วคำสั่ง (P0) — หัวใจของความปลอดภัย</h3>
+<p><strong>F6.1 โครงตั๋ว (stock)</strong> — บัญชี · ซื้อ/ขาย · สัญลักษณ์ · จำนวน (ทศนิยม 6) หรือมูลค่า USD · ชนิดคำสั่ง (<code>LIMIT</code> ค่าเริ่มต้น · <code>MARKET</code> ต้องติ๊กยอมรับ) · ราคา limit · ตัดขาดทุน · เป้า · R:R · % พอร์ตหลังทำ · thesis ที่อ้าง · เหตุผล 3 บรรทัด · <strong>ทางเลือกที่ 0</strong> · <strong>อะไรจะทำให้คิดผิด</strong> · หมดอายุ (ค่าเริ่มต้น 3 วันทำการ) · เวอร์ชันกฎที่ใช้ตรวจ · environment
+<strong>F6.2 สถานะ</strong> — <code>proposed</code> → <code>confirmed</code> → <code>sent</code> → <code>filled</code> / <code>partially_filled</code> / <code>cancelled</code> / <code>rejected</code> / <code>expired</code> · ทุกการเปลี่ยนสถานะลง <code>order_log</code> (ใคร · เมื่อไร · จาก/ไป · เหตุผล)
+<strong>F6.3 ตรวจกฎ (รันตอนสร้างและตอนยืนยัน)</strong> — รายการตรวจจาก F1.3 + ตรวจ quote ไม่ค้าง + ตั๋วซ้ำ (สัญลักษณ์/ทางเดียวกันที่ยังเปิด) + ไม่หมดอายุ + environment ตรงกับที่บัญชีอนุญาต · ผลเป็นรายการ ✅/⚠️/⛔ พร้อมตัวเลขจริง · ⛔ ตัวเดียว = ยืนยันไม่ได้
+<strong>F6.4 ยืนยัน</strong> — ต้น (เซสชันคน) เปิดตั๋ว → กด <strong>"ดูตัวอย่างจาก Webull"</strong> (<code>POST /tickets/{id}/preview</code> → Webull <code>/trading/orders/preview</code> คืน <code>estimated_cost</code> + <code>estimated_transaction_fee</code> · <strong>ยืนยันแล้ว 18 ก.ย. 2569 กับบัญชีจริง: ขาย AXON 0.00639 → cost $2.88 · fee $0.02 · ไม่มีคำสั่งถูกส่ง</strong>) → เลือกราง (ส่งมือ / API — เลือกได้ตอนยืนยัน · ราง API ต้องผ่านประตู 14.3) → พิมพ์ประโยคยืนยันที่ระบบสร้าง เช่น <code>ยืนยัน ซื้อ AAPL 0.5</code> → <code>confirmed</code> → ส่งทันที (<code>sent</code>) · ปุ่มยืนยันปิดใช้จนกว่าประโยคจะตรงและการตรวจกฎเป็นเขียว/เหลืองทั้งหมด
+<strong>F6.5 ส่งคำสั่ง (API rail)</strong> — เรียก Webull <code>POST /trading/orders/place</code> ด้วย body <strong>TH v3 = <code>{account_id, new_orders:[{combo_type:"NORMAL", client_order_id (≤32 ตัว A–Z a–z 0–9 - _), instrument_type:"EQUITY", market:"US", symbol, order_type MARKET|LIMIT|STOP_LOSS|STOP_LOSS_LIMIT, entrust_type QTY|AMOUNT, support_trading_session CORE, time_in_force DAY|GTC, side, quantity (ทศนิยมได้สำหรับเศษหุ้นสหรัฐ), limit_price?, stop_price?}]}</code></strong> (ไม่ใช่ <code>stock_order</code> แบบ US — ส่งแบบนั้น Webull ตอบ "Orders can not be empty.") · ตัวสร้าง body เดียวกันสำหรับ preview และ place (<code>src/lib/webull/orders.ts</code>) · ตอบกลับ <code>{client_order_id, order_id}</code> · ตรวจ whitelist ซ้ำตอนยืนยัน · เก็บ <code>broker_order_id</code> · ติดตามสถานะด้วย poll ทุก 30 วินาทีจนจบ (gRPC event = เฟส 3) · fill → สร้าง <code>transactions</code> และเปิดหน้าต่าง journal ทันที
+<strong>F6.6 รางส่งมือ (Manual rail — ค่าเริ่มต้นของเฟส 1 จนกว่า API ผ่านการทดสอบ)</strong> — ปุ่ม "ทำในแอป Webull" แสดงรายละเอียดคำสั่งแบบก๊อปได้ + deep link เปิดแอป <strong>[ยังไม่ยืนยันว่า Webull TH มี URL scheme]</strong> → ต้นทำเอง → กลับมากด "ทำแล้ว ราคา __ จำนวน __" → สร้าง transaction (source <code>manual_after_ticket</code>) และตั๋วเป็น <code>filled</code> · ใช้ได้กับบัญชี <code>manual_paper</code> ด้วย (ทดลองระบบก่อนมีกุญแจ)
+<strong>F6.7 ขนาดไม้</strong> — เครื่องคิด: ทุน · %เสี่ยง · ราคาเข้า · ตัดขาดทุน (พรีฟิล 2×ATR14 หรือ swing low) → จำนวนหุ้น (เศษได้) · ปรับตามเพดาน F1.3 · แสดง "R ต่อไม้ = $x"
+<strong>F6.8 ตั๋วชุด DCA</strong> — จากแผน F8 สร้างตั๋วหลายใบในครั้งเดียว (แกน/ดาวเทียมตามสัดส่วน) แต่ยืนยันทีละใบ
+- [ ] พยายามเรียก <code>POST /api/v1/tickets/{id}/confirm</code> ด้วย API token → 403 เสมอ
+- [ ] ตั๋วที่มูลค่าเกินเพดาน → ⛔ และปุ่มยืนยันปิดใช้ · เปลี่ยนเพดาน (เวอร์ชันใหม่) → ตั๋วเดิมยังอ้างเวอร์ชันเก่าและต้องตรวจใหม่ก่อนยืนยัน
+- [ ] ยืนยันตั๋วเดียวกันซ้ำ (double tap) → ส่งครั้งเดียว (idempotency key)
+- [ ] environment=prod ขณะ <code>TRADING_ENABLED=false</code> → ส่งไม่ได้ทุกกรณี และ health รายงาน <code>trading_enabled=false</code>
+- <strong>[ยังไม่ยืนยัน]</strong> Webull TH รับคำสั่งเศษหุ้น/มูลค่าผ่าน API หรือไม่ (ตัวอย่างในเอกสารมีแค่ <code>entrust_type: QTY</code>) — ถ้าไม่ได้ ตั๋วเศษหุ้นจะบังคับใช้รางส่งมือ</p>
+<h3 id="f7-p0">F7 สมุดบันทึกการตัดสินใจ (P0)</h3>
+<ul>
+<li>รายการ: เวลา · อ้างตั๋ว/หุ้น (ถ้ามี) · การตัดสินใจ (ซื้อ/ขาย/ไม่ทำ/รอ) · thesis ย่อ · <strong>อารมณ์</strong> (กลัว/โลภ/เบื่อ/มั่นใจ/ลังเล) · สิ่งที่คาดหวัง · วันย้อนดู (30/90 วัน) · ผลจริง (กรอกทีหลังหรือระบบเติมผลตอบแทน) · บทเรียน</li>
+<li>หน้าสรุปรายไตรมาส: จำนวนการตัดสินใจ · สัดส่วนอารมณ์ · ผลตอบแทนเฉลี่ยตามอารมณ์ (ตัวเลขจริง ไม่ตีความ) · สิ่งที่คิดผิดซ้ำ (แท็ก)</li>
+<li>[ ] ตั๋ว <code>filled</code> ที่ยังไม่มี journal ภายใน 24 ชม. → เตือนบนหน้าหลัก</li>
+</ul>
+<h3 id="f8-dca-p0">F8 แผน DCA + ติดตามเป้า (P0)</h3>
+<ul>
+<li>เป้า: ยอด (THB) · วันเป้า · เงินตั้งต้น · เติมต่อเดือน · วัน DCA · สัดส่วนแกน/ดาวเทียม/เงินสด</li>
+<li>คำนวณ: อัตราผลตอบแทน "ที่จำเป็น" (ต่อปี) จากตัวเลขข้างต้น · เส้นทางคาดการณ์ 3 ฉากทัศน์โดยใช้ผลตอบแทนสมมติที่ต้นตั้งเอง (ค่าเริ่มต้นแสดงว่าง ต้องกรอก — <strong>ไม่ใส่ตัวเลขประวัติศาสตร์ให้เองในโค้ด</strong>; agent ดึงตัวเลขจริง ณ วันทำแล้วเสนอ) · "ตอนนี้อยู่ตรงไหน" = มูลค่าจริงเทียบเส้นทาง</li>
+<li>แสดงชัดว่า: ถ้าอัตราที่จำเป็นสูง คันโยกคือ "เติมมากขึ้น" หรือ "ยืดเวลา" — ปุ่มเลื่อนให้ลองปรับทั้งสอง</li>
+<li>[ ] เปลี่ยนเติมต่อเดือนแล้วอัตราที่จำเป็นอัปเดตทันที · ทุกสูตรมีเทสต์หน่วย</li>
+</ul>
+<h3 id="f9-line-p1-0700-ict-top-3-line-morning-brief-daily-flex-carousel">F9 บรีฟเช้า LINE (P1) — เวลา 07:00 ICT: มูลค่าพอร์ต/เปลี่ยนแปลง · Top 3 ต่อโมเดลที่เปลี่ยนจากเมื่อวาน · แจ้งเตือนที่ยิงเมื่อคืน · ตั๋วค้าง · วันงบสัปดาห์นี้ · ลิงก์ · ใช้โครง <code>line-morning-brief-daily</code> เดิม (Flex carousel)</h3>
+<h3 id="f10-p2-schema-cspcc-vi-iv-rank-dte-delta-max-loss-usdthb-assign-wheel-tracker-single-leg-api-th-trade-apioption-single-leg-single-option-orders-only-naked">F10 ออปชัน (P2 — ระบุไว้เพื่อออกแบบ schema) — สแกน CSP/CC จากหุ้นที่ผ่าน VI + IV rank · ตั๋วออปชัน (ขา · DTE · delta · เครดิต · max loss USD/THB/% · จุดคุ้มทุน · แผน assign) · wheel tracker · กฎ: single-leg เท่านั้นตามที่ API TH รองรับ [ที่มา: trade-api/option — "single-leg (<code>SINGLE</code>) option orders only"] · ⛔ naked</h3>
+<h3 id="f15-p0-18-2569-get-portfolioreview">F15 วิเคราะห์พอร์ต — "ควรทำอะไรกับแต่ละตัว" (P0 · ✅ ส่งมอบ 18 ก.ย. 2569 · <code>GET /portfolio/review</code> + ส่วนในหน้าพอร์ต)</h3>
+<p>กฎล้วน ไม่มี LLM · ทุกตัวเลขมี "ทำไม" · หลักการที่ใช้ระบุที่มาใน <code>docs/TECHNIQUES.md</code>
+- <strong>F15.1 สัดส่วนเงินทุน vs แผน</strong> — bucket: แกน (ETF ใน <code>coreSymbols</code> หรือ thesis role แกน) · ดาวเทียม · รายได้ · ตกค้าง (role ไม่เข้าเกณฑ์) · ไม่มี thesis · เงินสด → เทียบเป้าจาก F8 (ค่าเริ่มต้น 70/20/0/10) → gap เป็น $ → <strong>"เงินเติมรอบหน้าควรไป →"</strong> (แกนก่อนจนถึงเป้า; หุ้นเดี่ยวเฉพาะที่ผ่านด่าน)
+- <strong>F15.2 ฐานเพดาน</strong> — เมื่อ F8 มีเงินเติมต่อเดือน: วัดเพดานหุ้นเดี่ยวกับ <strong>พอร์ตแผน 12 เดือน</strong> (= มูลค่าวันนี้ + 12 × เงินเติม) ไม่ใช่พอร์ตวันนี้ · ไม่มี → ใช้พอร์ตวันนี้ + คำเตือน
+- <strong>F15.3 รายตัว</strong> — Weinstein stage 1–4 (ราคา vs SMA150 + ความชัน SMA200) · Minervini trend template 8 ข้อ (ข้อ 8 ใช้ RS เทียบ SPY แทน RS rating) · RS vs SPY 1/3/6/12 เดือน · มูลค่า (P/E · P/FCF · FCF yield · ปันผล · <strong>"ราคานี้ต้องการโต x%/ปี"</strong> = reverse DCF 3 ปี · 30× FCF หรือ 12× EPS · คิดลด 10%) · คุณภาพ (F-score · ROE · FCF margin · รายได้โต 3 ปี · หุ้นเพิ่ม/ลด) · thesis ล่าสุด + stale · ค่าธรรมเนียมถ้าออก (F17 fee model) · คะแนน 0–100 ตาม agent §2B
+- <strong>F15.4 ป้าย action + เหตุผล</strong> — ลำดับกฎ: (1) thesis "ออก" → ออก (2) เกินเพดาน → ลด · แต่ไม้ลด &lt; $3 หรือค่าธรรมเนียม &gt; 1% → <strong>de minimis: ถือ + เจือจางด้วยเงินใหม่</strong> (3) ไม่มี thesis → ถือ ห้ามเพิ่ม/ถัว (ขาลง + อ่อนกว่า SPY &gt; 20% → ทบทวน) (4) thesis "เพิ่ม" + ราคา ≤ น่าซื้อ + ไม่ใช่มีดตก + น้ำหนักหลังซื้อ &lt; เตือน → เพิ่ม (5) ขาลง + อ่อนกว่า SPY &gt; 20% + thesis ดูต่อ/รอ/ลด → โยก (ถ้ามีปลายทางผ่านด่าน) ไม่งั้นทบทวน (6) thesis stale → ทบทวน (7) ถือ · ป้าย "ร่าง — รอต้นยืนยัน" เมื่อ thesis ยังไม่ confirmed
+- <strong>F15.5 ถัวได้ไหม</strong> (ทุกตัวที่ขาดทุน) — ได้เฉพาะ thesis "เพิ่ม" ที่ยืนยัน + ไม่ stale + ราคา ≤ น่าซื้อ + ไม่ใช่มีดตก (ขั้น 4 + ร่วง &gt; 15%/20 วัน) + ไม่ถึงระดับเตือน · แกนดัชนี: DCA ตามรอบ ไม่มี stop
+- <strong>F15.6 โยกเงินแบบมีด่าน</strong> — ผู้สมัคร = watchlist + สแกน Top 5 ทุกโมเดล + thesis "เพิ่ม" (ไม่รวมแกน/ตัวที่ถือ) · ผ่านด่านเมื่อ thesis "เพิ่ม" ยืนยัน + ราคาในโซน + ไม่ใช่ขาลง/มีดตก · โยกได้เมื่อ ต้นทางเข้าข่าย (F15.4 ข้อ 5) + คะแนนปลายทางสูงกว่า ≥ 20 + ต้นทุนโยก (ขาย+ซื้อ) ≤ 1% + ถือต้นทาง ≥ 30 วัน — <strong>ผลตอบแทนย้อนหลังอย่างเดียวไม่ใช่เหตุผล</strong> (Barber &amp; Odean)
+- <strong>F15.7 เทียบตลาด</strong> — SPY 1/3/6/12 เดือน · <code>equityHistory</code> วันละจุด (จาก sync + review) → ผลตอบแทนพอร์ตแบบง่าย · มีความหมายเมื่อ ≥ 60 วัน · TWR = P1
+- เกณฑ์ตรวจรับ: [x] ทุก holding มี action + ≥ 1 เหตุผล [x] ไม่มี thesis → ห้ามเพิ่ม/ถัวเสมอ [x] ผู้สมัครโยกไม่มี thesis "เพิ่ม" → ไม่ผ่านด่านทุกตัว [x] ค่าธรรมเนียมขายไม้ $2.88 = 0.8% ตรงกับ preview ของ Webull ($0.02) [ ] ทดสอบด้วย F8 ที่ตั้งเงินเติมแล้ว (ฐานเพดาน = แผน)</p>
+<h3 id="f16-thesis-agent-p0-18-2569">F16 Thesis จาก agent (P0 · ✅ ส่งมอบ 18 ก.ย. 2569)</h3>
+<ul>
+<li>สคีมาบังคับ: summary ≤600 · verdict ถือ|เพิ่ม|ลด|ออก|รอ|ดูต่อ · role แกน|ดาวเทียม|รายได้|เก็งจังหวะ|ไม่เข้าเกณฑ์ · sections 3–12 · scenarios bear/base/bull ×3 (value = มูลค่าปัจจุบันหลังคิดลด) · buyBelow · invalidation (<strong>สัญญาณธุรกิจ ไม่ใช่ราคา</strong>) · altZero · dissent ≤6 (จากวง persona) · sources ≥1 พร้อม asOf · priceAtWrite · reviewAfter</li>
+<li>วงจร: agent (token <code>theses:write</code>) → <code>draft_ai</code> → ต้นยืนยัน/ปฏิเสธ+เหตุผลในหน้าหุ้น → <code>confirmed</code> · เลยวันทบทวน = stale · ปฏิเสธไม่ถูกลบ (ประวัติ)</li>
+<li>กระบวนการเขียน (บทเรียนใน memory <code>feedback_upverse-advisor_thesis-structure</code>): ข้อมูลจริง (Yahoo · EDGAR ดึงตรง · Webull snapshot · หน้าราคา) → ร่าง → <strong>วง persona 5×2</strong> → แก้ตามเสียงค้าน → POST · ส่งแล้ว 3 ฉบับ (NVDA ถือ · AXON ออก → ต้นยืนยัน · USB ถือ)</li>
+<li>เกณฑ์ตรวจรับ: [x] token ยืนยัน thesis ไม่ได้ [x] thesis แสดงในหน้าหุ้น + หน้าวิเคราะห์พอร์ต [x] สำเนาที่มีตำแหน่งจริงอยู่ <code>journal/private/</code> (git-ignored) ไม่ใช่ <code>output/</code></li>
+</ul>
+<h3 id="f17-p0">F17 แบบจำลองค่าธรรมเนียม + ประวัติมูลค่าพอร์ต (P0 · ✅)</h3>
+<ul>
+<li>Webull TH (หน้าราคา 18 ก.ย. 2569): คอมมิชชัน 0.10% ไม่มีขั้นต่ำ · ขาย: SEC 0.0000206×มูลค่า (ขั้นต่ำ $0.01) + FINRA 0.000195×จำนวน (ขั้นต่ำ $0.01 · สูงสุด $9.79) · FX spread ไม่ระบุ → <code>settings.fxSpreadPct</code> (null = 0 + คำเตือน) · <strong>fills จาก API มี <code>fees: 0</code> เพราะ API ไม่ส่ง</strong> → ตัวเลขในแอปเป็นค่าประมาณ ยืนยันกับ preview ของ Webull ได้</li>
+<li>ผล: ไม้ขาย &lt; $3 ผิดกฎ ≤ 1% เสมอ · ตั๋วเสนอโดย agent ต้องระบุค่าธรรมเนียมประมาณใน rationale</li>
+<li><code>equityHistory</code> วันละจุด {date, totalUsd, cashUsd, investedUsd, fxRate} — เขียนจาก sync (Webull รายงาน) และ review</li>
+</ul>
+<h3 id="f18-agent-rest-api-v1-mcp-server-p0-18-2569">F18 การเชื่อม agent: REST API v1 + MCP server (P0 · ✅ 18 ก.ย. 2569)</h3>
+<ul>
+<li><strong>REST</strong> <code>/api/v1</code> (F11) + token scope · เพิ่ม <code>theses:read</code> · เอกสาร <code>docs/API-UPVerse.md</code></li>
+<li><strong>MCP server</strong> <code>mcp/upverse-mcp.mjs</code> (stdio · Node ≥ 20 · <code>@modelcontextprotocol/sdk</code>) — 18 เครื่องมือ: อ่าน <code>upverse_health · portfolio · review · instrument · quotes · scans · theses · tickets · transactions · watchlist · journal · goal</code> · เขียน <code>thesis_create · ticket_propose (proposed เสมอ) · watchlist_add · journal_add</code> · <code>query</code> (กฎ) · <code>api</code> (เรียก /api/v1 ตรง — path ต้องอยู่ใต้ /api/v1) · ลงทะเบียนใน <code>.mcp.json</code> ที่ root (Claude Code เห็นเมื่อเปิดโปรเจกต์นี้) · token อ่านจาก <code>UPVERSE_TOKEN</code> หรือ <code>~/.upverse/token</code> <strong>นอก repo</strong></li>
+<li>กติกา: ทำได้เท่าที่ token มี scope · <strong>ยืนยันตั๋ว/เปลี่ยนตั้งค่า/เปิดประตูทำจาก MCP ไม่ได้</strong> (ไม่มี scope) · ทุกการเรียกลง audit · ผลลัพธ์เป็น JSON ดิบ + ที่มา/เวลา · ไม่มี LLM ในตัว</li>
+<li>เกณฑ์ตรวจรับ: [x] <code>node mcp/test-client.mjs</code> ผ่าน 5 tools [x] token ไม่อยู่ใน repo [ ] ต้นอนุมัติ server ใน Claude Code ครั้งแรก</li>
+</ul>
+<h3 id="f19-persona-agent-3-f13-f15">F19 กฎใหม่ที่เสนอจากวง persona (รอต้นเคาะ → เขียนเข้า agent §3 + F1.3 + F15)</h3>
+<table>
+<thead>
+<tr>
+<th>กฎ</th>
+<th>ใจความ</th>
+<th>สถานะ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ไม่มี thesis เขียนไว้ = ไม่มีตำแหน่งใหม่</strong></td>
+<td>ตั๋วซื้อหุ้นเดี่ยวต้องอ้าง thesis (confirmed หรือ draft) หรือมีเหตุผลใน journal ก่อน · แอปแสดง "ห้ามเพิ่ม/ถัว" สำหรับตัวที่ไม่มี thesis (ทำแล้วใน F15) · ด่านตั๋ว (A1) = P1</td>
+<td>รอต้นเคาะ</td>
+</tr>
+<tr>
+<td><strong>de minimis</strong></td>
+<td>ไม้ลดสัดส่วน &lt; $3 หรือค่าธรรมเนียม &gt; 1% → ไม่บังคับขาย ใช้เงินใหม่เจือจาง (ทำแล้วใน F15.4)</td>
+<td>รอต้นเคาะ</td>
+</tr>
+<tr>
+<td><strong>เพดานวัดกับพอร์ตแผน 12 เดือน</strong></td>
+<td>ต้องมีเงินเติมต่อเดือนใน F8 (ทำแล้วใน F15.2)</td>
+<td>รอต้นตอบ Q1</td>
+</tr>
+<tr>
+<td><strong>look-through ผ่าน ETF</strong></td>
+<td>หุ้นเดี่ยวรวม = ถือตรง + สัดส่วน ETF × น้ำหนักในนั้น — ต้องดึง holdings ของ ETF (P1)</td>
+<td>รอต้นเคาะว่านับไหม</td>
+</tr>
+</tbody>
+</table>
+<h3 id="f11-api-first-apiv1-p0">F11 API-first <code>/api/v1</code> (P0)</h3>
+<table>
+<thead>
+<tr>
+<th>ทาง</th>
+<th>scope</th>
+<th>หน้าที่</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /health</code></td>
+<td>—</td>
+<td>สถานะ · เวอร์ชัน · <code>webull.environment</code> · <code>trading_enabled</code> · <code>last_scan_at</code> · <code>price_provider</code> · ค่าเพดานที่บังคับใช้จริง</td>
+</tr>
+<tr>
+<td><code>GET /openapi.json</code> · <code>GET /meta</code></td>
+<td>— / any</td>
+<td>สคีมา · scope ของ token นี้</td>
+</tr>
+<tr>
+<td><code>GET /portfolio</code> · <code>GET /holdings</code> · <code>GET /transactions</code></td>
+<td><code>portfolio:read</code></td>
+<td>พอร์ตรวม/รายบัญชี · รายการ</td>
+</tr>
+<tr>
+<td><code>POST /transactions</code></td>
+<td><code>portfolio:write</code></td>
+<td>บันทึกมือ (manual_paper เท่านั้น)</td>
+</tr>
+<tr>
+<td><code>GET /quotes?symbols=</code></td>
+<td><code>quotes:read</code></td>
+<td>ราคาล่าสุด + source + as_of + market_status</td>
+</tr>
+<tr>
+<td><code>GET /scans</code> · <code>GET /scans/{model}</code> · <code>GET /scans/{model}/runs/{date}</code></td>
+<td><code>scan:read</code></td>
+<td>ผลสแกน + why + เวอร์ชัน</td>
+</tr>
+<tr>
+<td><code>GET /instruments/{symbol}</code> · <code>GET /instruments/{symbol}/bars?tf=1d</code> · <code>/fundamentals</code></td>
+<td><code>quotes:read</code></td>
+<td>ข้อมูลหุ้น</td>
+</tr>
+<tr>
+<td><code>GET/POST /watchlist</code> · <code>POST /alerts</code></td>
+<td><code>watchlist:write</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>GET /theses</code> · <code>POST /theses</code> · <code>POST /theses/{id} {confirm|reject|stale}</code></td>
+<td><code>theses:read</code> · <code>theses:write</code> · เจ้าของ</td>
+<td>เขียนเป็น draft 🤖 เสมอ · เจ้าของยืนยัน/ปฏิเสธในหน้าหุ้น · เวอร์ชันต่อ symbol</td>
+</tr>
+<tr>
+<td><code>GET /portfolio/review</code></td>
+<td><code>portfolio:read</code></td>
+<td>วิเคราะห์พอร์ต F15 (สัดส่วน vs แผน · action ต่อตัว · โยกเงินแบบมีด่าน)</td>
+</tr>
+<tr>
+<td><code>POST /tickets/{id}/preview</code></td>
+<td>เจ้าของ / ผู้ดูแลระบบ (CRON_SECRET)</td>
+<td>ให้ Webull ประเมินคำสั่ง (ไม่ส่ง) — ต้องผ่านก่อนเปิดราง API</td>
+</tr>
+<tr>
+<td><code>GET /tickets</code> · <code>POST /tickets</code></td>
+<td><code>tickets:propose</code></td>
+<td>สร้างได้เฉพาะ <code>proposed</code> · response คืนผลตรวจกฎ</td>
+</tr>
+<tr>
+<td><code>POST /tickets/{id}/confirm</code></td>
+<td><strong>ไม่มี scope</strong></td>
+<td>403 สำหรับ token ทุกชนิด · ทำได้จากเซสชันคนเท่านั้น</td>
+</tr>
+<tr>
+<td><code>POST /journal</code></td>
+<td><code>journal:write</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>POST /query</code></td>
+<td>any</td>
+<td>ภาษาคน → ตัวแปลเจตนาแบบกฎ คืน <code>understood_as</code> + ผล หรือ <code>needs_disambiguation</code></td>
+</tr>
+<tr>
+<td>- กติกา: ทางไหนไม่ชัดตกไปทาง "แคบกว่า" · ทุกการเรียกลง log รวมที่ถูกปฏิเสธ · rate limit 60/นาที/token · เอกสาร <code>docs/API-UPVerse.md</code> มี <code>curl</code> ที่รันได้จริง · ไม่ฝัง LLM</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="f12-ops-p0">F12 Ops (P0)</h3>
+<ul>
+<li><code>health</code> ครอบคลุม: DB · Webull · price provider · งานล่าสุดแต่ละตัว (สแกน · sync · alerts · fx) · <code>trading_enabled</code> · เวอร์ชัน git</li>
+<li><code>audit_log</code> ทุกการกระทำสำคัญ (ล็อกอิน · เปลี่ยนตั้งค่า · กุญแจ · ตั๋วทุกสถานะ · token) · เก็บ ≥ 1 ปี</li>
+<li>Kill switch: env <code>TRADING_ENABLED</code> (Vercel) <strong>และ</strong> ปุ่มในตั้งค่า — ตัวใดตัวหนึ่งปิด = ส่งไม่ได้</li>
+<li>สำรอง: Supabase backup รายวัน + ปุ่มส่งออก CSV (transactions · journal · theses) · เก็บ 3 เดือนล่าสุดของ scan_results เต็ม ที่เหลือเก็บเฉพาะ Top 10</li>
+<li>Error tracking (Sentry หรือ Vercel logs) · ห้าม log payload ที่มีกุญแจ/token (masking กลาง)</li>
+</ul>
+<hr />
+<h2 id="7-top-10">7. โมเดลสแกน Top 10 (รายละเอียด)</h2>
+<h3 id="70">7.0 กติการ่วมทุกโมเดล</h3>
+<table>
+<thead>
+<tr>
+<th>เรื่อง</th>
+<th>ค่าเริ่มต้น v1</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>จักรวาล</td>
+<td>S&amp;P 500 constituents (ตาราง <code>instruments.is_sp500</code> อัปเดตรายเดือนจากแหล่งสาธารณะ + วันที่ดึง) · ขยายได้ทีหลัง</td>
+</tr>
+<tr>
+<td>สภาพคล่องขั้นต่ำ</td>
+<td>ราคา ≥ 5 USD · มูลค่าซื้อขายเฉลี่ย 50 วัน ≥ 20 ล้าน USD</td>
+</tr>
+<tr>
+<td>เวลา</td>
+<td>รันทุกคืนวันทำการสหรัฐ หลังปิดตลาด + กันชน → <strong>05:30 ICT</strong> · ข้อมูลราคาปิดของวันนั้น</td>
+</tr>
+<tr>
+<td>ข้อมูลไม่ครบ</td>
+<td>ไม่จัดอันดับ ไม่ประมาณค่า · นับแสดงใน "ตัดออกเพราะข้อมูลไม่ครบ"</td>
+</tr>
+<tr>
+<td>คะแนน</td>
+<td>0–100 · เก็บองค์ประกอบคะแนนรายส่วน (<code>metrics.score_parts</code>) · เวอร์ชันโมเดล + พารามิเตอร์ที่ใช้ (<code>scan_models.params</code>)</td>
+</tr>
+<tr>
+<td>"ทำไม"</td>
+<td>สร้างจากแม่แบบตายตัว (deterministic) เติมตัวเลขจริง · ไม่ใช่ LLM</td>
+</tr>
+<tr>
+<td>ผลลัพธ์</td>
+<td>Top 10 ต่อโมเดล + รายการเต็มที่ผ่านตะแกรง (ดูได้) · มุมพิเศษ "ซ้ำหลายโมเดล" (ติด ≥ 2 โมเดล) และ "หลีกเลี่ยง" (ตกตะแกรงแข็ง: F-score ≤ 3 · หนี้สุทธิ/EBITDA &gt; 4 · FCF ติดลบ 2 ใน 3 ปี)</td>
+</tr>
+<tr>
+<td>วัดผล</td>
+<td>งานคืนละครั้งคำนวณผลตอบแทนล่วงหน้า 5/20/60 วันของทุก Top 10 ในอดีต เทียบ SPY → <code>scan_outcomes</code> → หน้า "ความแม่นของโมเดล"</td>
+</tr>
+<tr>
+<td>แหล่งข้อมูล</td>
+<td>ราคา: Webull batch bars (ถ้ามีสิทธิ์) หรือ yfinance · งบ: SEC EDGAR XBRL companyfacts (ทางการ ฟรี) · ประมาณการนักวิเคราะห์/วันงบ: Finnhub หรือ yfinance (ไม่ทางการ → ป้าย "ชั้น 2") · ทุกค่าเก็บ <code>source</code> + <code>fetched_at</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="m1">M1 — กลับตัว + วอลุ่มผิดปกติ ("หุ้นเด่นที่กำลังกลับตัว")</h3>
+<ul>
+<li><strong>ตอบคำถาม:</strong> ตัวไหนเพิ่งเปลี่ยนจังหวะจากลง/พักตัว เป็นขึ้น พร้อมเงินไหลเข้าผิดปกติ</li>
+<li><strong>บริบทก่อนหน้า (ต้องมีอย่างน้อย 1):</strong> ราคาปิดต่ำกว่า EMA20 ≥ 10 ใน 15 วันก่อนหน้า · หรือ ราคาลงจากจุดสูง 52 สัปดาห์ ≥ 15%</li>
+<li><strong>สัญญาณวันล่าสุด (ต้องครบ):</strong> ปิดเหนือ high ของวันก่อน · ปิดเหนือ EMA20 · ปริมาณ ≥ 2.0 × ค่าเฉลี่ย 50 วัน · ปิดในครึ่งบนของช่วงวัน (≥ 60%)</li>
+<li><strong>คะแนน:</strong> ปริมาณเทียบเฉลี่ย 0–30 (2× = 15 · 3× = 25 · ≥ 4× = 30) · คุณภาพการยืนกลับ 0–20 (เหนือ EMA20 +10 · SMA50 +5 · SMA200 +5) · ความแข็งแท่ง 0–15 · RS 20 วันเทียบ SPY 0–15 · ประตูพื้นฐาน 0–20 (F-score ≥ 5 +10 · FCF บวก +10) · <strong>หัก:</strong> งบภายใน 5 วัน −10 · ขึ้นวันเดียว &gt; 15% −10 (เสี่ยง blow-off)</li>
+<li><strong>คอลัมน์:</strong> ราคา · %วัน · ปริมาณ/เฉลี่ย · ระยะจาก EMA20/SMA50/SMA200 · RSI14 · วันงบ · คะแนน</li>
+<li><strong>ทำไม (แม่แบบ):</strong> "ปิดเหนือ EMA20 ครั้งแรกใน {n} วัน ด้วยปริมาณ {x}× ค่าเฉลี่ย · ปิดที่ {p}% ของช่วงวัน · แข็งกว่า SPY {rs}% ใน 20 วัน · {ป้ายพื้นฐาน}"</li>
+<li><strong>กับดัก:</strong> กลับตัวหลอกบ่อย → agent ต้องรอ follow-through 1–3 วันก่อนเสนอตั๋ว · ตัดขาดทุนใต้ low ของวันสัญญาณ · ห้ามไล่หลังขึ้นไปแล้ว &gt; 5%</li>
+<li><strong>วัดผล:</strong> ผลตอบแทน 5/20 วัน vs SPY · % ที่ไม่หลุด low วันสัญญาณใน 10 วัน</li>
+</ul>
+<h3 id="m2-vi-vi">M2 — ดาวรุ่ง VI ("VI เด่น อนาคตดี")</h3>
+<ul>
+<li><strong>ตอบคำถาม:</strong> ธุรกิจคุณภาพที่โตจริง ราคาไม่แพงเกินเหตุ (Quality Growth at a Reasonable Price)</li>
+<li><strong>ตะแกรง:</strong> รายได้โตเฉลี่ย 3 ปี ≥ 10% · กำไรต่อหุ้นหรือ FCF/หุ้น โต 3 ปี ≥ 10% · ROIC ≥ 15% (หรือ ROE ≥ 15% เมื่อ หนี้/ทุน ≤ 1) · อัตรากำไรขั้นต้นไม่ถดถอย (≥ ค่าเฉลี่ย 3 ปี − 2 จุด) · FCF margin ≥ 10% · หนี้สุทธิ/EBITDA ≤ 2 หรือเงินสดสุทธิ · จำนวนหุ้นไม่เพิ่ม &gt; 2%/ปี · มูลค่า: PEG ≤ 1.5 <strong>หรือ</strong> EV/EBITDA ≤ ค่ามัธยฐาน 5 ปีของตัวเอง</li>
+<li><strong>คะแนน:</strong> การเติบโต 25 · คุณภาพ (ROIC · margin) 25 · งบดุล 15 · มูลค่า 25 · บริบทเทคนิค 10 (เหนือ SMA200 +10)</li>
+<li><strong>ทำไม:</strong> "รายได้โต {g}%/ปี (3 ปี) · ROIC {r}% · FCF margin {f}% · EV/EBITDA {v} เทียบมัธยฐาน 5 ปี {m} · {สถานะแนวโน้ม}"</li>
+<li><strong>กับดัก:</strong> หุ้นโตมักถูกตั้งราคาไว้สมบูรณ์แบบ · ตรวจรายการพิเศษครั้งเดียว (one-off) · ข้อมูลประมาณการชั้น 2 คลาดเคลื่อนได้ → ต้องมี thesis ก่อนตั๋วเสมอ</li>
+<li><strong>วัดผล:</strong> 60 วัน และ 6/12 เดือน vs SPY</li>
+</ul>
+<h3 id="m3-deep-value-turnaround">M3 — ของถูกมีเหตุผล (Deep Value / Turnaround)</h3>
+<ul>
+<li><strong>ตอบคำถาม:</strong> ตัวไหนถูกเพราะตลาดทิ้ง แต่ตัวเลขกำลังดีขึ้น (ไม่ใช่ถูกเพราะกำลังพัง)</li>
+<li><strong>ตะแกรง:</strong> P/FCF ≤ 12 หรือ EV/EBIT ≤ 10 หรือ (P/B ≤ 1.5 และ ROE ≥ 8%) · Piotroski F-score ≥ 7 · ราคาต่ำกว่าจุดสูง 52 สัปดาห์ ≥ 20% · <strong>สัญญาณนิ่ง:</strong> ปิดเหนือ SMA50 หรือ RS 3 เดือนดีขึ้นต่อเนื่อง · ปันผลปลอดภัย (payout ≤ 70%) ให้คะแนนเพิ่ม · <strong>ตัดทิ้ง:</strong> หนี้สุทธิ/EBITDA &gt; 3 · FCF ติดลบ 2 ใน 3 ปี · Altman Z &lt; 1.8</li>
+<li><strong>คะแนน:</strong> ความถูก 35 · คุณภาพดีขึ้น (F-score) 25 · งบดุล 15 · การนิ่ง/เทคนิค 15 · ปัจจัยหนุน (ซื้อหุ้นคืน · ผู้บริหารซื้อ — เมื่อมีข้อมูล) 10</li>
+<li><strong>ทำไม:</strong> "P/FCF {x} · F-score {f}/9 · ต่ำกว่าจุดสูง 52 สัปดาห์ {d}% แต่ยืนเหนือ SMA50 มา {n} วัน · หนี้สุทธิ/EBITDA {l}"</li>
+<li><strong>กับดัก:</strong> value trap · ห้ามถัวเฉลี่ยขาลงถ้า thesis พัง · ต้องรู้ว่า "ทำไมถูก"</li>
+<li><strong>วัดผล:</strong> 6/12 เดือน vs SPY</li>
+</ul>
+<h3 id="m4-trend-leader-minervini-rs">M4 — ผู้นำแนวโน้ม (Trend Leader — แม่แบบแนวโน้มแบบ Minervini + RS)</h3>
+<ul>
+<li><strong>ตอบคำถาม:</strong> ตัวไหนอยู่ในแนวโน้มขึ้นที่แข็งแรงและแข็งกว่าตลาด และตอนนี้อยู่ใกล้จุดเข้าที่มีเหตุผล</li>
+<li><strong>ตะแกรง:</strong> ปิด &gt; SMA50 &gt; SMA150 &gt; SMA200 · SMA200 สูงกว่าเมื่อ 22 วันก่อน (ยกตัวขึ้น ≥ 1 เดือน) · ปิด ≥ 1.3 × ต่ำสุด 52 สัปดาห์ · ปิด ≥ 0.75 × สูงสุด 52 สัปดาห์ · RS rank ≥ 70 (เปอร์เซ็นไทล์ในจักรวาลของผลตอบแทนถ่วงน้ำหนัก 3/6/12 เดือน)</li>
+<li><strong>สถานะจุดเข้า:</strong> ระยะจาก EMA21 ≤ 5% และปริมาณ 5 วันล่าสุด &lt; ค่าเฉลี่ย 50 วัน = "ใกล้จุดเข้า" · 5–10% = "รอ" · &gt; 10% = "ไล่ราคาแล้ว"</li>
+<li><strong>คะแนน:</strong> RS 35 · โครงสร้างแนวโน้ม 25 · ใกล้จุดเข้า 20 · พื้นฐาน (กำไร 2 ไตรมาสล่าสุดโต ≥ 15%) 20</li>
+<li><strong>ทำไม:</strong> "RS rank {r} · เหนือ SMA200 ที่ยกตัว {m} เดือน · ห่าง EMA21 {d}% ({สถานะ}) · กำไรไตรมาสล่าสุด {e}%"</li>
+<li><strong>กับดัก:</strong> momentum พลิกเร็ว → ตัดขาดทุน 7–8% หรือใต้ swing low · ห้ามซื้อตอน "ไล่ราคาแล้ว"</li>
+<li><strong>วัดผล:</strong> 20/60 วัน vs SPY · % หลุดตัดขาดทุนใน 20 วัน</li>
+</ul>
+<h3 id="m5-dividend-compounder">M5 — เครื่องจ่ายเงิน (Dividend Compounder + ผู้สมัครขายพรีเมียม)</h3>
+<ul>
+<li><strong>ตอบคำถาม:</strong> ตัวไหนจ่ายเงินสม่ำเสมอ โตได้ ปลอดภัย และเหมาะจะทำ CSP/covered call ในเฟส 2–3</li>
+<li><strong>ตะแกรง:</strong> ปันผลเพิ่มติดต่อกัน ≥ 5 ปี (หรือ CAGR ปันผล 5 ปี ≥ 5%) · payout ≤ 60% (FCF payout ≤ 70%) · FCF yield ≥ 4% หรือ อัตราปันผล ≥ 2.5% · หนี้สุทธิ/EBITDA ≤ 2.5 · beta ≤ 1.2 · <strong>ราคาต่อหุ้น ≤ 150 USD</strong> (ล็อต 100 หุ้น ≤ 15,000 USD — พารามิเตอร์ <code>max_lot_price</code>) · IV rank ≥ 30 ให้คะแนนเพิ่ม (เมื่อมีข้อมูลออปชัน; ไม่มี = ข้าม ไม่หัก)</li>
+<li><strong>คะแนน:</strong> ความปลอดภัยของปันผล 30 · การเติบโต 20 · มูลค่า (อัตราปันผลเทียบเฉลี่ย 5 ปี) 20 · ความน่าสนใจของพรีเมียม 15 · ล็อตจ่ายไหว 15</li>
+<li><strong>คอลัมน์พิเศษ:</strong> "เงินสดที่ต้องกันสำหรับ CSP ที่ strike ≈ ราคา = {ราคา × 100}"</li>
+<li><strong>ทำไม:</strong> "ปันผลโต {n} ปีติด · payout {p}% · FCF yield {f}% · ล็อต 100 หุ้น ≈ ${lot} · {IV rank ถ้ามี}"</li>
+<li><strong>กับดัก:</strong> yield trap (ปันผลสูงเพราะราคาพัง) → ต้องผ่านตะแกรงหนี้และ FCF</li>
+<li><strong>วัดผล:</strong> ผลตอบแทนรวม 12 เดือน (รวมปันผล) vs SPY</li>
+</ul>
+<h3 id="m6-p1-post-earnings-drift">M6 (P1) — งบเซอร์ไพรส์ (Post-Earnings Drift)</h3>
+<ul>
+<li>รายงานงบภายใน 5 วันทำการ · EPS surprise ≥ +5% และรายได้ surprise ≥ +2% · เปิดกระโดด ≥ 3% ด้วยปริมาณ ≥ 2× · ยังรักษา ≥ 50% ของช่องว่างหลัง 3 วัน · ต้องใช้ข้อมูลประมาณการ (ชั้น 2) จึงเป็น P1 · วัดผล 20/60 วัน</li>
+</ul>
+<h3 id="71">7.1 ข้อมูลที่โมเดลต้องใช้ (สรุป)</h3>
+<table>
+<thead>
+<tr>
+<th>ข้อมูล</th>
+<th>ใช้ใน</th>
+<th>แหล่ง v1</th>
+<th>ความถี่</th>
+<th>ชั้น</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OHLCV รายวัน 2 ปี × ~500 ตัว</td>
+<td>ทุกโมเดล</td>
+<td>Webull <code>get_batch_history_bar</code> (ถ้าสิทธิ์ market data ครอบคลุม) → สำรอง yfinance</td>
+<td>คืนละครั้ง</td>
+<td>1 / 2</td>
+</tr>
+<tr>
+<td>งบรายไตรมาส/ปี (รายได้ · กำไร · OCF · capex · หนี้ · เงินสด · หุ้น · ปันผลจ่าย)</td>
+<td>M2 M3 M5</td>
+<td>SEC EDGAR XBRL <code>companyfacts</code> (ทางการ)</td>
+<td>สัปดาห์ละครั้ง + หลังวันงบ</td>
+<td>1</td>
+</tr>
+<tr>
+<td>ประมาณการ EPS / วันงบ / surprise</td>
+<td>M2 (PEG) M6</td>
+<td>Finnhub / yfinance</td>
+<td>คืนละครั้ง</td>
+<td>2</td>
+</tr>
+<tr>
+<td>ประวัติปันผล</td>
+<td>M5</td>
+<td>EDGAR + yfinance</td>
+<td>สัปดาห์</td>
+<td>1 / 2</td>
+</tr>
+<tr>
+<td>S&amp;P 500 constituents + sector</td>
+<td>จักรวาล</td>
+<td>แหล่งสาธารณะ (ระบุ URL ในโค้ด)</td>
+<td>เดือน</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Beta · IV rank</td>
+<td>M5</td>
+<td>คำนวณเอง (beta) · Webull options snapshot (ต้องสมัคร market data)</td>
+<td>คืน</td>
+<td>1 / —</td>
+</tr>
+<tr>
+<td>USD/THB</td>
+<td>พอร์ต</td>
+<td>ธนาคารแห่งประเทศไทย API หรือแหล่งเปิด + rate จาก Webull ตอนแลก</td>
+<td>วันละครั้ง + ตอนบันทึก</td>
+<td>1 / 2</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="8-supabase-postgres">8. แบบจำลองข้อมูล (Supabase · Postgres)</h2>
+<p>ทุกตารางมี <code>owner_id uuid</code> + <code>created_at</code> + <code>updated_at</code> · <strong>RLS เปิดทุกตาราง</strong> (owner = <code>auth.uid()</code>; งานเบื้องหลังใช้ service role) · จำนวนหุ้น <code>numeric(18,6)</code> · เงิน <code>numeric(18,4)</code> · เวลาเป็น <code>timestamptz</code> (แสดงเป็น ICT · ตลาดเป็น ET)</p>
+<table>
+<thead>
+<tr>
+<th>ตาราง</th>
+<th>คอลัมน์สำคัญ</th>
+<th>หมายเหตุ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>profiles</code></td>
+<td>id · email · role (<code>owner</code>/<code>viewer</code>) · display_name · locale · theme</td>
+<td></td>
+</tr>
+<tr>
+<td><code>accounts</code></td>
+<td>id · kind (<code>webull_live</code>/<code>manual_paper</code>) · label · currency · environment (<code>uat</code>/<code>prod</code>) · is_active · broker_account_id_masked</td>
+<td>หลายบัญชีได้</td>
+</tr>
+<tr>
+<td><code>broker_credentials</code></td>
+<td>account_id · app_key_enc · app_secret_enc · access_token_enc · token_expires_at · key_last4 · status (<code>connected</code>/<code>needs_2fa</code>/<code>expired</code>/<code>error</code>) · last_ok_at · last_error</td>
+<td>ciphertext เท่านั้น · ไม่มี policy อ่านจาก client (service role only)</td>
+</tr>
+<tr>
+<td><code>instruments</code></td>
+<td>symbol (PK) · name · exchange · sector · industry · cik · is_sp500 · sp500_as_of · lot_price_cap_flag</td>
+<td></td>
+</tr>
+<tr>
+<td><code>prices_daily</code></td>
+<td>symbol · date · o · h · l · c · adj_c · v · source · fetched_at</td>
+<td>PK (symbol, date)</td>
+</tr>
+<tr>
+<td><code>quotes_cache</code></td>
+<td>symbol · ts · price · change · change_pct · volume · market_status · source</td>
+<td>TTL 5 วิ ฝั่งแอป</td>
+</tr>
+<tr>
+<td><code>fundamentals</code></td>
+<td>symbol · period_end · period_type (<code>Q</code>/<code>FY</code>) · revenue · net_income · ocf · capex · fcf · total_debt · cash · ebitda · shares_out · dividends_paid · eps · source · fetched_at</td>
+<td>จาก EDGAR เป็นหลัก</td>
+</tr>
+<tr>
+<td><code>metrics_daily</code></td>
+<td>symbol · date · ema20 · ema21 · sma50 · sma150 · sma200 · rsi14 · atr14 · vol_sma50 · dollar_vol50 · rs_rank · hi52 · lo52 · f_score · pe · ev_ebitda · p_fcf · div_yield · payout · beta · model_version</td>
+<td>คำนวณคืนละครั้ง</td>
+</tr>
+<tr>
+<td><code>fx_rates</code></td>
+<td>date · usd_thb · source · fetched_at</td>
+<td></td>
+</tr>
+<tr>
+<td><code>holdings_snapshots</code></td>
+<td>account_id · as_of · symbol · qty · avg_cost · market_value · source</td>
+<td>รายวัน + ทุก sync</td>
+</tr>
+<tr>
+<td><code>transactions</code></td>
+<td>account_id · ts · symbol · type (<code>buy</code>/<code>sell</code>/<code>dividend</code>/<code>fee</code>/<code>deposit</code>/<code>withdraw</code>/<code>fx</code>/<code>split</code>) · qty · price · amount_usd · fx_rate_thb · fees · note · source (<code>manual</code>/<code>webull_fill</code>/<code>import</code>/<code>manual_after_ticket</code>) · ticket_id · broker_order_id (unique)</td>
+<td></td>
+</tr>
+<tr>
+<td><code>positions</code> (view)</td>
+<td>account_id · symbol · qty · avg_cost · lots</td>
+<td>คำนวณจาก transactions (manual) หรือ snapshot (webull)</td>
+</tr>
+<tr>
+<td><code>scan_models</code></td>
+<td>key (<code>M1</code>…) · name_th · version · params jsonb · enabled</td>
+<td></td>
+</tr>
+<tr>
+<td><code>scan_runs</code></td>
+<td>id · model_key · version · run_at · universe_size · passed_count · excluded_missing · status · stats jsonb</td>
+<td></td>
+</tr>
+<tr>
+<td><code>scan_results</code></td>
+<td>run_id · rank · symbol · score · score_parts jsonb · metrics jsonb · why_th · flags[]</td>
+<td></td>
+</tr>
+<tr>
+<td><code>scan_outcomes</code></td>
+<td>result_id · horizon_days · fwd_return · spy_return · hit (bool) · computed_at</td>
+<td></td>
+</tr>
+<tr>
+<td><code>watchlist</code></td>
+<td>symbol · reason · zone_low · zone_high · stop · note · from_model · status</td>
+<td></td>
+</tr>
+<tr>
+<td><code>alerts</code></td>
+<td>id · kind · symbol · condition jsonb · channel · status · last_fired_at · cooldown_min</td>
+<td></td>
+</tr>
+<tr>
+<td><code>theses</code></td>
+<td>id · symbol · version · status (<code>draft_ai</code>/<code>confirmed</code>/<code>stale</code>) · content jsonb (7 หัวข้อ) · scenarios jsonb · author (<code>agent</code>/<code>owner</code>) · confirmed_at · stale_reason</td>
+<td></td>
+</tr>
+<tr>
+<td><code>risk_rules</code></td>
+<td>version · params jsonb · active_from · created_by</td>
+<td>ไม่แก้ทับ</td>
+</tr>
+<tr>
+<td><code>tickets</code></td>
+<td>id · account_id · kind (<code>stock</code>/<code>option</code>) · side · symbol · qty · notional_usd · order_type · limit_price · stop_price · target_price · rr · pct_port_after · thesis_id · rationale · alt_zero · invalidation · expires_at · status · risk_check jsonb · risk_rules_version · environment · proposed_by · confirmed_by · confirmed_at · confirm_phrase · idempotency_key · broker_order_id · rail (<code>api</code>/<code>manual</code>)</td>
+<td></td>
+</tr>
+<tr>
+<td><code>order_log</code></td>
+<td>ticket_id · ts · action · from_status · to_status · request_redacted jsonb · response_redacted jsonb · http_status · environment · actor</td>
+<td>ห้ามมีกุญแจ/token</td>
+</tr>
+<tr>
+<td><code>journal</code></td>
+<td>id · ts · ticket_id · symbol · decision · thesis_short · emotion · expectation · review_at · outcome · lesson · tags[]</td>
+<td></td>
+</tr>
+<tr>
+<td><code>goals</code></td>
+<td>target_thb · target_date · start_amount · monthly_contribution · dca_day · allocation jsonb · scenario_returns jsonb</td>
+<td></td>
+</tr>
+<tr>
+<td><code>api_tokens</code></td>
+<td>prefix · hash · scopes[] · label · created_at · last_used_at · revoked_at</td>
+<td></td>
+</tr>
+<tr>
+<td><code>audit_log</code></td>
+<td>ts · actor · action · entity · entity_id · meta jsonb · ip</td>
+<td></td>
+</tr>
+<tr>
+<td><code>jobs_runs</code></td>
+<td>job · started_at · finished_at · status · summary jsonb · log_ref</td>
+<td></td>
+</tr>
+<tr>
+<td><code>settings</code></td>
+<td>key · value jsonb · version · updated_by</td>
+<td>เช่น <code>trading_enabled</code> · price_provider_order · quiet_hours</td>
+</tr>
+</tbody>
+</table>
+<p><strong>ดัชนี/ข้อควรระวัง:</strong> <code>prices_daily (symbol, date desc)</code> · <code>scan_results (run_id, rank)</code> · PostgREST ตัด 1,000 แถวเงียบ ๆ → งานที่อ่านทั้งจักรวาลต้องไล่ <code>.range()</code> (<code>feedback_postgrest_1000_row_cap</code>) · <code>createClient</code> ตั้ง <code>cache: "no-store"</code> (<code>feedback_nextjs_fetch_cache_supabase</code>)</p>
+<hr />
+<h2 id="9-integrations">9. การเชื่อมต่อภายนอก (Integrations)</h2>
+<h3 id="91-webull-openapi-region-th-17-2569">9.1 Webull OpenAPI (region <code>th</code>) — ข้อเท็จจริงที่ตรวจแล้ว 17 ก.ย. 2569</h3>
+<table>
+<thead>
+<tr>
+<th>เรื่อง</th>
+<th>ข้อเท็จจริง</th>
+<th>ที่มา</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>พอร์ทัล/เอกสาร</td>
+<td>https://developer.webull.co.th/apis/docs/ — Trading API + Market Data API · SDK Python และ Java · <code>ApiClient("&lt;app_key&gt;", "&lt;app_secret&gt;", "th")</code></td>
+<td>getting-started</td>
+</tr>
+<tr>
+<td>การขอสิทธิ์</td>
+<td>สมัคร Individual Application → App Key + App Secret · รีวิว 1–2 วันทำการ · มีบัญชีทดสอบร่วมใช้ได้ทันที</td>
+<td>getting-started</td>
+</tr>
+<tr>
+<td>การยืนยันตัวตน</td>
+<td>ลายเซ็น HMAC-SHA256 ฝั่ง client · header <code>x-app-key</code> <code>x-timestamp</code> (ISO 8601 UTC) <code>x-signature</code> <code>x-signature-algorithm</code> <code>x-signature-version</code> <code>x-signature-nonce</code> <code>x-version</code> (<code>v2</code>) · <strong>2FA บังคับในการเรียกครั้งแรก</strong> แล้วใช้ <code>x-access-token</code> ต่อ · App Secret ไม่ถูกส่งใน header · HTTPS เท่านั้น</td>
+<td>authentication/overview</td>
+</tr>
+<tr>
+<td>SDK Python</td>
+<td><code>webull-openapi-python-sdk</code> 3.0.1 บน PyPI (Python 3.8–3.14) · README ระบุรองรับลูกค้า <strong>Webull TH</strong> (HK/US/JP/SG/TH/AU/MY/UK/BR/MX/ZA/EU) · โปรโตคอล HTTP (เทรด/บัญชี/แท่งเทียน/snapshot) · gRPC (สถานะคำสั่งแบบ push) · MQTT (ราคาเรียลไทม์)</td>
+<td>GitHub webull-inc/webull-openapi-python-sdk · PyPI</td>
+</tr>
+<tr>
+<td>Trade API (หุ้น)</td>
+<td>ตัวอย่างใช้ <code>LIMIT</code> · time-in-force <code>DAY</code> · <code>entrust_type: QTY</code> · มี <code>replace_order</code> <code>cancel_order</code> · session <code>CORE</code></td>
+<td>trade-api/getting-started</td>
+</tr>
+<tr>
+<td>Trade API (ออปชัน)</td>
+<td>"US stock options" · single-leg (<code>SINGLE</code>) เท่านั้น · MARKET/LIMIT/STOP/STOP-LIMIT · DAY/GTC · <code>BUY_TO_OPEN</code> <code>SELL_TO_CLOSE</code> · ข้อมูลออปชัน (tick/snapshot/bars/contracts) ต้อง "paid market-data subscription"</td>
+<td>trade-api/option</td>
+</tr>
+<tr>
+<td>Market Data</td>
+<td><code>get_history_bar</code> · <code>get_batch_history_bar</code> · streaming MQTT (quote/snapshot/tick) ใช้ <code>api_endpoint</code> และ <code>data_api_endpoint</code> แยกกัน · "requires an active OpenAPI market data subscription" · 403 = ยังไม่สมัคร</td>
+<td>market-data-api/getting-started</td>
+</tr>
+<tr>
+<td>ค่าใช้จ่าย</td>
+<td>Trading API: "0 No API fees charged" · Market data: "Free Data — Start with US Market Nasdaq Basic at no cost" · ระดับสูงกว่าไม่ระบุราคา</td>
+<td>webull.co.th/en/open-api</td>
+</tr>
+<tr>
+<td>Skills/MCP ทางการ</td>
+<td><code>webull-openapi-skills</code> และ <code>webull-openapi-mcp</code> (PyPI 1.2.4) รองรับ US/HK/JP/SG/MY/UK/MX/BR/ZA — <strong>ไม่มี TH</strong> → ใช้ SDK ตรง · เอาแนวคิดชั้นป้องกันมาใช้ (UAT ค่าเริ่มต้น · notional/quantity limit · symbol whitelist · read-only toolsets · audit)</td>
+<td>GitHub webull-inc</td>
+</tr>
+<tr>
+<td><strong>ยืนยันแล้ว 18 ก.ย. 2569 (เอกสารทางการ + บัญชีจริง)</strong></td>
+<td>host prod <code>api.webull.co.th</code> · <strong>host UAT <code>th-api.uat.webullbroker.com</code> + บัญชีทดสอบร่วม 3 บัญชี (docs/sdk.md — ไม่ต้องสมัคร)</strong> · body คำสั่ง TH v3 <code>new_orders[]</code> · <strong>เศษหุ้น: <code>quantity</code> รับทศนิยม</strong> · preview คืน <code>estimated_cost</code>/<code>estimated_transaction_fee</code> (ทดสอบจริง: ขาย 0.00639 AXON → $2.88 / $0.02) · order types MARKET/LIMIT/STOP_LOSS/STOP_LOSS_LIMIT · sessions CORE/ALL/NIGHT/ALL_DAY · token INVALID หลัง 15 วันไม่ใช้ · history คืนช่วงล่าสุด (start_time → 417) · fills ไม่มีค่าธรรมเนียม</td>
+<td><code>docs/API-UPVerse.md</code> · llms.txt ของ Webull TH</td>
+</tr>
+<tr>
+<td><strong>[ยังไม่ยืนยัน]</strong></td>
+<td>2FA/token ของบัญชีทดสอบ UAT (ใช้ flow เดียวกันไหม) · place จริงบน UAT · deep link เปิดแอป · rate limit ของ preview/place</td>
+<td>→ S0.2 (ทำได้แล้วเพราะมี UAT)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>การใช้งานในระบบ:</strong> เส้นทางออนไลน์ (Vercel · TypeScript) ต้องเรียก Webull ได้ → <strong>Sprint 0 ตัดสิน</strong>: (ก) พอร์ตตัวเซ็นลายเซ็นจาก SDK Python (open source) มาเป็น TypeScript module <code>lib/webull/</code> · หรือ (ข) ใช้ Vercel Python Function เรียก SDK ตรง · <strong>เส้นทางกลางคืน (batch) ใช้ Python SDK บน GitHub Actions เสมอ</strong></p>
+<h3 id="92-price-providers-priceprovider-quotesymbols-barssymbol-tf-range-health">9.2 ผู้ให้ราคา (Price providers) — อินเทอร์เฟซเดียว <code>PriceProvider { quote(symbols) · bars(symbol, tf, range) · health() }</code></h3>
+<table>
+<thead>
+<tr>
+<th>ลำดับ</th>
+<th>ผู้ให้</th>
+<th>ใช้</th>
+<th>ข้อจำกัด</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Webull Market Data</td>
+<td>quote ใกล้เรียลไทม์ · bars</td>
+<td>ต้องมีสิทธิ์ market data (Nasdaq Basic ฟรี <strong>[ยังไม่ยืนยันขอบเขต]</strong>)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Finnhub (free tier)</td>
+<td>quote สำรอง · วันงบ · ประมาณการ</td>
+<td>โควตา/นาที <strong>[ยังไม่ยืนยันตัวเลขปัจจุบัน]</strong> · ต้องมีคีย์</td>
+</tr>
+<tr>
+<td>3</td>
+<td>yfinance (Python, งานกลางคืน)</td>
+<td>bars ย้อนหลัง · ข้อมูลพื้นฐานชั้น 2</td>
+<td>ไม่ทางการ · ดีเลย์ · ห้ามใช้ตรวจตั๋ว</td>
+</tr>
+</tbody>
+</table>
+<h3 id="93-sec-edgar-xbrl-companyfacts-api-user-agent-fundamentals-vs-parse-feedback_research_fetch_pdf_locally">9.3 งบการเงิน — SEC EDGAR XBRL <code>companyfacts</code> API (ทางการ · ฟรี · ต้องใส่ <code>User-Agent</code> ระบุตัวตน) → แปลงเป็น <code>fundamentals</code> · ตรวจสอบหน่วยและช่วงเวลา (ไตรมาส vs สะสม) · ดึงเป็นไฟล์ในเครื่องแล้ว parse (<code>feedback_research_fetch_pdf_locally</code>)</h3>
+<h3 id="94-api-rate">9.4 อัตราแลกเปลี่ยน — ธนาคารแห่งประเทศไทย API (ต้องสมัครคีย์) หรือแหล่งเปิด · เก็บรายวัน · rate ที่ใช้จริงตอนแลกเงินมาจากรายการที่ต้นบันทึก</h3>
+<h3 id="95-line-oa-wrapper-line-push-line-morning-brief">9.5 LINE — ใช้ OA และ wrapper เดิม (<code>line-push</code> · <code>line-morning-brief</code>) · ส่งจากงานเบื้องหลังเท่านั้น · ไม่ส่งข้อมูลกุญแจ/ยอดเต็มถ้าต้นตั้ง "ซ่อนยอด"</h3>
+<h3 id="96-sp-500-url-500505">9.6 จักรวาล S&amp;P 500 — แหล่งสาธารณะ (ระบุ URL + วันที่ในตาราง) · แจ้งเตือนเมื่อจำนวน ≠ 500–505</h3>
+<hr />
+<h2 id="10">10. สถาปัตยกรรมและลำดับการทำงาน</h2>
+<h3 id="101">10.1 ส่วนประกอบ</h3>
+<table>
+<thead>
+<tr>
+<th>ส่วน</th>
+<th>เทคโนโลยี</th>
+<th>หน้าที่</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Web app</td>
+<td>Next.js App Router (TypeScript) · Tailwind · PWA</td>
+<td>หน้าจอ + <code>/api/v1</code> + งานสั้น (quote proxy · sync ตามคำขอ · ส่งคำสั่ง)</td>
+</tr>
+<tr>
+<td>ฐานข้อมูล</td>
+<td>Supabase Postgres + Auth + RLS (+ Realtime ในเฟส 3)</td>
+<td>ระบบบันทึกจริง</td>
+</tr>
+<tr>
+<td>งานเบื้องหลัง</td>
+<td><strong>GitHub Actions cron (Python 3.12 + Webull SDK + pandas)</strong></td>
+<td>สแกนกลางคืน · fundamentals · fx · วัดผล · alerts ทุก 5 นาที (ตลาดเปิด) · เขียน Supabase ด้วย service role</td>
+</tr>
+<tr>
+<td>ทางเลือกงานเบื้องหลัง</td>
+<td>Vercel Cron → Python/TS function (จำกัด 300 วิ)</td>
+<td>ถ้าไม่อยากพึ่ง Actions · Hobby plan cron อาจจำกัดความถี่ <strong>[ยังไม่ยืนยันแผนบัญชี upwellness]</strong></td>
+</tr>
+<tr>
+<td>ความลับ</td>
+<td>Vercel env (<code>UPVERSE_MASTER_KEY</code> · Supabase service role · Finnhub key) · GitHub Actions secrets</td>
+<td>ไม่มีในโค้ด/repo</td>
+</tr>
+<tr>
+<td>สังเกตการณ์</td>
+<td><code>/api/v1/health</code> · <code>jobs_runs</code> · Vercel logs / Sentry</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="102-webull">10.2 ลำดับ: เชื่อม Webull ครั้งแรก</h3>
+<ol>
+<li>ต้น → แอป: ตั้งค่า › เชื่อม Webull › กรอก App Key/Secret</li>
+<li>แอป (server) → เข้ารหัส → เก็บ <code>broker_credentials</code> (status <code>needs_2fa</code>) → audit</li>
+<li>แอป → Webull: ขอ token (ลายเซ็น HMAC)</li>
+<li>Webull → ต้น: รหัส 2FA ตามช่องทางที่ Webull กำหนด [ยังไม่ยืนยันช่องทาง]</li>
+<li>ต้น → แอป: กรอกรหัส 2FA</li>
+<li>แอป → Webull: ยืนยัน → ได้ access token + วันหมดอายุ → เข้ารหัสเก็บ (status <code>connected</code>)</li>
+<li>แอป → Webull: <code>account/list</code> + <code>balance</code> → แสดงการ์ดสถานะ · health อัปเดต</li>
+</ol>
+<h3 id="103-api-rail">10.3 ลำดับ: ตั๋วคำสั่ง (API rail)</h3>
+<ol>
+<li>agent หรือต้น → <code>POST /api/v1/tickets</code> (proposed) พร้อม thesis · ทางเลือกที่ 0 · invalidation</li>
+<li>แอป: ดึง quote สด → ตรวจกฎ (เวอร์ชันล่าสุด) → บันทึกผลตรวจในตั๋ว → แจ้ง LINE "มีตั๋วรอยืนยัน"</li>
+<li>ต้น (มือถือ) → เปิดตั๋ว → เห็นทุกช่อง + ผลตรวจ + preview (ถ้ามี) → พิมพ์ประโยคยืนยัน</li>
+<li>แอป: ตรวจซ้ำ (quote ใหม่ · กฎ · <code>trading_enabled</code> · environment · idempotency) → <code>confirmed</code> → <code>place_order</code> → <code>sent</code> (broker_order_id)</li>
+<li>งาน poll ทุก 30 วิ → <code>filled</code> → สร้าง <code>transactions</code> → เปิด journal → LINE สรุป</li>
+<li>ทุกขั้นลง <code>order_log</code> + <code>audit_log</code> (ค่าที่ส่งถูก redact)</li>
+</ol>
+<h3 id="104-github-actions-0530-ict">10.4 ลำดับ: สแกนกลางคืน (GitHub Actions 05:30 ICT วันอังคาร–เสาร์)</h3>
+<ol>
+<li>ดึงจักรวาล + bars ที่ขาด (Webull batch หรือ yfinance) → <code>prices_daily</code></li>
+<li>อัปเดต <code>fundamentals</code> (EDGAR) เฉพาะตัวที่มีงบใหม่ · <code>fx_rates</code></li>
+<li>คำนวณ <code>metrics_daily</code> ทั้งจักรวาล</li>
+<li>รัน M1–M5 → <code>scan_runs</code> + <code>scan_results</code> (+ why) · มุม "ซ้ำหลายโมเดล/หลีกเลี่ยง"</li>
+<li>คำนวณ <code>scan_outcomes</code> ของรอบที่ครบ 5/20/60 วัน</li>
+<li>ตรวจ alerts ชนิด "thesis เก่า" · "วันงบใกล้"</li>
+<li>เขียน <code>jobs_runs</code> · ถ้าล้ม → LINE แจ้ง + health เป็น <code>degraded</code></li>
+</ol>
+<h3 id="105-agent-thesis">10.5 ลำดับ: agent เขียน thesis</h3>
+<ol>
+<li>ต้นกด "ขอ thesis" ในหน้าหุ้น → สร้าง task ใน <code>settings</code>/คิว (หรือต้นสั่ง agent ตรงใน Claude Code)</li>
+<li>agent → <code>GET /instruments/{s}/fundamentals</code> + <code>/bars</code> + <code>/scans</code> (token อ่าน) → วิเคราะห์ → ตั้งวง persona</li>
+<li>agent → <code>POST /theses</code> (draft 🤖) พร้อมเสียงค้าน 3 ข้อแรก</li>
+<li>ต้น → หน้าหุ้น → อ่าน → ยืนยัน (✅) หรือส่งกลับพร้อมคอมเมนต์ (journal)</li>
+</ol>
+<h3 id="106">10.6 สภาพแวดล้อม</h3>
+<p><code>local</code> (Supabase branch/local · Webull UAT) → <code>preview</code> (Vercel preview · Webull UAT) → <code>production</code> (Vercel prod · Webull <strong>UAT จนผ่าน gate</strong> → prod เมื่อต้นเปิดเอง)</p>
+<hr />
+<h2 id="11_1">11. ความปลอดภัยและการกำกับ</h2>
+<ul>
+<li><strong>กุญแจ:</strong> ciphertext ใน DB (AES-256-GCM · nonce ต่อรายการ) · master key ใน Vercel env เท่านั้น · หมุนกุญแจหลักได้ (re-encrypt job) · ทางเลือก: Supabase Vault (ประเมินใน Sprint 0)</li>
+<li><strong>สิทธิ์:</strong> RLS ทุกตาราง · <code>broker_credentials</code> ไม่มี policy ฝั่ง client · service role ใช้เฉพาะ server/jobs · ผู้ดู (<code>viewer</code>) อ่านเฉพาะ portfolio/scan/journal ที่ต้นเปิด</li>
+<li><strong>การยืนยันตั๋ว:</strong> เซสชันคน + ประโยคยืนยัน + idempotency + ตรวจซ้ำฝั่ง server · API token ไม่มีทางยืนยันได้</li>
+<li><strong>Kill switch สองชั้น:</strong> env <code>TRADING_ENABLED</code> และ <code>settings.trading_enabled</code> · prod ต้องผ่าน gate (§14) และมีป้ายแดงถาวร</li>
+<li><strong>Log/ข้อผิดพลาด:</strong> masking กลางสำหรับ <code>app_key</code> <code>app_secret</code> <code>access_token</code> <code>authorization</code> · ห้าม log body ของ credentials endpoint</li>
+<li><strong>Repo public:</strong> <code>.gitignore</code> ครอบ <code>.env*</code> · เปิด GitHub secret scanning + push protection · ไม่มี seed ข้อมูลจริง · ตัวอย่างในโค้ด/mockup เป็นข้อมูลสมมติและติดป้าย</li>
+<li><strong>Header ความปลอดภัย:</strong> CSP · HSTS · no-referrer สำหรับหน้าตั้งค่า · rate limit ต่อ IP/token</li>
+<li><strong>ข้อความกำกับ:</strong> ทุกหน้ามีบรรทัด "ไม่ใช่คำแนะนำจากผู้มีใบอนุญาต · ใช้ส่วนตัว" · ไม่มีฟีเจอร์แชร์พอร์ตสาธารณะใน v1</li>
+<li><strong>ข้อมูลส่วนบุคคล:</strong> เก็บเฉพาะอีเมลผู้ใช้ · ไม่เก็บเลขบัตร/บัญชีธนาคาร · หมายเลขบัญชีโบรกเกอร์เก็บแบบ mask</li>
+</ul>
+<hr />
+<h2 id="12-docsdesignmd">12. ประสบการณ์ผู้ใช้และหน้าจอ (สรุป — รายละเอียดใน <code>docs/DESIGN.md</code>)</h2>
+<ul>
+<li><strong>แผนที่การนำทาง (มือถือ = แถบล่าง 5 ปุ่ม):</strong> หน้าหลัก · พอร์ต · สแกน · ตั๋ว · เพิ่มเติม (watchlist · สมุดบันทึก · เป้า/DCA · ตั้งค่า) · <strong>เดสก์ท็อป = แถบข้าง</strong> รายการเดียวกัน</li>
+<li><strong>หน้าจอ v1 (10 หน้า):</strong> ล็อกอิน · หน้าหลัก · พอร์ต · สแกน · หุ้น · watchlist · ตั๋ว (รายการ + รายละเอียด/ยืนยัน) · สมุดบันทึก · เป้า/DCA · ตั้งค่า (บัญชี Webull · กฎ · ราคา · แจ้งเตือน · token)</li>
+<li><strong>Responsive:</strong> ออกแบบที่ 375 ก่อน → 768 → 1024 → 1440 · ตารางบนมือถือกลายเป็นการ์ด · กราฟยืดเต็มกว้าง · ปุ่มยืนยันอยู่ในระยะนิ้วโป้ง (ล่าง) · แตะได้ ≥ 44px</li>
+<li><strong>ตัวอักษร:</strong> IBM Plex Sans Thai (ไทย) + IBM Plex Sans (ละติน) + IBM Plex Mono ตัวเลขแบบ tabular · ขนาดฐาน 17.5px · ระยะบรรทัด 1.75–1.85 · คอนทราสต์ ≥ 4.5:1 ทั้งสองธีม</li>
+<li><strong>ธีม:</strong> ตามเครื่อง (มืด/สว่าง) + สวิตช์ · โหมดมืดใช้แนว "aurora glass" ที่ต้นเคยรับแล้วใน Investor Advisor เดิม · สีสถานะ: กำไร/ขาดทุน ไม่ใช้สีอย่างเดียว (มี +/− และไอคอน)</li>
+<li><strong>สถานะจำเป็นทุกหน้า:</strong> ว่าง (บอกขั้นถัดไป) · โหลด (skeleton) · ผิดพลาด (บอกสาเหตุ + ปุ่มลองใหม่) · <strong>ค้าง/สำรอง</strong> (ป้ายที่มาข้อมูล) · UAT/PROD (ป้ายมุมบนตลอดเวลา)</li>
+<li><strong>กราฟ:</strong> ตามสกิล <code>dataviz</code> — แกนเดียว · เส้นบาง · ไม่ใช้ spline · tooltip/crosshair · จานสีผ่าน validator ทั้งมืด/สว่าง · ตารางสำรองสำหรับทุกกราฟ</li>
+</ul>
+<hr />
+<h2 id="13-non-functional">13. ข้อกำหนดที่ไม่ใช่หน้าที่ (Non-functional)</h2>
+<table>
+<thead>
+<tr>
+<th>ด้าน</th>
+<th>เป้า</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ประสิทธิภาพ</td>
+<td>LCP &lt; 2.5 วิ (มือถือ 4G) · <code>GET /quotes</code> p95 &lt; 800 ms (แคชโดน) · หน้าสแกน &lt; 1.5 วิ (อ่านผลที่คำนวณไว้แล้ว)</td>
+</tr>
+<tr>
+<td>งานกลางคืน</td>
+<td>จบใน &lt; 30 นาที · ล้มแล้วรันซ้ำได้ (idempotent) · แจ้งเตือนเมื่อล้ม</td>
+</tr>
+<tr>
+<td>ความพร้อมใช้</td>
+<td>ใช้ free/hobby tier ได้ในเฟส 1 · ยอมรับ downtime ของงานเบื้องหลังได้ (แสดง "ข้อมูลของคืนก่อน") แต่การยืนยันตั๋วต้องไม่ทำงานถ้าตรวจกฎไม่ได้ (fail-closed)</td>
+</tr>
+<tr>
+<td>ต้นทุน</td>
+<td>เป้า ≤ 500 บาท/เดือน (Vercel Hobby · Supabase Free/Pro · Actions ฟรี · market data ระดับฟรี) · ทบทวนเมื่อพอร์ตโต</td>
+</tr>
+<tr>
+<td>ความถูกต้อง</td>
+<td>ทุกสูตร (ต้นทุนเฉลี่ย · FIFO · RSI · ATR · F-score · ขนาดไม้ · อัตราที่จำเป็น) มีเทสต์หน่วยเทียบค่าอ้างอิงที่คำนวณด้วยมือ</td>
+</tr>
+<tr>
+<td>เวลา</td>
+<td>เก็บ UTC · แสดง ICT · ปฏิทินตลาดสหรัฐ (วันหยุด · ครึ่งวัน) จาก provider หรือตารางในโค้ด (อัปเดตรายปี)</td>
+</tr>
+<tr>
+<td>การเข้าถึง</td>
+<td>WCAG AA · โฟกัสเห็นชัด · reduced-motion · ตัวหนังสือปรับได้</td>
+</tr>
+<tr>
+<td>ทดสอบ</td>
+<td>หน่วย (สูตร · risk checks) · integration (API scope · 403 confirm) · e2e (สร้างตั๋ว → ยืนยัน → log) บน UAT · ตรวจ <code>grep</code> ว่า UI ผูก action จริง (<code>feedback_verify_delivered_not_rendered</code>)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="14-gates">14. ประตูเฟส (Gates) และแผนงาน</h2>
+<h3 id="141-sprint-0-1-metatron-upverse-advisor">14.1 Sprint 0 — พิสูจน์ก่อนสร้าง (1 สัปดาห์ · metatron + upverse-advisor)</h3>
+<ul>
+<li>[ ] S0.1 บัญชีทดสอบ Webull: auth + 2FA + <code>account/list</code> + <code>positions</code> + <code>get_batch_history_bar</code> ทำงานด้วย region <code>th</code> → บันทึกผลจริงใน <code>docs/SPIKES.md</code></li>
+<li>[~] S0.2 ทดสอบส่งคำสั่ง: <strong>preview บน prod ผ่านแล้ว (เศษหุ้น OK · fee $0.02)</strong> · ถัดไป: ต่อ host UAT <code>th-api.uat.webullbroker.com</code> ด้วยบัญชีทดสอบร่วม → place/cancel/detail จริงบน UAT (ไม่ใช่เงินจริง) → บันทึก <code>docs/SPIKES.md</code></li>
+<li>[ ] S0.3 ตัดสินเส้นทางออนไลน์: พอร์ตลายเซ็นเป็น TS ได้ภายใน 2 วันไหม · ไม่ได้ → Python function</li>
+<li>[ ] S0.4 ขอบเขต market data ฟรี (Nasdaq Basic): quote ดีเลย์ไหม · bars ย้อนหลังกี่ปี · โควตา</li>
+<li>[ ] S0.5 Supabase schema v1 + RLS + <code>/api/v1/health</code> ขึ้น preview · Supabase <code>aqklpnjzgtpqotxebthn</code> ยืนยันบัญชี/กุญแจ</li>
+<li>[ ] S0.6 ยืนยันบัญชี Vercel (upwellness) + git author ที่ใช้ commit (<code>feedback_vercel_blocked_commit_author</code>)</li>
+</ul>
+<h3 id="142-sprint-0">14.2 สปรินต์สร้าง (หลัง Sprint 0 ผ่าน)</h3>
+<table>
+<thead>
+<tr>
+<th>สปรินต์</th>
+<th>ส่งมอบ</th>
+<th>นิยามเสร็จ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S1 (2 สัปดาห์)</td>
+<td>F1 (ล็อกอิน · เชื่อม Webull · กฎ · provider · token) · F2 (ledger มือ · sync · quotes · วิเคราะห์) · F8 (เป้า/DCA) · F12 health/audit</td>
+<td>ใช้จริงบนมือถือกับพอร์ตจริง (manual หรือ Webull) · curl health บน preview ตอบครบ</td>
+</tr>
+<tr>
+<td>S2 (2 สัปดาห์)</td>
+<td>ท่อข้อมูล + M1–M5 + F3 หน้าสแกน + F4 หน้าหุ้น + F5 watchlist</td>
+<td>สแกนรันเองครบ 5 คืนติด · why-text ถูกต้องเทียบ metrics · hit-rate job ทำงาน</td>
+</tr>
+<tr>
+<td>S3 (1–2 สัปดาห์)</td>
+<td>F6 ตั๋ว (รางส่งมือ + API rail บน UAT) · F7 journal · F11 API ครบ + <code>openapi.json</code> · F5 LINE alerts</td>
+<td>e2e ตั๋ว UAT ผ่าน · token confirm = 403 · <code>npm audit</code> สะอาด · ข้อมูลจริงในฐานตรวจแล้ว</td>
+</tr>
+<tr>
+<td>S4 (1 สัปดาห์)</td>
+<td>F9 บรีฟเช้า · F14 ผู้ดู · ขัดเกลา UX จากการใช้จริง · เอกสาร API</td>
+<td>ต้นใช้ 2 สัปดาห์โดยไม่ต้องเปิดแอปโบรกเกอร์เพื่อ "ดู"</td>
+</tr>
+</tbody>
+</table>
+<h3 id="143-api-gate-webull-prod-v02-18-2569">14.3 ประตูเปิดราง API เงินจริง (Gate → Webull prod) — ฉบับ v0.2 (18 ก.ย. 2569)</h3>
+<p>สถานะประตูวันนี้: environment <code>uat</code> · kill switch ตั้งค่า <strong>ปิด</strong> · env <code>TRADING_ENABLED</code> <strong>ปิด</strong> · whitelist <strong>ว่าง</strong> · preview ผ่าน · lucifer ทุบแล้ว (ผลใน §19)
+1. <strong>UAT จริงก่อน</strong> (เพิ่งรู้ว่ามี): ต่อ host UAT + บัญชีทดสอบร่วม → place → detail → cancel ผ่านครบ · ตรวจว่า <code>client_order_id</code> ไม่ส่งซ้ำ (idempotency) และสถานะ poll ได้
+2. preview บน prod ผ่านสำหรับตั๋วใบที่จะส่ง (ทำแล้วสำหรับ AXON) · body ที่ preview = body ที่ place (ตัวสร้างเดียวกัน — ทำแล้ว)
+3. lucifer ทุบ + michael เคาะ (บันทึกใน <code>docs/DECISIONS.md</code>) — ไม้แรกต้องเป็นไม้ที่เล็กที่สุดที่มี (เช่น ขาย AXON $2.88) และเป็น <strong>ขาย</strong> ไม่ใช่ซื้อ
+4. ต้นเปิดเอง 4 ชั้นในลำดับนี้: whitelist = [สัญลักษณ์เดียวของไม้นั้น] → <code>max_order_notional_usd</code> ≤ 20 สำหรับไม้แรก → ตั้งค่า environment <code>prod</code> ด้วยประโยค "เปิดเงินจริง" → kill switch ตั้งค่า + env <code>TRADING_ENABLED=true</code> บน Vercel (ตัวสุดท้าย)
+5. ทดสอบ kill switch: ยืนยันตั๋วขณะ env ปิด → ต้องถูกปฏิเสธ (log <code>send_failed</code>/422) ก่อนเปิดตัวสุดท้าย
+6. หลังส่ง: poll <code>/trading/orders/get</code> จนจบ → fill ตรงกับแอป Webull → บันทึก transaction + journal → ปิด kill switch กลับ (opt-in ต่อไม้ในช่วงแรก) → ค่อยผ่อนเพดาน
+7. เกณฑ์เดิม (ใช้รางส่งมือ ≥ 30 วัน · ตั๋ว ≥ 10) <strong>ยังใช้กับการ "ผ่อนเพดาน"</strong> ไม่ใช่กับไม้ทดสอบแรก</p>
+<h3 id="144-2-5000-usd-100-1-csp-options-agent-2e">14.4 ประตูเฟส 2 (ออปชัน) — พอร์ต ≥ 5,000 USD · มีหุ้นครบ 100 หุ้น 1 ตัว หรือเงินสดกัน CSP ได้ · สิทธิ์ options ของบัญชียืนยันแล้ว · agent §2E เป็นกฎ</h3>
+<hr />
+<h2 id="15">15. ตัวชี้วัดความสำเร็จ</h2>
+<table>
+<thead>
+<tr>
+<th>ประเภท</th>
+<th>ตัวชี้วัด</th>
+<th>เป้า (3 เดือนแรก)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>นำ</td>
+<td>วันที่เปิดแอป / วันทำการ</td>
+<td>≥ 70%</td>
+</tr>
+<tr>
+<td>นำ</td>
+<td>ตั๋วที่ยืนยันภายใน 24 ชม. หลังเสนอ (หรือปฏิเสธพร้อมเหตุผล)</td>
+<td>≥ 90%</td>
+</tr>
+<tr>
+<td>นำ</td>
+<td>quote ค้าง &gt; 15 วิ ระหว่างตลาดเปิด</td>
+<td>&lt; 5% ของเวลา</td>
+</tr>
+<tr>
+<td>นำ</td>
+<td>งานกลางคืนสำเร็จ</td>
+<td>≥ 95%</td>
+</tr>
+<tr>
+<td>นำ</td>
+<td>ตั๋ว filled ที่มี journal ใน 7 วัน</td>
+<td>≥ 80%</td>
+</tr>
+<tr>
+<td>ตาม</td>
+<td>hit-rate ของแต่ละโมเดล (Top 10 ชนะ SPY ที่ 20 วัน)</td>
+<td>รายงานตามจริง — ใช้ตัดสินน้ำหนักและปิดโมเดลที่แพ้ 2 ไตรมาสติด</td>
+</tr>
+<tr>
+<td>ตาม</td>
+<td>drawdown สูงสุดของพอร์ตเทียบขีดที่ต้นตั้ง</td>
+<td>ไม่เกินขีด</td>
+</tr>
+<tr>
+<td>ตาม</td>
+<td>ยอดเติมจริง vs แผน DCA</td>
+<td>≥ 90% ของแผน</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="16">16. ความเสี่ยงและการรับมือ</h2>
+<table>
+<thead>
+<tr>
+<th>ความเสี่ยง</th>
+<th>ผล</th>
+<th>รับมือ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Webull TH API ไม่รองรับเศษหุ้น/มีข้อจำกัดที่ยังไม่รู้</td>
+<td>ตั๋วเศษหุ้นส่งอัตโนมัติไม่ได้</td>
+<td>รางส่งมือเป็นค่าเริ่มต้นเฟส 1 · Sprint 0 พิสูจน์ก่อน</td>
+</tr>
+<tr>
+<td>Market data ฟรีไม่พอ (ดีเลย์/โควตา)</td>
+<td>ราคา "ค้าง" · สแกนช้า</td>
+<td>provider สำรอง · แคช · ประเมินค่าสมัครเมื่อพอร์ตโต</td>
+</tr>
+<tr>
+<td>ข้อมูลพื้นฐานชั้น 2 ผิด</td>
+<td>สแกนผิด → ตัดสินใจผิด</td>
+<td>EDGAR เป็นหลัก · ป้ายชั้นข้อมูล · thesis ก่อนตั๋วเสมอ</td>
+</tr>
+<tr>
+<td>สแกนทุกคืนกระตุ้นให้เทรดถี่</td>
+<td>ค่าธรรมเนียม/อารมณ์</td>
+<td>เพดานตั๋ว/วัน · journal บังคับ · agent ยึดเฟส · ค่าเริ่มต้นแสดง "รอ follow-through"</td>
+</tr>
+<tr>
+<td>กุญแจรั่ว (repo public / log)</td>
+<td>เสียหายรุนแรง</td>
+<td>ciphertext · masking · secret scanning · UAT ค่าเริ่มต้น · rotate ได้ในแอป</td>
+</tr>
+<tr>
+<td>Vercel cron/ระยะเวลา function ไม่พอ</td>
+<td>งานกลางคืนล้ม</td>
+<td>GitHub Actions เป็นหลัก · งานแบ่งชิ้น idempotent</td>
+</tr>
+<tr>
+<td>scope บวม (ฟีเจอร์ "ที่จำเป็น" เพิ่มไม่หยุด)</td>
+<td>ไม่ได้ใช้จริงสักที</td>
+<td>Non-goals §1.3 · parking lot §18 · S1 ต้องใช้จริงก่อนต่อ</td>
+</tr>
+<tr>
+<td>ข้อกำกับ (ใช้ระบบให้คำแนะนำคนอื่น)</td>
+<td>ประเด็นใบอนุญาต</td>
+<td>ใช้ส่วนตัวเท่านั้น · ไม่มีแชร์สาธารณะ · ข้อความกำกับทุกหน้า</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="17">17. คำถามเปิด</h2>
+<p><strong>ปิดก่อนเริ่ม Sprint 1 (blocking)</strong>
+| # | คำถาม | ใครตอบ |
+|---|---|---|
+| Q1 | เป้าเป็นตัวเลข (กี่ล้าน · ปีไหน) · เงินตั้งต้น · <strong>เติมต่อเดือน</strong> · วัน DCA | ต้น |
+| Q2 | พอร์ตปัจจุบัน (CSV/ภาพจาก Webull) + ตัวอย่างไฟล์ส่งออกของ Webull TH | ต้น |
+| Q3 | ยอมรับค่าเริ่มต้นกฎความเสี่ยง F1.3 และแผน 3 เฟสไหม | ต้น (+ lucifer ทุบ) |
+| Q4 | Supabase <code>aqklpnjzgtpqotxebthn</code> อยู่บัญชีไหน · ใส่กุญแจเอง/เพิ่ม MCP | ต้น |
+| Q5 | Vercel: team ของบัญชี upwellness · ชื่อโปรเจกต์ · โดเมน · แผน (Hobby/Pro) | ต้น |
+| Q6 | เฟส 1 ต้องการ "ส่งจริงหลังยืนยัน (UAT)" ด้วย หรือรางส่งมืออย่างเดียวก่อน | ต้น |
+| Q7 | สมัคร Webull OpenAPI แล้วหรือยัง · สิทธิ์ options ของบัญชี | ต้น |</p>
+<p><strong>ระหว่างทำ (non-blocking)</strong>
+| # | คำถาม | ใครตอบ |
+|---|---|---|
+| Q8 | รูปแบบ 2FA ของ Webull ผ่าน SDK · อายุ token · preview endpoint · เศษหุ้นผ่าน API | metatron (Sprint 0) |
+| Q9 | ขอบเขต market data ฟรี (Nasdaq Basic) · โควตา Finnhub ปัจจุบัน | metatron (Sprint 0) |
+| Q10 | LINE OA ที่ใช้ (Toni OA เดิม?) · ซ่อนยอดเงินในข้อความไหม | ต้น |
+| Q11 | ใครเป็นผู้ดูคนที่ 2 (ถ้ามี) | ต้น |
+| Q12 | ภาษี: ถิ่นที่อยู่ทางภาษี · W-8BEN · แผนนำเงินกลับ | sachiel |
+| Q13 | สร้าง persona ใหม่ 3 ตัว (technical trader · options income · risk manager) | ต้น |
+| Q14 | น้ำหนัก scorecard และเกณฑ์ M1–M5 เวอร์ชัน 1 — ต้นอยากปรับตัวไหนก่อนรัน | ต้น + upverse-advisor |
+| Q15 | เคาะกฎ F19: ไม่มี thesis = ไม่มีตำแหน่ง · de minimis · เพดานวัดกับพอร์ตแผน · look-through | ต้น |
+| Q16 | จะเปิดราง API เงินจริงด้วยไม้ขาย AXON $2.88 เป็นไม้ทดสอบแรกไหม (ประตู 14.3 ข้อ 1–5) หรือขายมือแล้วรอ UAT ก่อน | ต้น (+ lucifer §19) |
+| Q17 | ต้นทุนแลกเงิน THB↔USD จริงของ Webull (ตั้ง <code>fxSpreadPct</code>) + W-8BEN ยื่นแล้วไหม | ต้น + sachiel |</p>
+<hr />
+<h2 id="18-parking-lot-v1">18. ที่จอดไอเดีย (Parking lot — ไม่อยู่ใน v1)</h2>
+<p>Backtest เต็มรูปแบบ · หลายผู้ใช้/ขายเป็น SaaS · HK/A-shares/หุ้นไทย · แชร์พอร์ตสาธารณะ · แอป native · การจำลอง Monte Carlo · ข่าวรายตัว (ชั้น 3) ในแอป · เชื่อมโบรกเกอร์อื่น · การซื้อขายอัตโนมัติตามกฎ (ไม่มีวันทำในบ้านนี้โดยไม่มีคนยืนยัน)</p>
+<hr />
+<h2 id="19-lucifer-red-team">19. ผลการทุบโดย lucifer (red-team)</h2>
+<p><em>รอบเอกสาร v0.1: ยังไม่ได้ทุบ</em> · <strong>รอบ "ส่งคำสั่งจริงผ่าน API ครั้งแรก" (18 ก.ย. 2569): ผลอยู่ใน <code>docs/DECISIONS.md</code> (เติมเมื่อได้ผล) — ข้อที่รับแล้ว: UAT จริงก่อน · ไม้แรก = ขาย ไม้เล็กสุด · whitelist ตัวเดียว · เพดาน ≤ $20 · ปิด kill switch กลับหลังไม้แรก (ดู 14.3)</strong></p>
+<hr />
+<h2 id="20">20. ประวัติการแก้ไข</h2>
+<table>
+<thead>
+<tr>
+<th>วันที่</th>
+<th>เวอร์ชัน</th>
+<th>อะไร</th>
+<th>ใคร</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>17 ก.ย. 2569</td>
+<td>0.1</td>
+<td>ร่างแรก: ปัญหา/เป้า · scope · F1–F14 · โมเดล M1–M6 · schema · integrations (ตรวจ Webull TH แล้ว) · sequences · security · gates · คำถามเปิด</td>
+<td>upverse-advisor (ผ่านสกิล write-spec)</td>
+</tr>
+<tr>
+<td>18 ก.ย. 2569</td>
+<td>0.2</td>
+<td>เพิ่ม F15 วิเคราะห์พอร์ต · F16 thesis จาก agent · F17 ค่าธรรมเนียม/ประวัติพอร์ต · F18 MCP + API · F19 กฎที่เสนอ · แก้ F6.4/F6.5 ตามสคีมา TH v3 + preview จริง · §9 ข้อค้นพบ Webull TH (UAT มีจริง · เศษหุ้น OK) · §14.3 ประตูราง API ฉบับใหม่ · Q15–Q17</td>
+<td>upverse-advisor (ผ่านสกิล write-spec)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>ไม่ใช่คำแนะนำจากผู้มีใบอนุญาต · ตัวเลขเกณฑ์ทั้งหมดเป็นค่าเริ่มต้นที่ต้องยืนยันด้วยข้อมูลจริงก่อนใช้</p>
+</blockquote></section><section id="api" class="doc"><div class="doc-head"><span class="kicker">docs/API-UPVerse.md</span><h1>API v1 — สเปกและตัวอย่างจริง</h1></div><h1 id="upverse-api-v1-18-2569">UPVerse API v1 — คู่มือใช้งาน (ทดสอบจริง 18 ก.ย. 2569)</h1>
+<p>ฐาน: <code>http://localhost:3777/api/v1</code> (dev) · production = <code>https://&lt;your-vercel-domain&gt;/api/v1</code> · สคีมา: <code>GET /openapi.json</code></p>
+<p><strong>กติกา:</strong> ทุก endpoint ตอบ JSON · ผิดพลาดเป็น <code>{ "error": { "code", "message" } }</code> · ยืนยันตั๋ว (<code>/tickets/{id}/confirm</code>) ทำได้จาก <strong>เซสชันเจ้าของในเบราว์เซอร์เท่านั้น</strong> — Bearer token ทุกชนิดได้ 403 · rate limit 60 ครั้ง/นาที/ตัวตน · ทุกการเรียกที่ถูกปฏิเสธลง audit</p>
+<h2 id="_1">การยืนยันตัวตน</h2>
+<table>
+<thead>
+<tr>
+<th>แบบ</th>
+<th>ใช้เมื่อ</th>
+<th>วิธี</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>เซสชันเจ้าของ</td>
+<td>หน้าจอ · ยืนยันตั๋ว · ตั้งค่า</td>
+<td><code>POST /auth/login {"passphrase"}</code> → cookie <code>upv_session</code> (30 วัน) · ถ้าไม่ตั้ง <code>UPVERSE_OWNER_PASSPHRASE</code> = โหมด dev เปิดให้เข้า (ใช้ในเครื่องเท่านั้น)</td>
+</tr>
+<tr>
+<td>API token</td>
+<td>agent · n8n · ChatGPT Actions</td>
+<td>สร้างในหน้าตั้งค่า (แสดงครั้งเดียว) → <code>Authorization: Bearer upv_…</code> · scope เป็น allow-list</td>
+</tr>
+</tbody>
+</table>
+<p>Scope ที่มี: <code>portfolio:read</code> <code>portfolio:write</code> <code>quotes:read</code> <code>scan:read</code> <code>watchlist:write</code> <code>theses:read</code> <code>theses:write</code> <code>tickets:propose</code> <code>journal:write</code> — <strong>ไม่มี <code>tickets:confirm</code></strong></p>
+<h2 id="_2">ตัวอย่างที่รันได้จริง</h2>
+<pre><code class="language-bash">B=http://localhost:3777/api/v1; J='Content-Type: application/json'
+
+# สุขภาพระบบ — บอกค่าที่บังคับใช้จริง (environment · kill switch · broker · กฎ)
+curl -s $B/health | jq
+
+# บันทึกรายการ paper: ฝากเงิน 100 USD ที่ 33.27 แล้วซื้อ VOO 0.1 หุ้น @ 500
+curl -s -X POST $B/transactions -H &quot;$J&quot; -d '{&quot;type&quot;:&quot;deposit&quot;,&quot;amountUsd&quot;:100,&quot;fxRateThb&quot;:33.27}'
+curl -s -X POST $B/transactions -H &quot;$J&quot; -d '{&quot;type&quot;:&quot;buy&quot;,&quot;symbol&quot;:&quot;VOO&quot;,&quot;qty&quot;:0.1,&quot;price&quot;:500}'
+
+# พอร์ต (ราคาจริงจาก yahoo ชั้น 2 · P&amp;L แยกหุ้น/ค่าเงิน)
+curl -s &quot;$B/portfolio?account=all&quot; | jq '{total_usd,total_thb,cash_usd,holdings:[.holdings[]|{symbol,qty,price,weight_pct,pnl_pct,quote_source}]}'
+
+# ราคา
+curl -s &quot;$B/quotes?symbols=AAPL,MSFT,VOO&quot; | jq
+
+# หุ้น: quote + bars + indicators + EDGAR
+curl -s &quot;$B/instruments/AAPL?range=1y&quot; | jq '{quote:.quote.price, rsi:.snapshot.rsi14, fy:.fundamentals.fy, fscore:.fundamentals.fScore}'
+
+# รันสแกน (เจ้าของ) — เร็ว 60 ตัว หรือทั้ง S&amp;P 500 (หลายนาที)
+curl -s -X POST $B/scans/run -H &quot;$J&quot; -d '{&quot;limit&quot;:60}'
+curl -s &quot;$B/scans?model=M4&quot; | jq '.runs[0].results[:3]'
+
+# เสนอตั๋ว (proposed เสมอ · คืนผลตรวจกฎ + ประโยคยืนยัน)
+curl -s -X POST $B/tickets -H &quot;$J&quot; -d '{&quot;side&quot;:&quot;buy&quot;,&quot;symbol&quot;:&quot;VOO&quot;,&quot;qty&quot;:0.05,&quot;orderType&quot;:&quot;LIMIT&quot;,&quot;limitPrice&quot;:400,&quot;rationale&quot;:&quot;DCA แกน&quot;,&quot;altZero&quot;:&quot;ถือเงินสด&quot;,&quot;invalidation&quot;:&quot;ไม่มี&quot;,&quot;tag&quot;:&quot;DCA&quot;,&quot;rail&quot;:&quot;manual&quot;}' | jq '{id:.ticket.id, phrase:.ticket.confirmPhrase, checks:[.ticket.riskCheck[]|&quot;\(.state):\(.code)&quot;]}'
+
+# ยืนยัน (เซสชันเจ้าของเท่านั้น — ต้องพิมพ์ประโยคตรงทุกตัวอักษร · idempotencyKey กันกดซ้ำ)
+curl -s -X POST $B/tickets/&lt;ID&gt;/confirm -H &quot;$J&quot; -d '{&quot;phrase&quot;:&quot;ยืนยัน ซื้อ VOO 0.05&quot;,&quot;idempotencyKey&quot;:&quot;abcdefgh12&quot;}'
+
+# รางส่งมือ: ทำในแอป Webull แล้วรายงานผลจริง → เข้าสมุดบันทึกอัตโนมัติ
+curl -s -X POST $B/tickets/&lt;ID&gt;/fill -H &quot;$J&quot; -d '{&quot;price&quot;:401.5,&quot;qty&quot;:0.05,&quot;fees&quot;:0}'
+
+# journal
+curl -s -X POST $B/journal -H &quot;$J&quot; -d '{&quot;ticketId&quot;:&quot;&lt;ID&gt;&quot;,&quot;symbol&quot;:&quot;VOO&quot;,&quot;decision&quot;:&quot;ซื้อ&quot;,&quot;emotion&quot;:&quot;มั่นใจ&quot;,&quot;thesisShort&quot;:&quot;DCA&quot;,&quot;expectation&quot;:&quot;ถือยาว&quot;}'
+
+# เป้า/DCA → อัตราผลตอบแทนที่ &quot;จำเป็น&quot;
+curl -s -X PUT $B/goal -H &quot;$J&quot; -d '{&quot;targetThb&quot;:3000000,&quot;targetDate&quot;:&quot;2035-12-31&quot;,&quot;startAmountThb&quot;:4000,&quot;monthlyContributionThb&quot;:3000,&quot;dcaDay&quot;:25}' | jq .computed
+
+# ภาษาคน (rule-based · คืน understood_as เสมอ)
+curl -s -X POST $B/query -H &quot;$J&quot; -d '{&quot;q&quot;:&quot;พอร์ตตอนนี้เป็นไง&quot;}'
+curl -s -X POST $B/query -H &quot;$J&quot; -d '{&quot;q&quot;:&quot;ราคา MSFT&quot;}'
+
+# ด้วย token ของ agent (อ่าน + เสนอตั๋ว ได้ · ยืนยัน/แก้ตั้งค่า ไม่ได้)
+T=upv_...; curl -s $B/portfolio -H &quot;Authorization: Bearer $T&quot;
+curl -s -o /dev/null -w &quot;%{http_code}\n&quot; -X POST $B/tickets/&lt;ID&gt;/confirm -H &quot;$J&quot; -H &quot;Authorization: Bearer $T&quot; -d '{&quot;phrase&quot;:&quot;x&quot;,&quot;idempotencyKey&quot;:&quot;abcdefgh12&quot;}'   # → 403
+</code></pre>
+<h3 id="agent-thesis-prod-18-2569-nvda-v1-201-draft_ai">agent ส่ง thesis เข้าแอป (ทดสอบจริงบน prod 18 ก.ย. 2569 — NVDA v1 → <code>201</code> · <code>draft_ai</code>)</h3>
+<pre><code class="language-bash"># token ของ agent ต้องมี scope theses:write · JSON ตามสคีมาในตาราง (ดูตัวอย่างเต็มใน journal/private/theses/ — ไม่อยู่ใน repo)
+curl -s -X POST https://upverse-app.vercel.app/api/v1/theses \
+  -H &quot;Authorization: Bearer $UPV_AGENT_TOKEN&quot; -H 'Content-Type: application/json' \
+  --data-binary @thesis.json | jq '{id,symbol,version,status,verdict,buyBelow}'
+# → {&quot;symbol&quot;:&quot;NVDA&quot;,&quot;version&quot;:1,&quot;status&quot;:&quot;draft_ai&quot;,&quot;verdict&quot;:&quot;ถือ&quot;,&quot;buyBelow&quot;:135}
+# ต้นเปิด /stock/NVDA → การ์ด &quot;Thesis&quot; → ปุ่ม &quot;ยืนยัน thesis (ต้น)&quot; หรือ &quot;ปฏิเสธ + เหตุผล&quot;
+</code></pre>
+<h2 id="endpoint">Endpoint ทั้งหมด</h2>
+<table>
+<thead>
+<tr>
+<th>Method · Path</th>
+<th>Scope</th>
+<th>หมายเหตุ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET <code>/health</code></td>
+<td>—</td>
+<td>environment · trading_enabled (setting+env) · api_rail_possible · broker status · กฎที่ใช้ · last_scan_at</td>
+</tr>
+<tr>
+<td>GET <code>/openapi.json</code> · GET <code>/meta</code></td>
+<td>— / any</td>
+<td>สคีมา · scope ของ token</td>
+</tr>
+<tr>
+<td>POST <code>/auth/login</code> · POST <code>/auth/logout</code></td>
+<td>—</td>
+<td>เซสชันเจ้าของ</td>
+</tr>
+<tr>
+<td>GET/PUT <code>/auth/passphrase</code></td>
+<td><strong>เซสชันเจ้าของเท่านั้น</strong></td>
+<td>ดูที่มาของรหัส (env/db/none) · PUT <code>{current,next}</code> เปลี่ยนรหัส (scrypt hash ใน DB · env ไม่ถูกใช้อีก · หมุนเซสชัน)</td>
+</tr>
+<tr>
+<td>GET <code>/portfolio?account=all\|&lt;id&gt;</code></td>
+<td>portfolio:read</td>
+<td>positions ที่ราคาล่าสุด + cash + P&amp;L (หุ้น / ค่าเงิน) + caveats</td>
+</tr>
+<tr>
+<td>GET <code>/portfolio/review?account=all</code></td>
+<td>portfolio:read</td>
+<td><strong>วิเคราะห์พอร์ต</strong> (กฎล้วน ไม่มี LLM · ~5–10 วิ ครั้งแรก): สัดส่วน vs แผน (เป้าจาก <code>/goal</code> · ฐาน = พอร์ตแผน 12 เดือนเมื่อตั้งเงินเติม) · เทียบ SPY · รายตัว: Weinstein stage · Minervini trend template x/8 · RS vs SPY 1/3/6/12 เดือน · P/E·P/FCF·"ราคานี้ต้องการโต x%/ปี" · คุณภาพ · thesis · ค่าธรรมเนียมถ้าออก · คะแนน 0–100 (§2B) · <strong>action</strong> ถือ/เพิ่ม/ลด/ออก/โยก/ทบทวน + เหตุผล + <code>avgDown</code> (ถัวได้ไหม) · rotation candidates (watchlist + สแกน top-5 + thesis "เพิ่ม") พร้อมด่าน 4 ข้อ · บันทึก <code>equityHistory</code> วันละจุด · หลักการ: <code>docs/TECHNIQUES.md</code></td>
+</tr>
+<tr>
+<td>GET/POST/DELETE <code>/transactions</code></td>
+<td>portfolio:read / write</td>
+<td>บันทึกมือ (paper) · <code>{rows:[…]}</code> นำเข้า · ลบด้วย <code>?id=</code></td>
+</tr>
+<tr>
+<td>GET <code>/quotes?symbols=</code></td>
+<td>quotes:read</td>
+<td>source · as_of · market_state · stale</td>
+</tr>
+<tr>
+<td>GET <code>/instruments/{symbol}?range=3mo\|6mo\|1y\|2y</code></td>
+<td>quotes:read</td>
+<td>bars + EMA20/SMA50/SMA200/RSI14 + snapshot + EDGAR + ป้ายสแกน + position (บัญชี Webull ใช้ snapshot · paper ใช้ ledger) + thesis ล่าสุด</td>
+</tr>
+<tr>
+<td>GET <code>/scans?model=&amp;date=</code></td>
+<td>scan:read</td>
+<td>ผลล่าสุดต่อโมเดล (M1–M5 · OVERLAP · AVOID)</td>
+</tr>
+<tr>
+<td>POST <code>/scans/run {limit?,withFundamentals?}</code></td>
+<td>เจ้าของ / <code>x-cron-secret</code></td>
+<td>รันสแกน · GET พร้อม <code>Authorization: Bearer CRON_SECRET</code> = Vercel Cron</td>
+</tr>
+<tr>
+<td>GET/POST/DELETE <code>/watchlist</code></td>
+<td>portfolio:read / watchlist:write</td>
+<td>โซนเข้า · ระยะจากโซน</td>
+</tr>
+<tr>
+<td>GET/POST <code>/tickets</code> · GET <code>/tickets/{id}</code></td>
+<td>portfolio:read / tickets:propose</td>
+<td>สร้าง = proposed เสมอ · GET ตรวจกฎสดใหม่</td>
+</tr>
+<tr>
+<td>POST <code>/tickets/{id}/confirm</code></td>
+<td><strong>เซสชันเจ้าของเท่านั้น</strong></td>
+<td>ตรวจซ้ำ · ประโยค · idempotency · manual→confirmed · api→ส่ง Webull เมื่อ prod+kill switch เปิด+เชื่อมแล้ว</td>
+</tr>
+<tr>
+<td>POST <code>/tickets/{id}/fill</code> · <code>/reject</code></td>
+<td>เจ้าของ</td>
+<td>รายงานผลจริง → ledger · ปฏิเสธ → journal</td>
+</tr>
+<tr>
+<td>GET/POST/PATCH <code>/journal</code></td>
+<td>portfolio:read / journal:write</td>
+<td>+ <code>pending_journal</code> (ตั๋ว filled ที่ยังไม่บันทึก)</td>
+</tr>
+<tr>
+<td>GET/PUT <code>/goal?current_thb=</code></td>
+<td>portfolio:read / เจ้าของ</td>
+<td>อัตราที่จำเป็น · เส้นทาง 3 ฉากทัศน์ (ตัวเลขผู้ใช้กรอก)</td>
+</tr>
+<tr>
+<td>GET/PATCH <code>/settings</code> · PUT <code>/settings/rules</code></td>
+<td>เจ้าของ</td>
+<td>PROD ต้อง <code>confirmProdPhrase:"เปิดเงินจริง"</code> · กฎเป็นเวอร์ชันใหม่เสมอ · <code>fxSpreadPct</code> (ค่าแลกเงินต่อขา % — Webull ไม่ระบุ · null = 0 + คำเตือน)</td>
+</tr>
+<tr>
+<td>GET/POST/DELETE <code>/settings/tokens</code></td>
+<td>เจ้าของ</td>
+<td>token แสดงครั้งเดียว · เพิกถอนได้</td>
+</tr>
+<tr>
+<td>POST <code>/broker/connect</code></td>
+<td>เจ้าของ</td>
+<td>บันทึกกุญแจ (เข้ารหัส) + สร้าง token → <strong>Webull ส่ง SMS</strong> · คืน <code>instructions</code></td>
+</tr>
+<tr>
+<td>GET <code>/broker/status</code> · <code>?check=1</code></td>
+<td>เจ้าของ</td>
+<td>มุมมองที่เก็บไว้ / ตรวจ token กับ Webull (ไม่ส่ง SMS) · <code>twoFaSecondsLeft</code> นับถอยหลัง 5 นาที</td>
+</tr>
+<tr>
+<td>POST <code>/broker/status {action:"resend"}</code> · POST <code>/broker/disconnect</code></td>
+<td>เจ้าของ</td>
+<td>สร้าง token ใหม่ (ส่ง SMS ใหม่) เมื่อ EXPIRED/INVALID · ลบกุญแจ+token</td>
+</tr>
+<tr>
+<td>POST <code>/broker/sync</code> · GET <code>/broker/sync</code></td>
+<td>เจ้าของ / <code>x-cron-secret</code></td>
+<td><strong>ดึงพอร์ตจริง</strong>: balance + positions (qty · cost · last_price) + fills ล่าสุด → บัญชี <code>webull_live</code> + <code>liveSnapshots</code> · GET = snapshot ล่าสุด · งานกลางคืนเรียกให้ทุกวัน</td>
+</tr>
+<tr>
+<td>GET <code>/theses?symbol=</code> · POST <code>/theses</code></td>
+<td>theses:read / theses:write</td>
+<td><strong>บทวิเคราะห์จาก agent</strong> (สคีมา: summary · verdict ถือ/เพิ่ม/ลด/ออก/รอ/ดูต่อ · role แกน/ดาวเทียม/รายได้/เก็งจังหวะ · sections 3–12 · scenarios bear/base/bull ×3 · buyBelow · invalidation · altZero · dissent ≤6 · sources ≥1 · priceAtWrite · reviewAfter) · POST ด้วย token = <code>draft_ai</code> เสมอ · ด้วยเซสชันเจ้าของ = <code>confirmed</code> · เวอร์ชันเพิ่มอัตโนมัติต่อ symbol</td>
+</tr>
+<tr>
+<td>POST <code>/theses/{id} {action:"confirm"\|"reject"\|"stale", reason?}</code></td>
+<td><strong>เซสชันเจ้าของเท่านั้น</strong></td>
+<td>ต้นกดในหน้า <code>/stock/{symbol}</code> · reject ต้องมีเหตุผล · แสดง thesis ล่าสุดที่ไม่ถูก reject ใน <code>/instruments/{symbol}</code></td>
+</tr>
+<tr>
+<td>POST <code>/query {q}</code></td>
+<td>any (ตาม scope ที่ใช้)</td>
+<td>ตัวแปลเจตนาแบบกฎ ไม่มี LLM</td>
+</tr>
+</tbody>
+</table>
+<h2 id="srclibfeests-webullcothpricing-18-2569">แบบจำลองค่าธรรมเนียม (<code>src/lib/fees.ts</code> · webull.co.th/pricing อ่าน 18 ก.ย. 2569)</h2>
+<p>คอมมิชชัน 0.10% ของมูลค่า ไม่มีขั้นต่ำ (ซื้อ+ขาย) · ฝั่งขาย: SEC 0.0000206 × มูลค่า (ขั้นต่ำ $0.01) + FINRA 0.000195 × จำนวนหุ้น (ขั้นต่ำ $0.01 · สูงสุด $9.79) · FX spread จาก <code>settings.fxSpreadPct</code> · fills ที่นำเข้าจาก Webull มี <code>fees: 0</code> เพราะ API ไม่ส่งค่าธรรมเนียม — ตัวเลขในแอปเป็นค่าประมาณจากแบบจำลองนี้ · ผล: ไม้ขาย &lt; $3 เกินกฎ 1% เสมอ</p>
+<h2 id="v1">กฎความเสี่ยงที่ตรวจทุกตั๋ว (ค่าเริ่มต้น v1)</h2>
+<p>quote สด (≤ 60 วิ ตอนตลาดเปิด · fail-closed) · มูลค่า ≤ $500 · จำนวน ≤ 100 · whitelist (ราง API) · น้ำหนักหลังทำ: หุ้นเดี่ยว ≤ 10% (เตือน 8%) / แกน ETF (VOO SPY IVV VTI QQQ SCHD) ≤ 80% · เงินสดพอ + ขั้นต่ำ 5% · ความเสี่ยงต่อไม้ ≤ 1% (ยกเว้น tag DCA) · ตั๋ว/วัน ≤ 5 · ตั๋วซ้ำ · หมดอายุ · ราง API: kill switch (setting + env) · environment ตรง · เชื่อม Webull แล้ว · ขายไม่เกินที่ถือ</p>
+<h2 id="2fa-webull-authenticationtoken">2FA ของ Webull — กรอกที่ไหน (จากเอกสารทางการ <code>authentication/token</code>)</h2>
+<ol>
+<li>กด "เชื่อม" ในหน้าตั้งค่า → แอปเรียก <code>POST /auth/tokens/create</code> → token สถานะ <strong>PENDING</strong> และ <strong>Webull ส่ง SMS</strong> ไปเบอร์ที่ผูกบัญชี</li>
+<li><strong>ในแอป Webull:</strong> Menu → Messages → <strong>OpenAPI Notifications</strong> → เปิดข้อความล่าสุด → กด <strong>"Check Now"</strong> → กรอกรหัส SMS → ยืนยัน (ภายใน <strong>5 นาที</strong> ไม่งั้น EXPIRED)</li>
+<li>กลับมาที่หน้าตั้งค่า กด "ตรวจสถานะ" (หน้าจะตรวจให้เองทุก 5 วิ) → <code>POST /auth/tokens/check</code> → <strong>NORMAL</strong> = เชื่อมแล้ว</li>
+<li>token จะ <strong>INVALID ถ้าไม่มีการเรียก 15 วันติดต่อกัน</strong> → งานสแกนกลางคืนเรียก refresh ให้ · ถ้าหลุดให้กด "ขอรหัสใหม่"</li>
+</ol>
+<p><strong>แอป UPVerse ไม่มีช่องกรอกรหัส SMS โดยเจตนา</strong> — รหัสกรอกในแอป Webull เท่านั้น (เราแค่รอสถานะ)</p>
+<h2 id="endpoint-webull-th-18-2569">Endpoint ของ Webull TH ที่ยืนยันด้วยบัญชีจริง (18 ก.ย. 2569)</h2>
+<table>
+<thead>
+<tr>
+<th>ใช้ทำ</th>
+<th>path (host <code>api.webull.co.th</code> · header <code>x-version: v3</code>)</th>
+<th>หมายเหตุ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>รายการบัญชี</td>
+<td><code>GET /trading/accounts/list</code></td>
+<td>คืน <code>account_id · account_number · account_type · account_label</code> (<code>/app/subscriptions/list</code> ของ US = 404)</td>
+</tr>
+<tr>
+<td>ยอดเงิน</td>
+<td><code>GET /trading/assets/balances/get?account_id&amp;total_asset_currency=USD</code></td>
+<td><code>total_asset_currency</code> กลับมาเป็น <strong>THB</strong> เสมอ · รายสกุลใน <code>account_currency_assets[]</code> (USD cash/buying power/market value/unrealized)</td>
+</tr>
+<tr>
+<td>ตำแหน่ง</td>
+<td><code>GET /trading/assets/positions/list?account_id</code></td>
+<td>เศษหุ้น 5 ทศนิยม · <code>cost_price</code> · <code>last_price</code> · <code>unrealized_profit_loss</code></td>
+</tr>
+<tr>
+<td>คำสั่งเปิด</td>
+<td><code>GET /trading/orders/open-orders/list?account_id&amp;page_size</code></td>
+<td><code>{data:[]}</code></td>
+</tr>
+<tr>
+<td>ประวัติคำสั่ง</td>
+<td><code>GET /trading/orders/historical-orders/list?account_id&amp;page_size</code></td>
+<td><strong>คืนเฉพาะช่วงล่าสุด</strong> · ทุกรูปแบบ <code>start_time</code>/<code>end_time</code> → 417 · ยิงถี่ → 429 (เว้น ≥ 8 วิ)</td>
+</tr>
+<tr>
+<td>ราคาตลาด</td>
+<td><code>data-api.webull.co.th/market-data/...</code></td>
+<td>timeout/ต้อง subscription — ใช้ <code>last_price</code> จาก positions แทน</td>
+</tr>
+<tr>
+<td><strong>preview คำสั่ง (ทดสอบจริง 18 ก.ย. 2569)</strong></td>
+<td><code>POST /trading/orders/preview</code></td>
+<td>body <strong>TH v3</strong> <code>{account_id, new_orders:[{combo_type:"NORMAL", client_order_id (≤32 · A-Za-z0-9-_ · คงที่ต่อตั๋ว), instrument_type:"EQUITY", market:"US", symbol, order_type MARKET|LIMIT|STOP_LOSS|STOP_LOSS_LIMIT, entrust_type:"QTY", support_trading_session:"CORE", time_in_force:"DAY", side, quantity (ทศนิยมได้ = เศษหุ้น OK)}]}</code> → <code>{estimated_cost:"2.88", estimated_transaction_fee:"0.02"}</code> (ขาย AXON 0.00639) · ส่ง <code>stock_order</code> แบบ US → <code>Orders can not be empty.</code></td>
+</tr>
+<tr>
+<td>ส่งคำสั่ง / ยกเลิก / ดูผล (ยังไม่ทดสอบจริง)</td>
+<td><code>POST /trading/orders/place</code> (body เดียวกับ preview) · <code>POST /trading/orders/cancel {account_id, client_order_id}</code> · <code>GET /trading/orders/get?account_id&amp;client_order_id</code></td>
+<td>place คืน <code>{client_order_id, order_id}</code> · ประตูก่อนยิงจริง: <code>docs/SPEC.md</code> §14.3 + <code>docs/DECISIONS.md</code> D-001</td>
+</tr>
+<tr>
+<td><strong>UAT (สนามทดสอบจริง — เพิ่งพบในเอกสาร)</strong></td>
+<td>host <code>th-api.uat.webullbroker.com</code> (trade + market data) · events <code>th-events-api.uat.webullbroker.com</code></td>
+<td>บัญชีทดสอบร่วม 3 บัญชีเผยแพร่ใน docs/sdk.md (ไม่ต้องสมัคร · ใช้ร่วมกับคนอื่น) — v0.1 เคยสรุปว่า TH ไม่มี sandbox = ผิด</td>
+</tr>
+</tbody>
+</table>
+<h2 id="sdk-301">ข้อค้นพบสำคัญ (จากซอร์ส SDK ทางการ 3.0.1)</h2>
+<ul>
+<li>ลายเซ็น HMAC-SHA256 ของ Webull ถูกพอร์ตเป็น TypeScript และ <strong>ตรวจเทียบกับ Python SDK แล้วตรงทั้ง GET/POST</strong> (<code>x-version</code> ส่งแต่ไม่ถูก sign)</li>
+<li>endpoint TH: <code>api.webull.co.th</code> / <code>data-api.webull.co.th</code> · token: <code>POST /auth/tokens/create</code> → <code>POST /auth/tokens/check</code> จน <code>NORMAL</code></li>
+<li><strong>ไม่มี host UAT/sandbox ใน SDK</strong> → "UAT" ในแอป = ไม่ส่งจริง · การส่งจริงต้อง environment=prod + kill switch 2 ชั้น + เชื่อมแล้ว + ตั๋วผ่านกฎ + เจ้าของพิมพ์ยืนยัน</li>
+<li>market data ของ Webull ต้องมี subscription (403 ถ้าไม่มี) — เวอร์ชันนี้ใช้ Yahoo (ชั้น 2) และ EDGAR (ทางการ)</li>
+</ul></section><section id="mcp" class="doc"><div class="doc-head"><span class="kicker">mcp/README.md</span><h1>MCP — ดึงข้อมูล/สั่งงานจาก Claude Code</h1></div><h1 id="upverse-mcp-upverse-claude-code-mcp-client">upverse-mcp — ดึงข้อมูล/สั่งงาน UPVerse จาก Claude Code (หรือ MCP client อื่น)</h1>
+<p>MCP server (stdio) ที่ห่อ REST API v1 ของแอป (<code>docs/API-UPVerse.md</code>) เป็นเครื่องมือ 18 ตัว · ไม่มี LLM ในตัว · ทำได้เท่าที่ token มี scope — <strong>ยืนยันตั๋วไม่ได้</strong> (เจ้าของกดในแอปเท่านั้น)</p>
+<h2 id="_1">ติดตั้ง (ครั้งเดียว)</h2>
+<pre><code class="language-bash">cd mcp &amp;&amp; npm install
+</code></pre>
+<p>สร้าง API token ในแอป: ตั้งค่า → API tokens → scope ที่แนะนำ <code>portfolio:read quotes:read scan:read theses:read theses:write tickets:propose journal:write watchlist:write</code> แล้วเก็บไว้ที่ (ไม่อยู่ใน repo):</p>
+<pre><code class="language-bash">mkdir -p ~/.upverse &amp;&amp; printf '%s' 'upv_…' &gt; ~/.upverse/token &amp;&amp; chmod 600 ~/.upverse/token
+</code></pre>
+<p>หรือตั้ง env <code>UPVERSE_TOKEN</code> · เปลี่ยน URL ด้วย <code>UPVERSE_URL</code> (ค่าเริ่มต้น https://upverse-app.vercel.app)</p>
+<h2 id="claude-code">ใช้กับ Claude Code</h2>
+<p><code>.mcp.json</code> ที่ root ของ repo ลงทะเบียน server ชื่อ <code>upverse</code> ไว้แล้ว — เปิด Claude Code ในโฟลเดอร์นี้ → อนุมัติ server ครั้งแรก → ถามได้เลย เช่น "ดูพอร์ต" "วิเคราะห์พอร์ต" "thesis NVDA" "สแกน M4" "เสนอตั๋วซื้อ VOO $10"
+ถ้าเปิดจากโฟลเดอร์อื่น: <code>claude mcp add upverse -- node /path/to/UPVerse/mcp/upverse-mcp.mjs</code></p>
+<h2 id="claude-desktop">ใช้กับ Claude Desktop</h2>
+<p><code>claude_desktop_config.json</code> → <code>"upverse": { "command": "node", "args": ["/ABS/PATH/UPVerse/mcp/upverse-mcp.mjs"] }</code></p>
+<h2 id="_2">ทดสอบ</h2>
+<pre><code class="language-bash">cd mcp &amp;&amp; node test-client.mjs
+</code></pre>
+<h2 id="_3">เครื่องมือ</h2>
+<table>
+<thead>
+<tr>
+<th>อ่าน</th>
+<th>เขียน (scope)</th>
+<th>อื่น</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>upverse_health</code> · <code>upverse_portfolio</code> · <code>upverse_review</code> · <code>upverse_instrument</code> · <code>upverse_quotes</code> · <code>upverse_scans</code> · <code>upverse_theses</code> · <code>upverse_tickets</code> · <code>upverse_transactions</code> · <code>upverse_watchlist</code> · <code>upverse_journal</code> · <code>upverse_goal</code></td>
+<td><code>upverse_thesis_create</code> (theses:write) · <code>upverse_ticket_propose</code> (tickets:propose → proposed เสมอ) · <code>upverse_watchlist_add</code> · <code>upverse_journal_add</code></td>
+<td><code>upverse_query</code> (ตัวแปลเจตนาแบบกฎ) · <code>upverse_api</code> (เรียก /api/v1 ตรง)</td>
+</tr>
+</tbody>
+</table></section><section id="techniques" class="doc"><div class="doc-head"><span class="kicker">docs/TECHNIQUES.md</span><h1>หลักการวิเคราะห์ที่ใช้</h1></div><h1 id="upverse-v01-18-2569">หลักการวิเคราะห์หุ้นที่ UPVerse ใช้ — และที่ยังไม่ใช้ (v0.1 · 18 ก.ย. 2569)</h1>
+<blockquote>
+<p>คัดจากหลักการที่มีหลักฐาน/ประวัติยาว ไม่ใช่สูตรจากอินฟลูเอนเซอร์ · ทุกข้อระบุว่า <strong>ใช้ในแอปแล้ว (✅)</strong> · <strong>ใช้ได้เมื่อมีข้อมูล (🟡)</strong> · <strong>จงใจไม่ใช้ (⛔)</strong> พร้อมเหตุผล
+กติกาแกน: พื้นฐานตัดสินว่า <em>ซื้ออะไร</em> · เทคนิคตัดสินว่า <em>ซื้อเมื่อไร/ออกตรงไหน</em> · กฎความเสี่ยงตัดสินว่า <em>เท่าไร</em> · ไม่มีหลักการไหนแทนการเขียน thesis ก่อนซื้อได้</p>
+</blockquote>
+<h2 id="1">1 · เลือกอะไร (พื้นฐาน)</h2>
+<table>
+<thead>
+<tr>
+<th>หลักการ</th>
+<th>ใจความ</th>
+<th>ในแอป</th>
+<th>ที่มา</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>คูเมือง + circle of competence</strong> (Buffett/Munger)</td>
+<td>อธิบายธุรกิจได้ใน 3 บรรทัด · คูเมืองแข็งขึ้นหรืออ่อนลง · ผู้บริหารเอาเงินไปทำอะไร</td>
+<td>✅ thesis §2C ข้อ 1–3 · ตรวจโดยวง persona</td>
+<td>Berkshire letters · Munger, <em>Poor Charlie's Almanack</em></td>
+</tr>
+<tr>
+<td><strong>Owner earnings / FCF หลังหัก SBC</strong></td>
+<td>กำไรที่เจ้าของได้จริง = OCF − capex − ค่าตอบแทนที่จ่ายเป็นหุ้น (SBC คือต้นทุน)</td>
+<td>✅ FCF ในสแกน · 🟡 SBC ต้องเพิ่ม tag EDGAR (บทเรียน AXON)</td>
+<td>Buffett 1986 letter · Damodaran เรื่อง SBC</td>
+</tr>
+<tr>
+<td><strong>Piotroski F-score</strong></td>
+<td>9 สัญญาณคุณภาพงบ (กำไร · กระแสเงินสด · หนี้ · margin · turnover)</td>
+<td>✅ คำนวณจาก EDGAR (ธนาคารได้ 6/9)</td>
+<td>Piotroski (2000)</td>
+</tr>
+<tr>
+<td><strong>Gross profitability</strong></td>
+<td>กำไรขั้นต้น/สินทรัพย์ ทำนายผลตอบแทนได้ดีกว่ากำไรสุทธิ</td>
+<td>🟡 ต้องเพิ่ม GrossProfit + Assets tags</td>
+<td>Novy-Marx (2013)</td>
+</tr>
+<tr>
+<td><strong>Expectations investing (reverse DCF)</strong></td>
+<td>ไม่ทายมูลค่า แต่ถามว่า "ราคานี้ต้องการโตกี่ %/ปี" แล้วตัดสินว่าเชื่อไหม</td>
+<td>✅ "ราคานี้ต้องการโต x%/ปี" ในหน้าพอร์ต (3 ปี · 30× FCF หรือ 12× EPS · คิดลด 10%)</td>
+<td>Mauboussin &amp; Rappaport (2001/2021)</td>
+</tr>
+<tr>
+<td><strong>มูลค่า 3 ฉาก + margin of safety ≥ 25%</strong></td>
+<td>bear/base/bull ที่ย้อนสูตรได้ · ราคาน่าซื้อ = base − 25%</td>
+<td>✅ thesis §2C ข้อ 4 (สคริปต์ <code>journal/private/theses/</code>) · 🟡 เครื่องคิดเลขในแอป (B5)</td>
+<td>Graham, <em>The Intelligent Investor</em> บท 20</td>
+</tr>
+<tr>
+<td><strong>Magic Formula</strong> (ROIC สูง + earnings yield สูง)</td>
+<td>จัดอันดับ "ดี+ถูก" แบบกลไก</td>
+<td>🟡 ต้องเพิ่ม EBIT · NWC · fixed assets tags</td>
+<td>Greenblatt, <em>The Little Book That Beats the Market</em> (2005)</td>
+</tr>
+<tr>
+<td><strong>Accruals / Beneish M / Altman Z</strong></td>
+<td>จับกำไรที่ไม่ใช่เงินสด · แต่งบัญชี · ความเสี่ยงล้มละลาย</td>
+<td>🟡 ต้องเพิ่ม tags · ใช้เป็น "ธงแดง" ไม่ใช่คะแนน</td>
+<td>Sloan (1996) · Beneish (1999) · Altman (1968)</td>
+</tr>
+<tr>
+<td><strong>PEG / ประเภทหุ้นแบบ Lynch</strong></td>
+<td>โตเร็ว · โตช้า · วัฏจักร · ฟื้นตัว · สินทรัพย์แฝง — ใช้เครื่องมือคนละชุด</td>
+<td>🟡 บทบาทใน thesis (แกน/ดาวเทียม/รายได้) ทำหน้าที่คล้ายกัน</td>
+<td>Lynch, <em>One Up on Wall Street</em> (1989)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="2">2 · ซื้อเมื่อไร / ออกตรงไหน (เทคนิค)</h2>
+<table>
+<thead>
+<tr>
+<th>หลักการ</th>
+<th>ใจความ</th>
+<th>ในแอป</th>
+<th>ที่มา</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Stage analysis</strong> (Weinstein)</td>
+<td>4 ขั้น: ฐาน → ขาขึ้น → ยอด → ขาลง · ซื้อขั้น 1–2 · ห้ามถัวขั้น 4</td>
+<td>✅ หน้าพอร์ต: ราคา vs SMA150 + ความชัน SMA200</td>
+<td>Weinstein (1988)</td>
+</tr>
+<tr>
+<td><strong>Trend template</strong> (Minervini)</td>
+<td>8 เงื่อนไขแนวโน้มขึ้น (ราคา &gt; SMA150/200 · SMA200 ขาขึ้น · ≥ 30% เหนือ low · ≤ 25% จาก high · RS สูง)</td>
+<td>✅ นับ x/8 · ข้อ 8 ใช้ RS เทียบ SPY แทน RS rating</td>
+<td>Minervini (2013)</td>
+</tr>
+<tr>
+<td><strong>Relative strength / momentum</strong></td>
+<td>แข็งกว่าตลาด 3–12 เดือน มีหลักฐานเชิงวิชาการ · 1 เดือนกลับทิศ · 3–5 ปีกลับทิศ</td>
+<td>✅ RS vs SPY 1/3/6/12 เดือน · rank ในสแกน M4</td>
+<td>Jegadeesh &amp; Titman (1993) · Antonacci (2014)</td>
+</tr>
+<tr>
+<td><strong>CAN SLIM</strong> (O'Neil)</td>
+<td>กำไรโตเร่ง + ผู้นำกลุ่ม + ฐานทะลุด้วยปริมาณ + ตัดขาดทุน 7–8%</td>
+<td>🟡 M1/M4 ใช้บางส่วน · ตัดขาดทุนใช้ 2×ATR แทน</td>
+<td>O'Neil, <em>How to Make Money in Stocks</em></td>
+</tr>
+<tr>
+<td><strong>ฐานสะสม ≥ 4–6 สัปดาห์ + ปริมาณยืนยัน</strong></td>
+<td>ไม่รับมีดที่กำลังตก · รอ higher low + กลับเหนือ EMA20 ด้วยปริมาณ</td>
+<td>✅ กฎ "มีดกำลังตก" (ขั้น 4 + ร่วง &gt; 15%/20 วัน) → ห้ามเพิ่ม</td>
+<td>Weinstein · Minervini · Wyckoff (แนวคิด)</td>
+</tr>
+<tr>
+<td><strong>ATR position sizing / R-multiples</strong></td>
+<td>ขนาดไม้จากระยะถึง stop (≤ 1% ของพอร์ตต่อไม้) · เป้า ≥ 2R · time stop</td>
+<td>✅ กฎ §3 ในตั๋ว · 🟡 ต้องรู้ก่อนว่า Webull TH ตั้ง stop กับเศษหุ้นได้ไหม</td>
+<td>Van Tharp · Turtle rules</td>
+</tr>
+<tr>
+<td><strong>Dual momentum สำหรับแกน</strong></td>
+<td>ถ้า SPY 12 เดือน &lt; T-bill → พักแกนไปพันธบัตร/เงินสด</td>
+<td>⛔ ยังไม่ใช้ — พอร์ตเล็ก + ค่าธรรมเนียม/ภาษีจากการสลับ · ทบทวนเมื่อพอร์ต ≥ $5,000</td>
+<td>Antonacci (2014)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3">3 · เท่าไร / จัดพอร์ต (ความเสี่ยง)</h2>
+<table>
+<thead>
+<tr>
+<th>หลักการ</th>
+<th>ใจความ</th>
+<th>ในแอป</th>
+<th>ที่มา</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Core-Satellite</strong></td>
+<td>แกน ETF ดัชนี 70% · ดาวเทียม 20% · เงินสด 10% · เงินใหม่ไปแกนก่อน</td>
+<td>✅ หน้าพอร์ต "สัดส่วนเงินทุน vs แผน" + "เงินเติมรอบหน้าควรไป" (เป้าจากหน้าเป้าหมาย)</td>
+<td>Bogle · Swensen (2005)</td>
+</tr>
+<tr>
+<td><strong>เพดานหุ้นเดี่ยว + วัดกับพอร์ตแผน</strong></td>
+<td>≤ 10% (เตือน 8%) · วัดกับพอร์ต 12 เดือนข้างหน้า ไม่ใช่วันนี้</td>
+<td>✅ เมื่อตั้งเงินเติมต่อเดือนในหน้าเป้าหมาย</td>
+<td>UPVerse §3 (วง persona 18 ก.ย.)</td>
+</tr>
+<tr>
+<td><strong>De minimis</strong></td>
+<td>ไม้ลดสัดส่วน &lt; $3 หรือค่าธรรมเนียม &gt; 1% → ไม่บังคับขาย ใช้เงินใหม่เจือจาง</td>
+<td>✅</td>
+<td>UPVerse §3 (เสนอ 18 ก.ย. — ต้นเคาะ)</td>
+</tr>
+<tr>
+<td><strong>Rebalancing bands 5/25</strong></td>
+<td>ปรับสมดุลเมื่อสัดส่วนเบี่ยง 5 จุด หรือ 25% ของเป้า — ไม่ใช่ตามปฏิทิน</td>
+<td>🟡 แสดง gap แล้ว · ตั๋ว rebalance อัตโนมัติยังไม่มี</td>
+<td>Swedroe</td>
+</tr>
+<tr>
+<td><strong>ห้ามถัวเฉลี่ยขาลงเมื่อ thesis พัง</strong></td>
+<td>ถัวได้เฉพาะ thesis "เพิ่ม" ที่ยืนยัน + ราคา ≤ น่าซื้อ + ไม่ใช่มีดตก + ไม่เกินเพดาน</td>
+<td>✅ "ถัวได้ไหม" ทุกตัวที่ขาดทุน</td>
+<td>UPVerse §2D</td>
+</tr>
+<tr>
+<td><strong>โยกเงินแบบมีด่าน (ไม่ไล่ performance)</strong></td>
+<td>ต้นทางอ่อน + ปลายทางมี thesis "เพิ่ม" ยืนยัน + คะแนนต่าง ≥ 20 + ต้นทุน ≤ 1% + ถือ ≥ 30 วัน</td>
+<td>✅ "โยกเงินไปไหน" · ผลตอบแทนย้อนหลังอย่างเดียวไม่ใช่เหตุผล</td>
+<td>Barber &amp; Odean (2000) — ยิ่งซื้อขายบ่อย ยิ่งได้น้อย</td>
+</tr>
+<tr>
+<td><strong>Kelly fraction / risk parity</strong></td>
+<td>ขนาดไม้จากความได้เปรียบ · น้ำหนักจากความผันผวน</td>
+<td>⛔ Kelly ต้องรู้ edge ที่ยังไม่มีหลักฐาน (B9 วัดผลก่อน) · risk parity ต้องมีพันธบัตร</td>
+<td>Kelly (1956) · Bridgewater</td>
+</tr>
+</tbody>
+</table>
+<h2 id="4">4 · พฤติกรรม (ที่ทำให้ทุกอย่างข้างบนใช้ได้จริง)</h2>
+<table>
+<thead>
+<tr>
+<th>หลักการ</th>
+<th>ในแอป</th>
+<th>ที่มา</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>เขียน thesis/journal ก่อนซื้อ</strong> — "ไม่มี thesis เขียนไว้ = ไม่มีตำแหน่ง"</td>
+<td>✅ ป้าย "ไม่มี thesis — ห้ามเพิ่ม/ถัว" · 🟡 ด่านตั๋ว (A1)</td>
+<td>Kahneman · Klein pre-mortem · Pabrai/Spier checklist</td>
+</tr>
+<tr>
+<td><strong>"อะไรจะทำให้ผมคิดผิด" เป็นเรื่องธุรกิจ ไม่ใช่ราคา</strong></td>
+<td>✅ thesis ทุกฉบับ · 🟡 ตรวจอัตโนมัติกับงบใหม่ (B2)</td>
+<td>Buffett: ราคาไม่ได้บอกว่าคุณผิด</td>
+</tr>
+<tr>
+<td><strong>ทางเลือกที่ 0 เสมอ</strong></td>
+<td>✅ thesis + ตั๋ว</td>
+<td>Munger: inversion</td>
+</tr>
+<tr>
+<td><strong>วง persona + lucifer ก่อนไม้ใหญ่</strong></td>
+<td>✅ 5 persona × 2 รอบ ทุก thesis</td>
+<td>UPVerse §6</td>
+</tr>
+<tr>
+<td><strong>วัดผลตัวเอง</strong> (hit rate · R เฉลี่ย · thesis แม่นไหม)</td>
+<td>🟡 B9 — ต้องมีประวัติ ≥ 1 ไตรมาส</td>
+<td>Tetlock, <em>Superforecasting</em></td>
+</tr>
+</tbody>
+</table>
+<h2 id="0100-agent-2b">คะแนน 0–100 ที่หน้าพอร์ตใช้ (agent §2B · ต้นปรับน้ำหนักได้)</h2>
+<p>คุณภาพ 25 (F-score · ROE · FCF margin · รายได้โต 3 ปี) · มูลค่า 25 (P/FCF หรือ P/E · ราคา ≤ น่าซื้อของ thesis) · จังหวะ 30 (trend template x/8 · RS vs SPY 6 เดือน) · ปัจจัยกระตุ้น 10 (thesis "เพิ่ม" · ติดสแกน) · หักความเสี่ยง ≤ 10 (ผันผวน &gt; 5%/วัน · ต่ำกว่า high &gt; 40% · ไม่มี thesis · ขาลง) — ทุกคะแนนมี "ทำไม" กดดูได้</p>
+<h2 id="_1">ข้อจำกัดที่ต้องรู้</h2>
+<ul>
+<li>งบจาก EDGAR <strong>รายปี</strong> (งบรายไตรมาสยังไม่ดึง) · ราคา Yahoo ชั้น 2 · ค่าธรรมเนียมเป็นค่าประมาณจากหน้าราคา Webull TH (FX spread ไม่ระบุ)</li>
+<li>ผลตอบแทนพอร์ตเทียบ SPY ต้องมีประวัติ ≥ 60 วัน และยังเป็นแบบง่าย (ไม่หักเงินเติม — TWR มาทีหลัง)</li>
+<li>ป้าย "ควรทำอะไร" ทุกป้ายเป็นข้อเสนอจากกฎ · ต้นตัดสินใจเองผ่านตั๋ว · ไม่ใช่คำแนะนำจากผู้มีใบอนุญาต</li>
+</ul></section><section id="decisions" class="doc"><div class="doc-head"><span class="kicker">docs/DECISIONS.md</span><h1>บันทึกการตัดสินใจ</h1></div><h1 id="decisions-upverse-lucifer-michael">DECISIONS — บันทึกการตัดสินใจสำคัญของ UPVerse (ต้นเคาะ · lucifer ทุบ · michael ประกอบ)</h1>
+<p>รูปแบบ: D-xxx · วันที่ · เรื่อง · ทางเลือก · ผลทุบ · คำตัดสิน · เงื่อนไข · ผู้เคาะ · สถานะ</p>
+<h2 id="d-001-18-2569-webull-api-axon-000639-288">D-001 · 18 ก.ย. 2569 · เปิดรางส่งคำสั่งผ่าน Webull API ครั้งแรก (ไม้เสนอ: ขาย AXON 0.00639 ≈ $2.88)</h2>
+<p><strong>บริบท:</strong> ต้นถาม "api สั่งขายให้เลยได้ไหม" หลังยืนยัน thesis AXON "ออก" · ประตู §14.3 ยังไม่ผ่าน (environment uat · kill switch ปิด 2 ชั้น · whitelist ว่าง)
+<strong>ข้อเท็จจริงที่ได้วันนี้:</strong> preview บน prod ผ่าน (body TH v3 <code>new_orders[]</code> · เศษหุ้น 0.00639 รับได้ · <code>estimated_cost $2.88 · estimated_transaction_fee $0.02</code>) · body แบบ US เดิมถูกปฏิเสธ "Orders can not be empty." · Webull TH มี UAT host + บัญชีทดสอบร่วม (เพิ่งรู้ — v0.1 เข้าใจผิดว่าไม่มี)
+<strong>ผลทุบ lucifer (สรุป):</strong> "ไม่ทิ้ง แต่ห้ามยิงตามที่เสนอ" — (1) แยก 2 งานที่ถูกมัดรวม: ออกจาก AXON (ตัดสินแล้ว ขายมือได้วันนี้) กับ เปิดราง API (โปรเจกต์ทดสอบของตัวเอง) (2) โค้ดยังไม่พร้อมยิงจริง: ไม่มี poll ผลหลังส่ง · DB เขียนหลังยิง · timeout 15 วิ + client_order_id มี timestamp → กดซ้ำ = ส่งซ้ำ (แก้ id คงที่ + log ก่อนยิงแล้ว 18 ก.ย. · poll/reconcile ยังไม่ทำ) · confirm ไม่บังคับ preview · กฎ position ใช้ ledger ไม่ใช่ snapshot (3) "$2.88 เล็ก" ห้ามใช้เป็นเหตุผลข้ามประตูที่เขียนไว้เอง — บรรทัดฐานคือของแพง (4) ไม้แรกต้องเป็น SELL · MARKET · ช่วงตลาดเปิด · whitelist 1 ตัว · เพดาน ≤ $10 · ต้นนั่งดู · ปิด kill switch คืนทันที
+<strong>ทางเลือก:</strong> (A) ขาย AXON ทางรางส่งมือวันนี้ + ทำราง API เป็นโปรเจกต์แยก (UAT จริงก่อน) · (B) fast-track: แก้โค้ด 5 จุด → preview → ทดสอบ kill switch + คำสั่งที่ fill ไม่ได้/cancel → ไม้ AXON เป็นไม้ API แรกก่อนตั๋วหมดอายุ 23 ก.ย. · (C) ไม่เปิดราง API จนกว่าครบเกณฑ์เดิม 30 วัน/10 ตั๋ว
+<strong>คำแนะนำ upverse-advisor:</strong> A (AXON ออกวันนี้ · เก็บ "ไม้ SELL เล็ก" ตัวถัดไปหรือ UAT เป็นสนามทดสอบ) — เหตุผล: ไม่มีอะไรได้จากการรอ 2–4 วันบน $2.88 และท่อพิสูจน์ได้ 90% บน UAT โดยเสี่ยง $0
+<strong>คำตัดสิน:</strong> <em>รอต้น (+ michael)</em> · <strong>สถานะ:</strong> เปิด
+<strong>เงื่อนไขถ้าเลือก B (ต้องครบทุกข้อ · หลักฐานใน orderLog):</strong> โค้ด: poll <code>orderDetail</code> จนจบ + reconcile fill โดยเก็บทั้ง order_id/client_order_id + dedupe sync · confirm บังคับ preview ของ body เดียวกันภายใน 10 นาที · kill switch 3 กรณีต้อง 422 · คำสั่ง LIMIT ที่ fill ไม่ได้ → เห็นใน open-orders → cancel สำเร็จ · deploy freeze (SHA เดียวกัน preview→place) · ห้าม retry เมื่อไม่ทราบผล</p></section></main></div>
+<div class="foot">ไม่ใช่คำแนะนำจากผู้มีใบอนุญาต · ตัวเลขเกณฑ์ทั้งหมดเป็นค่าเริ่มต้นที่ต้องยืนยันด้วยข้อมูลจริงก่อนใช้ · เอกสารต้นทางคือไฟล์ .md — แก้ที่นั่นแล้วสร้างใหม่</div>
+</body></html>
