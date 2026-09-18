@@ -84,26 +84,31 @@ export const openOrders = (creds: WebullCreds, accountId: string) => callWebull<
 export const orderHistory = (creds: WebullCreds, accountId: string, pageSize = 100) => callWebull<{ data: WebullOrderGroup[] }>({ method: "GET", uri: "/trading/orders/historical-orders/list", query: { account_id: accountId, page_size: pageSize }, creds });
 export const orderDetail = (creds: WebullCreds, accountId: string, clientOrderId: string) => callWebull<Record<string, unknown>>({ method: "GET", uri: "/trading/orders/get", query: { account_id: accountId, client_order_id: clientOrderId }, creds });
 
-// ---------- orders (stock) ----------
-export interface StockOrder {
-  client_order_id: string;
+// ---------- orders (stock) — Webull TH v3 schema (docs: reference/trade-api/common-order-place.md, verified 18 ก.ย. 2569) ----------
+// Body = { account_id, new_orders: [NewOrder] } (NOT the US-style { stock_order }). quantity accepts decimals for US fractional lots.
+export interface NewOrder {
+  combo_type: "NORMAL";
+  client_order_id: string; // ≤ 32 chars · A–Z a–z 0–9 - _ · unique per account
+  instrument_type: "EQUITY";
+  market: "US";
+  symbol: string;
+  order_type: "LIMIT" | "MARKET" | "STOP_LOSS" | "STOP_LOSS_LIMIT";
+  entrust_type: "QTY" | "AMOUNT";
+  support_trading_session?: "CORE" | "ALL" | "NIGHT" | "ALL_DAY";
+  time_in_force: "DAY" | "GTC";
   side: "BUY" | "SELL";
-  tif: "DAY" | "GTC";
-  extended_hours_trading: boolean;
-  instrument_id?: string;
-  symbol?: string;
-  market?: "US";
-  instrument_type?: "EQUITY";
-  order_type: "LIMIT" | "MARKET" | "STOP" | "STOP_LOSS_LIMIT";
+  quantity?: string;
+  total_cash_amount?: string;
   limit_price?: string;
   stop_price?: string;
-  qty?: string;
-  entrust_type?: "QTY" | "CASH";
-  total_cash_amount?: string;
-  trading_session?: "CORE";
+  position_intent?: "BUY_TO_OPEN" | "SELL_TO_CLOSE"; // margin accounts only
 }
-export const previewOrder = (creds: WebullCreds, accountId: string, stock_order: StockOrder) => callWebull<Record<string, unknown>>({ method: "POST", uri: "/trading/orders/preview", body: { account_id: accountId, stock_order }, creds });
-export const placeOrder = (creds: WebullCreds, accountId: string, stock_order: StockOrder) => callWebull<Record<string, unknown>>({ method: "POST", uri: "/trading/orders/place", body: { account_id: accountId, stock_order }, creds });
+/** @deprecated US-style shape kept for type compatibility; TH rejects it with "Orders can not be empty." */
+export type StockOrder = NewOrder;
+export interface OrderPreview { estimated_cost?: string; estimated_transaction_fee?: string; [k: string]: unknown }
+export interface OrderAck { client_order_id: string; order_id: string; [k: string]: unknown }
+export const previewOrder = (creds: WebullCreds, accountId: string, order: NewOrder) => callWebull<OrderPreview>({ method: "POST", uri: "/trading/orders/preview", body: { account_id: accountId, new_orders: [order] }, creds });
+export const placeOrder = (creds: WebullCreds, accountId: string, order: NewOrder) => callWebull<OrderAck>({ method: "POST", uri: "/trading/orders/place", body: { account_id: accountId, new_orders: [order] }, creds });
 export const cancelOrder = (creds: WebullCreds, accountId: string, clientOrderId: string) => callWebull<Record<string, unknown>>({ method: "POST", uri: "/trading/orders/cancel", body: { account_id: accountId, client_order_id: clientOrderId }, creds });
 
 // ---------- market data (requires market-data subscription; 403 otherwise) ----------
