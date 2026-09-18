@@ -10,7 +10,7 @@
 | เซสชันเจ้าของ | หน้าจอ · ยืนยันตั๋ว · ตั้งค่า | `POST /auth/login {"passphrase"}` → cookie `upv_session` (30 วัน) · ถ้าไม่ตั้ง `UPVERSE_OWNER_PASSPHRASE` = โหมด dev เปิดให้เข้า (ใช้ในเครื่องเท่านั้น) |
 | API token | agent · n8n · ChatGPT Actions | สร้างในหน้าตั้งค่า (แสดงครั้งเดียว) → `Authorization: Bearer upv_…` · scope เป็น allow-list |
 
-Scope ที่มี: `portfolio:read` `portfolio:write` `quotes:read` `scan:read` `watchlist:write` `theses:write` `tickets:propose` `journal:write` — **ไม่มี `tickets:confirm`**
+Scope ที่มี: `portfolio:read` `portfolio:write` `quotes:read` `scan:read` `watchlist:write` `theses:read` `theses:write` `tickets:propose` `journal:write` — **ไม่มี `tickets:confirm`**
 
 ## ตัวอย่างที่รันได้จริง
 ```bash
@@ -60,6 +60,16 @@ T=upv_...; curl -s $B/portfolio -H "Authorization: Bearer $T"
 curl -s -o /dev/null -w "%{http_code}\n" -X POST $B/tickets/<ID>/confirm -H "$J" -H "Authorization: Bearer $T" -d '{"phrase":"x","idempotencyKey":"abcdefgh12"}'   # → 403
 ```
 
+### agent ส่ง thesis เข้าแอป (ทดสอบจริงบน prod 18 ก.ย. 2569 — NVDA v1 → `201` · `draft_ai`)
+```bash
+# token ของ agent ต้องมี scope theses:write · JSON ตามสคีมาในตาราง (ดูตัวอย่างเต็มใน journal/private/theses/ — ไม่อยู่ใน repo)
+curl -s -X POST https://upverse-app.vercel.app/api/v1/theses \
+  -H "Authorization: Bearer $UPV_AGENT_TOKEN" -H 'Content-Type: application/json' \
+  --data-binary @thesis.json | jq '{id,symbol,version,status,verdict,buyBelow}'
+# → {"symbol":"NVDA","version":1,"status":"draft_ai","verdict":"ถือ","buyBelow":135}
+# ต้นเปิด /stock/NVDA → การ์ด "Thesis" → ปุ่ม "ยืนยัน thesis (ต้น)" หรือ "ปฏิเสธ + เหตุผล"
+```
+
 ## Endpoint ทั้งหมด
 | Method · Path | Scope | หมายเหตุ |
 |---|---|---|
@@ -70,7 +80,7 @@ curl -s -o /dev/null -w "%{http_code}\n" -X POST $B/tickets/<ID>/confirm -H "$J"
 | GET `/portfolio?account=all\|<id>` | portfolio:read | positions ที่ราคาล่าสุด + cash + P&L (หุ้น / ค่าเงิน) + caveats |
 | GET/POST/DELETE `/transactions` | portfolio:read / write | บันทึกมือ (paper) · `{rows:[…]}` นำเข้า · ลบด้วย `?id=` |
 | GET `/quotes?symbols=` | quotes:read | source · as_of · market_state · stale |
-| GET `/instruments/{symbol}?range=3mo\|6mo\|1y\|2y` | quotes:read | bars + EMA20/SMA50/SMA200/RSI14 + snapshot + EDGAR + ป้ายสแกน + position |
+| GET `/instruments/{symbol}?range=3mo\|6mo\|1y\|2y` | quotes:read | bars + EMA20/SMA50/SMA200/RSI14 + snapshot + EDGAR + ป้ายสแกน + position (บัญชี Webull ใช้ snapshot · paper ใช้ ledger) + thesis ล่าสุด |
 | GET `/scans?model=&date=` | scan:read | ผลล่าสุดต่อโมเดล (M1–M5 · OVERLAP · AVOID) |
 | POST `/scans/run {limit?,withFundamentals?}` | เจ้าของ / `x-cron-secret` | รันสแกน · GET พร้อม `Authorization: Bearer CRON_SECRET` = Vercel Cron |
 | GET/POST/DELETE `/watchlist` | portfolio:read / watchlist:write | โซนเข้า · ระยะจากโซน |
@@ -85,6 +95,8 @@ curl -s -o /dev/null -w "%{http_code}\n" -X POST $B/tickets/<ID>/confirm -H "$J"
 | GET `/broker/status` · `?check=1` | เจ้าของ | มุมมองที่เก็บไว้ / ตรวจ token กับ Webull (ไม่ส่ง SMS) · `twoFaSecondsLeft` นับถอยหลัง 5 นาที |
 | POST `/broker/status {action:"resend"}` · POST `/broker/disconnect` | เจ้าของ | สร้าง token ใหม่ (ส่ง SMS ใหม่) เมื่อ EXPIRED/INVALID · ลบกุญแจ+token |
 | POST `/broker/sync` · GET `/broker/sync` | เจ้าของ / `x-cron-secret` | **ดึงพอร์ตจริง**: balance + positions (qty · cost · last_price) + fills ล่าสุด → บัญชี `webull_live` + `liveSnapshots` · GET = snapshot ล่าสุด · งานกลางคืนเรียกให้ทุกวัน |
+| GET `/theses?symbol=` · POST `/theses` | theses:read / theses:write | **บทวิเคราะห์จาก agent** (สคีมา: summary · verdict ถือ/เพิ่ม/ลด/ออก/รอ/ดูต่อ · role แกน/ดาวเทียม/รายได้/เก็งจังหวะ · sections 3–12 · scenarios bear/base/bull ×3 · buyBelow · invalidation · altZero · dissent ≤6 · sources ≥1 · priceAtWrite · reviewAfter) · POST ด้วย token = `draft_ai` เสมอ · ด้วยเซสชันเจ้าของ = `confirmed` · เวอร์ชันเพิ่มอัตโนมัติต่อ symbol |
+| POST `/theses/{id} {action:"confirm"\|"reject"\|"stale", reason?}` | **เซสชันเจ้าของเท่านั้น** | ต้นกดในหน้า `/stock/{symbol}` · reject ต้องมีเหตุผล · แสดง thesis ล่าสุดที่ไม่ถูก reject ใน `/instruments/{symbol}` |
 | POST `/query {q}` | any (ตาม scope ที่ใช้) | ตัวแปลเจตนาแบบกฎ ไม่มี LLM |
 
 ## กฎความเสี่ยงที่ตรวจทุกตั๋ว (ค่าเริ่มต้น v1)

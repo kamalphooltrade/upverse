@@ -1,6 +1,15 @@
 # PROGRESS — UPVerse (Personal Financial Advisor)
 
-## สถานะล่าสุด: 18 ก.ย. 2569 (01:00) — 🟢 พอร์ตจริงจาก Webull แสดงในแอปแล้ว
+## สถานะล่าสุด: 18 ก.ย. 2569 (10:00) — 🧠 agent เขียน thesis เข้าแอปได้แล้ว · NVDA v1 รอต้นยืนยัน
+- ✅ **ตอบคำถาม "บทวิเคราะห์ในแอปใช้ AI คิดไหม"**: แอปเป็นกฎ/สูตรล้วน (ไม่มี LLM ฝั่งเซิร์ฟเวอร์) · ตัวที่ "คิด" คือ agent `upverse-advisor` ใน Claude Code → ต้นเลือกข้อ 1 "ต่อ agent เข้าแอปผ่าน API"
+- ✅ **Thesis API + การ์ดในหน้า `/stock/{symbol}`** (`a22d2a5`): `POST /api/v1/theses` (scope `theses:write` · token = `draft_ai` เสมอ) · ต้นกด "ยืนยัน/ปฏิเสธ" ในแอป (เซสชันเจ้าของเท่านั้น) · เวอร์ชันต่อ symbol · สคีมาบังคับ 3 ฉากทัศน์ + invalidation + ทางเลือกที่ 0 + dissent + sources
+- ✅ token ของ agent สร้างใน DB (label `agent-upverse-advisor` · ไม่มี `tickets:confirm`) · ค่าจริงอยู่ใน scratchpad ของ session — **ต้นสร้างใหม่ในหน้าตั้งค่าได้ทุกเมื่อ** ถ้าอยากเพิกถอน
+- ✅ **NVDA thesis v1 ส่งเข้า prod แล้ว** (`c068cb91` · draft_ai · คำตัดสิน **ถือ ไม่เพิ่ม** · ดาวเทียม · ราคาน่าซื้อ ≤ $135 · ทบทวน ≤ 17 ธ.ค. 2569) — ผ่านวง persona 5×2 ก่อน (เสียงค้าน 4 ข้อ แก้ครบในเวอร์ชันนี้: สัญญาณ "คิดผิด" เป็นเรื่องธุรกิจล้วน · สูตรมูลค่าย้อนได้ · กฎ look-through · ฉาก bear ที่กำไรถอย) · สำเนาส่วนตัว `journal/private/theses/2026-09-18_NVDA_v1.json` (git-ignored เพราะมีตำแหน่งจริง)
+- 🔎 **ข้อค้นพบจาก EDGAR ที่ระบบสแกนยังไม่เห็น**: เงินสดสุทธิจริงของ NVDA = +$41.7B (ระบบแสดง +$1.1B เพราะไม่นับหลักทรัพย์พร้อมขาย $39.5B) · กำไรขั้นต้นลด 75.0 → 71.1% · ตัดสต็อก $4.0B · ซื้อหุ้นคืน $40.1B · ลงทุนบริษัทเอกชน $17.5B + ซื้อกิจการ $14.5B → ควรเพิ่ม tag เหล่านี้ใน `fundamentals.ts` (งานถัดไป)
+- ✅ ค่าธรรมเนียม Webull TH (หน้า pricing): ซื้อ/ขาย 0.10% ไม่มีขั้นต่ำ · SEC/FINRA ขั้นต่ำ $0.01+$0.01 ฝั่งขาย → **ไม้ขายต้อง ≥ $3** ถึงผ่านกฎ ≤ 1% · FX spread ไม่ระบุ · ⚠️ `fees: 0` ใน fills ที่นำเข้าเป็นค่า hardcode (API ไม่ส่ง) ไม่ใช่ฟรี
+- ✅ แก้ `/instruments/{symbol}`: position ของบัญชี Webull ใช้ snapshot (fills ย้อนหลังไม่ครบ → NVDA เคยขึ้น "ไม่ได้ถือ") · avgCost ไม่ปัดก่อนหาร (`dfbc93b` · prod)
+
+## สถานะก่อนหน้า: 18 ก.ย. 2569 (01:00) — 🟢 พอร์ตจริงจาก Webull แสดงในแอปแล้ว
 - ✅ ต้นเชื่อม Webull สำเร็จ (token NORMAL · บัญชี Individual Cash CTH6641233) · ต้นตั้งรหัสผ่านในแอปแล้ว (source=db)
 - ✅ **แก้ endpoint ให้ตรง TH จริง**: `/trading/accounts/list` · `/trading/assets/balances/get` · `/trading/assets/positions/list` · `/trading/orders/historical-orders/list` (ที่ผมใช้ก่อนหน้า `/app/subscriptions/list` เป็นของ US → 404)
 - ✅ **sync** (`POST /broker/sync` · ปุ่ม "ดึงจาก Webull" ในหน้าพอร์ต · งานกลางคืนเรียกให้): snapshot balance+positions (qty/cost/last_price จาก Webull = ชั้น 1) + นำเข้า fills → บัญชี `webull_live` · พอร์ตรวม paper + live · ราคาใช้ของ Webull ถ้าใหม่กว่า Yahoo
@@ -83,6 +92,10 @@
 | 2 | ส่งออกพอร์ตจาก Webull (CSV/ภาพ → ยืนยันตัวเลข) | ต้น | พร้อมข้อ 1 |
 | 3 | สมัคร Webull OpenAPI (App Key/Secret) — เก็บใน `app/.env.local` เท่านั้น | ต้น | สัปดาห์นี้ (รีวิว 1–2 วันทำการ) |
 | 4 | Portfolio Review + Scan Report ฉบับแรก (S&P 500 · scorecard v1) | upverse-advisor | หลังได้ข้อ 1–2 |
+| 0t | **เปิด https://upverse-app.vercel.app/stock/NVDA → อ่านการ์ด Thesis → กด "ยืนยัน" หรือ "ปฏิเสธ + เหตุผล"** (ทุกข้อในนั้นคือข้อเสนอ ไม่ใช่คำสั่ง) | ต้น | วันนี้ |
+| 0u | เคาะ 2 เรื่องที่ persona เคาะแทนไม่ได้: (1) เพดานหุ้นเดี่ยว 10% นับแบบ look-through ผ่าน ETF ไหม (2) เป้า/เติมต่อเดือน/ความเสี่ยงที่รับได้ (SPEC §17 Q1–Q7) — ก่อนที่กฎ "$135" จะกลายเป็นค่าเริ่มต้น | ต้น | สัปดาห์นี้ |
+| 0v | เพิ่ม tag EDGAR ใน `fundamentals.ts`: หลักทรัพย์พร้อมขาย · ซื้อหุ้นคืน · เงินลงทุน/ซื้อกิจการ · ตัดสต็อก · กำไรขั้นต้น% (เพื่อให้สแกน M2/M3 เห็นเงินสดสุทธิจริง) + งบรายไตรมาส (10-Q) สำหรับสัญญาณออก | metatron | หลัง 0t |
+| 0w | thesis ตัวถัดไปตามลำดับน้ำหนักในพอร์ต (TSLA · GOOG · AAPL · INTC · AXON · USB) — หรือรอต้นเลือก | upverse-advisor | เมื่อต้นสั่ง |
 | 0 | **regenerate Webull App Key/Secret** (OpenAPI Management) แล้วใส่ใน **หน้าตั้งค่าของแอป** (ไม่ใช่แชท) หลังตั้ง `UPVERSE_MASTER_KEY` | ต้น | **ทันที** |
 | 0b | รันแอปในเครื่อง: `cd app && npm run dev -- -p 3777` → บันทึกพอร์ตจริงในหน้า "พอร์ต" (paper) · กด "รันเร็ว" ในหน้าสแกน | ต้น | วันนี้ |
 | 0c | ~~commit + push + deploy + migration~~ ✅ LIVE https://upverse-app.vercel.app | — | เสร็จ 18 ก.ย. |
