@@ -21,7 +21,17 @@ async function _GET(req: Request, ctx: { params: Promise<{ symbol: string }> }) 
   const cut = range === "3mo" ? 66 : range === "6mo" ? 130 : bars.length;
   const tags = d.scanRuns.filter((r) => r.results.some((x) => x.symbol === symbol)).map((r) => ({ model: r.modelKey, rank: r.results.find((x) => x.symbol === symbol)!.rank, runAt: r.runAt }));
   const latestTags = Object.values(tags.reduce((m, t) => { if (!m[t.model] || m[t.model].runAt < t.runAt) m[t.model] = t; return m; }, {} as Record<string, (typeof tags)[0]>));
-  const pos = positionsFrom(d.transactions).find((p) => p.symbol === symbol) ?? null;
+  // position: live Webull accounts use the broker snapshot (fills history is a recent window only), paper accounts use the ledger
+  const posRows = d.accounts.flatMap((a) => {
+    if (a.kind === "webull_live") {
+      const snap = (d.liveSnapshots ?? []).find((s) => s.accountId === a.id);
+      return (snap?.positions ?? []).filter((p) => p.symbol === symbol).map((p) => ({ qty: p.qty, costBasis: Math.round(p.costPrice * p.qty * 100) / 100 }));
+    }
+    return positionsFrom(d.transactions, a.id).filter((p) => p.symbol === symbol).map((p) => ({ qty: p.qty, costBasis: p.costBasis }));
+  });
+  const posQty = Math.round(posRows.reduce((s, r) => s + r.qty, 0) * 1e6) / 1e6;
+  const posCost = Math.round(posRows.reduce((s, r) => s + r.costBasis, 0) * 100) / 100;
+  const pos = posQty > 0 ? { symbol, qty: posQty, avgCost: Math.round((posCost / posQty) * 100) / 100, costBasis: posCost } : null;
   return json({
     symbol,
     quote: quoteR.status === "fulfilled" ? quoteR.value : { error: String(quoteR.reason) },
