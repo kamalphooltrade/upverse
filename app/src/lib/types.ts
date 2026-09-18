@@ -215,6 +215,32 @@ export interface ScanRun {
   note: string;
 }
 
+export type ThesisStatus = "draft_ai" | "confirmed" | "stale" | "rejected";
+export interface ThesisSection { title: string; body: string } // 7 หัวข้อตาม agent §2C
+export interface ThesisScenario { name: "bear" | "base" | "bull"; value: number | null; assumption: string }
+export interface Thesis {
+  id: string;
+  symbol: string;
+  version: number;
+  status: ThesisStatus;
+  author: "agent" | "owner";
+  createdAt: string;
+  confirmedAt: string | null;
+  staleReason: string | null;
+  summary: string; // 1–2 บรรทัด
+  verdict: "ถือ" | "เพิ่ม" | "ลด" | "ออก" | "รอ" | "ดูต่อ";
+  role: "แกน" | "ดาวเทียม" | "รายได้" | "เก็งจังหวะ" | "ไม่เข้าเกณฑ์";
+  sections: ThesisSection[];
+  scenarios: ThesisScenario[];
+  buyBelow: number | null; // base − margin of safety
+  invalidation: string; // อะไรจะทำให้คิดผิด
+  altZero: string; // ทางเลือกที่ 0
+  dissent: Array<{ persona: string; point: string; response: string }>; // เสียงค้าน 3 ข้อแรก + คำตอบ
+  sources: Array<{ label: string; asOf: string }>; // ที่มา + เวลา
+  priceAtWrite: number | null;
+  reviewAfter: string | null; // ISO date: งบถัดไป / 90 วัน
+}
+
 export interface ApiToken {
   id: string;
   prefix: string;
@@ -267,6 +293,7 @@ export interface DataFile {
     accounts: Array<{ account_id: string; account_number?: string; account_type?: string }> | null;
   } | null;
   owner: { passphraseHash: string; salt: string; changedAt: string } | null; // null = use env UPVERSE_OWNER_PASSPHRASE
+  theses?: Thesis[];
   liveSnapshots?: Array<{ accountId: string; brokerAccountId: string; asOf: string; currency: "USD"; cashUsd: number; buyingPowerUsd: number; marketValueUsd: number; unrealizedUsd: number; totalThbReported: number | null; positions: Array<{ symbol: string; qty: number; costPrice: number; lastPrice: number; unrealized: number; positionId: string }> }>;
 }
 
@@ -277,6 +304,7 @@ export const API_SCOPES = [
   "scan:read",
   "watchlist:write",
   "theses:write",
+  "theses:read",
   "tickets:propose",
   "journal:write",
 ] as const;

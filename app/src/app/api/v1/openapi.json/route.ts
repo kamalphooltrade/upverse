@@ -23,6 +23,8 @@ async function _GET(req: Request) {
       "/tickets/{id}": { get: R("ตั๋ว + ตรวจกฎสด", "portfolio:read") },
       "/tickets/{id}/confirm": { post: R("ยืนยัน — 403 สำหรับ token ทุกชนิด") },
       "/tickets/{id}/fill": { post: R("บันทึกผลจริงหลังทำในแอป Webull") },
+      "/theses": { get: R("thesis ล่าสุดต่อหุ้น ?symbol=", "theses:read"), post: R("agent เขียน thesis (draft_ai · 7 หัวข้อ · 3 ฉากทัศน์ · เสียงค้าน · ที่มา)", "theses:write") },
+      "/theses/{id}": { post: R("ยืนยัน/ปฏิเสธ/ทำเก่า — เจ้าของเท่านั้น") },
       "/journal": { get: R("สมุดบันทึก + ค้าง", "portfolio:read"), post: R("บันทึกการตัดสินใจ", "journal:write") },
       "/goal": { get: R("เป้า + อัตราที่จำเป็น + ฉากทัศน์", "portfolio:read"), put: R("ตั้งเป้า") },
       "/query": { post: R("ภาษาคน → เจตนา (rule-based) คืน understood_as", "any") },

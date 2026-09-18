@@ -25,7 +25,7 @@ export default function SettingsPage() {
   const setWl = (w: string) => setRulesEdit({ version: data!.rules.version, rules: rules!, wl: w });
   const [keys, setKeys] = useState({ appKey: "", appSecret: "" });
   const [prodPhrase, setProdPhrase] = useState("");
-  const [tok, setTok] = useState({ label: "agent-upverse-advisor", scopes: ["portfolio:read", "scan:read", "quotes:read", "theses:write", "tickets:propose", "journal:write", "watchlist:write"] as string[] });
+  const [tok, setTok] = useState({ label: "agent-upverse-advisor", scopes: ["portfolio:read", "scan:read", "quotes:read", "theses:read", "theses:write", "tickets:propose", "journal:write", "watchlist:write"] as string[] });
   const [newToken, setNewToken] = useState<string | null>(null);
   const [theme, setTheme] = useState<"auto" | "dark" | "light">(() => { try { return (localStorage.getItem("upv-theme") as "auto" | "dark" | "light") || "auto"; } catch { return "auto"; } });
   const [aurora, setAurora] = useState<"on" | "off">(() => { try { return (localStorage.getItem("upv-aurora") as "on" | "off") || "on"; } catch { return "on"; } });

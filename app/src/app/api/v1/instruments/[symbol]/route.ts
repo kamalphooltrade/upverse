@@ -33,6 +33,7 @@ async function _GET(req: Request, ctx: { params: Promise<{ symbol: string }> }) 
     scan_tags: latestTags,
     position: pos,
     watch: d.watchlist.find((w) => w.symbol === symbol) ?? null,
+    thesis: (d.theses ?? []).filter((t) => t.symbol === symbol && t.status !== "rejected").sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] ?? null,
     sources: { price: "yahoo (ชั้น 2)", fundamentals: "SEC EDGAR companyfacts (ทางการ)" },
   });
 }

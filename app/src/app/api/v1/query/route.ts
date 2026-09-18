@@ -29,6 +29,11 @@ async function _POST(req: Request) {
     const latest = runs.length ? runs[runs.length - 1] : null;
     return json({ understood_as: `scan.latest${model ? " " + model : ""}`, run: latest ? { model: latest.modelKey, runAt: latest.runAt, top: latest.results.slice(0, 10).map((r) => ({ rank: r.rank, symbol: r.symbol, score: r.score, why: r.why })) } : null });
   }
+  if (/thesis|บทวิเคราะห์|วิเคราะห์/i.test(q) && sym) {
+    if (!allowed(g.p, "theses:read")) return json({ understood_as: "thesis", error: "no scope theses:read" }, { status: 403 });
+    const t = (d.theses ?? []).filter((x) => x.symbol === sym).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] ?? null;
+    return json({ understood_as: `thesis ${sym}`, thesis: t && { status: t.status, version: t.version, verdict: t.verdict, summary: t.summary, buyBelow: t.buyBelow, invalidation: t.invalidation } });
+  }
   if (/ตั๋ว|ticket|รอยืนยัน/i.test(q)) {
     if (!allowed(g.p, "portfolio:read")) return json({ understood_as: "tickets", error: "no scope" }, { status: 403 });
     return json({ understood_as: "tickets.open", tickets: d.tickets.filter((t) => t.status === "proposed").map((t) => ({ id: t.id, symbol: t.symbol, side: t.side, qty: t.qty, notionalUsd: t.notionalUsd, blocks: t.riskCheck.filter((c) => c.state === "block").length })) });
