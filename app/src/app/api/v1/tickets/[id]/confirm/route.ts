@@ -8,7 +8,7 @@ import { isOwnerSession } from "@/lib/auth";
 import { readData, withData, uid, nowIso, audit } from "@/lib/store";
 import { evaluate } from "../../route";
 import { hasBlock, confirmPhraseFor } from "@/lib/risk";
-import { placeOrder } from "@/lib/webull";
+import { placeOrder, orderDetail } from "@/lib/webull";
 import { buildStockOrder, clientOrderIdFor } from "@/lib/webull/orders";
 import { credsFrom } from "@/lib/webull/session";
 
@@ -57,6 +57,10 @@ async function _POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   if (rules_whitelist_blocked(d, t)) return json({ error: { code: "whitelist", message: `${t.symbol} ไม่อยู่ใน whitelist ของกฎ — รางส่ง API ต้องมี whitelist` } }, { status: 422 });
   const clientOrderId = clientOrderIdFor(id);
   const order = buildStockOrder(t, ev.qty, clientOrderId);
+  // a successful Webull preview of this exact body within 10 minutes is mandatory before an API-rail send (agent §0.2 / lucifer D)
+  const wanted = JSON.stringify(order);
+  const recentPreview = d.orderLog.filter((l) => l.ticketId === id && l.action === "preview" && Date.now() - new Date(l.ts).getTime() < 10 * 60e3).some((l) => { try { return JSON.stringify(JSON.parse(l.detail).request) === wanted; } catch { return false; } });
+  if (!recentPreview) return json({ error: { code: "preview_required", message: "ต้องกด \"ดูตัวอย่างจาก Webull\" ให้ผ่านภายใน 10 นาทีก่อนส่งผ่าน API (body ต้องเหมือนกันทุกตัวอักษร)" } }, { status: 422 });
   // persist the attempt BEFORE calling the broker: if the DB is fine but the broker times out, the app still knows an order may exist
   await withData((dd) => {
     const x = dd.tickets.find((y) => y.id === id)!;
@@ -65,14 +69,41 @@ async function _POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   });
   try {
     const res = await placeOrder(creds, acc.brokerAccountMasked, order);
+    const brokerId = (res && typeof res.order_id === "string" && res.order_id) || clientOrderId;
+    await withData((dd) => {
+      const x = dd.tickets.find((y) => y.id === id)!;
+      x.status = "sent"; x.rail = "api"; x.confirmedAt = now; x.idempotencyKey = b.data.idempotencyKey; x.brokerOrderId = brokerId; x.riskCheck = ev.checks; x.updatedAt = nowIso();
+      dd.orderLog.push({ id: uid(), ticketId: id, ts: now, action: "send", fromStatus: "proposed", toStatus: "sent", actor: "owner", detail: JSON.stringify({ request: { account_id: acc.brokerAccountMasked, new_orders: [order] }, response: res }).slice(0, 2000) });
+      audit(dd, "owner", "ticket.send", "ticket", id, { rail: "api", clientOrderId, orderId: brokerId });
+    });
+    // follow the order for a short while so the app knows what happened (full reconciliation also runs on every Webull sync)
+    let last: Record<string, unknown> | null = null;
+    let filled: { price: number; qty: number; ts: string } | null = null;
+    for (let i = 0; i < 6 && !filled; i++) {
+      await new Promise((r) => setTimeout(r, 2000));
+      try {
+        last = await orderDetail(creds, acc.brokerAccountMasked, clientOrderId);
+        const legs = (last as { orders?: Array<Record<string, unknown>> }).orders ?? [];
+        const leg = legs[0] ?? {};
+        const st = String(leg.status ?? leg.order_status ?? "");
+        const fq = Number(leg.filled_quantity ?? 0), fp = Number(leg.filled_price ?? 0);
+        if (st === "FILLED" && fq > 0 && fp > 0) filled = { price: fp, qty: fq, ts: String(leg.filled_time ?? nowIso()) };
+        if (["CANCELLED", "REJECTED", "FAILED"].includes(st)) break;
+      } catch (e) { last = { error: e instanceof Error ? e.message : String(e) }; }
+    }
     const out = await withData((dd) => {
       const x = dd.tickets.find((y) => y.id === id)!;
-      x.status = "sent"; x.rail = "api"; x.confirmedAt = now; x.idempotencyKey = b.data.idempotencyKey; x.brokerOrderId = clientOrderId; x.riskCheck = ev.checks; x.updatedAt = nowIso();
-      dd.orderLog.push({ id: uid(), ticketId: id, ts: now, action: "send", fromStatus: "proposed", toStatus: "sent", actor: "owner", detail: JSON.stringify({ request: { ...order }, response: res }).slice(0, 2000) });
-      audit(dd, "owner", "ticket.send", "ticket", id, { rail: "api", clientOrderId });
+      dd.orderLog.push({ id: uid(), ticketId: id, ts: nowIso(), action: "status_poll", fromStatus: "sent", toStatus: filled ? "filled" : "sent", actor: "system", detail: JSON.stringify(last ?? {}).slice(0, 2000) });
+      if (filled && !dd.transactions.some((tx) => tx.brokerOrderId === brokerId || tx.brokerOrderId === clientOrderId)) {
+        const amount = x.side === "buy" ? -(filled.qty * filled.price) : filled.qty * filled.price;
+        dd.transactions.push({ id: uid(), accountId: x.accountId, ts: filled.ts, symbol: x.symbol, type: x.side, qty: filled.qty, price: filled.price, amountUsd: Math.round(amount * 100) / 100, fxRateThb: null, fees: 0, note: `Webull API rail · ตั๋ว ${id.slice(0, 8)} (ค่าธรรมเนียมจริงดูใบยืนยัน Webull)`, source: "webull_fill", ticketId: id, brokerOrderId: brokerId });
+        x.status = "filled"; x.fill = filled; x.updatedAt = nowIso();
+        dd.orderLog.push({ id: uid(), ticketId: id, ts: nowIso(), action: "fill", fromStatus: "sent", toStatus: "filled", actor: "system", detail: `${filled.qty} @ ${filled.price}` });
+        audit(dd, "system", "ticket.fill_from_poll", "ticket", id, { qty: filled.qty, price: filled.price });
+      }
       return x;
     });
-    return json({ ticket: out, broker: res });
+    return json({ ticket: out, broker: res, detail: last, note: filled ? "fill แล้ว → บันทึกลงพอร์ต · เขียน journal ภายใน 24 ชม." : "ส่งแล้ว ยังไม่เห็น fill — ระบบจะจับคู่เองตอน sync ครั้งถัดไป (หรือกด 'ดึงจาก Webull')" });
   } catch (e) {
     await withData((dd) => { dd.orderLog.push({ id: uid(), ticketId: id, ts: nowIso(), action: "send_failed", fromStatus: "proposed", toStatus: "proposed", actor: "owner", detail: e instanceof Error ? e.message : String(e) }); });
     return json({ error: { code: "broker_error", message: `${e instanceof Error ? e.message : String(e)} — ⚠ ห้ามกดยืนยันซ้ำจนกว่าจะตรวจในแอป Webull ว่าคำสั่ง ${clientOrderId} ถูกส่งไปแล้วหรือไม่ (client_order_id คงที่ต่อตั๋ว: ส่งซ้ำจะถูก Webull ปฏิเสธ)` } }, { status: 502 });

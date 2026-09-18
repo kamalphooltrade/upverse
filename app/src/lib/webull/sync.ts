@@ -58,11 +58,24 @@ export async function syncWebull(): Promise<{ snapshots: LiveSnapshot[]; importe
         for (const g of groups) for (const o of g.orders ?? []) {
           if (o.status !== "FILLED" || !o.filled_quantity || !o.filled_price) continue;
           const boid = o.order_id ?? o.client_order_id;
-          if (d.transactions.some((t) => t.brokerOrderId === boid)) continue;
+          const ids = [o.order_id, o.client_order_id, g.client_order_id].filter(Boolean) as string[];
+          if (d.transactions.some((t) => t.brokerOrderId && ids.includes(t.brokerOrderId))) continue;
           const qty = num(o.filled_quantity), price = num(o.filled_price);
           const side = o.side === "BUY" ? "buy" : "sell";
-          const tx: Transaction = { id: uid(), accountId: acc.id, ts: o.filled_time ?? o.place_time ?? nowIso(), symbol: o.symbol, type: side, qty, price, amountUsd: Math.round((side === "buy" ? -qty * price : qty * price) * 100) / 100, fxRateThb: null, fees: 0, note: `Webull ${o.order_type}${o.time_in_force ? " " + o.time_in_force : ""}`, source: "webull_fill", ticketId: null, brokerOrderId: boid };
+          const ts = o.filled_time ?? o.place_time ?? nowIso();
+          // reconcile with the app's tickets: (1) API rail → same client_order_id · (2) manual rail → confirmed ticket, same account/symbol/side/qty, not expired
+          const ticket = d.tickets.find((t) => t.accountId === acc.id && t.symbol === o.symbol && t.side === side && ["confirmed", "sent"].includes(t.status) && ((t.brokerOrderId && ids.includes(t.brokerOrderId)) || (t.qty != null && Math.abs(t.qty - qty) < 1e-6)));
+          // a manual-rail fill the owner already typed in (source manual_after_ticket) → link it instead of duplicating the ledger
+          const dupManual = d.transactions.find((t) => t.accountId === acc.id && t.symbol === o.symbol && t.type === side && !t.brokerOrderId && t.source === "manual_after_ticket" && Math.abs(t.qty - qty) < 1e-6 && Math.abs(new Date(t.ts).getTime() - new Date(ts).getTime()) < 3 * 86400e3);
+          if (dupManual) { dupManual.brokerOrderId = boid; dupManual.note += ` · จับคู่ Webull ${boid}`; continue; }
+          const tx: Transaction = { id: uid(), accountId: acc.id, ts, symbol: o.symbol, type: side, qty, price, amountUsd: Math.round((side === "buy" ? -qty * price : qty * price) * 100) / 100, fxRateThb: null, fees: 0, note: `Webull ${o.order_type}${o.time_in_force ? " " + o.time_in_force : ""}${ticket ? ` · ตั๋ว ${ticket.id.slice(0, 8)}` : ""}`, source: "webull_fill", ticketId: ticket?.id ?? null, brokerOrderId: boid };
           d.transactions.push(tx); importedFills++;
+          if (ticket) {
+            const from = ticket.status;
+            ticket.status = "filled"; ticket.fill = { price, qty, ts }; ticket.brokerOrderId = ticket.brokerOrderId ?? boid; ticket.updatedAt = nowIso();
+            d.orderLog.push({ id: uid(), ticketId: ticket.id, ts: nowIso(), action: "fill", fromStatus: from, toStatus: "filled", actor: "system", detail: `จับคู่ fill จาก Webull sync: ${qty} @ ${price} (${boid})` });
+            audit(d, "system", "ticket.fill_from_sync", "ticket", ticket.id, { qty, price, boid });
+          }
         }
       } catch (e) { errors.push(`orders ${a.account_number ?? a.account_id}: ${e instanceof Error ? e.message : String(e)}`); }
     }
