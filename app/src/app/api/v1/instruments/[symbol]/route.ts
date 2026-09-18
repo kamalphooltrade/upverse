@@ -25,13 +25,13 @@ async function _GET(req: Request, ctx: { params: Promise<{ symbol: string }> }) 
   const posRows = d.accounts.flatMap((a) => {
     if (a.kind === "webull_live") {
       const snap = (d.liveSnapshots ?? []).find((s) => s.accountId === a.id);
-      return (snap?.positions ?? []).filter((p) => p.symbol === symbol).map((p) => ({ qty: p.qty, costBasis: Math.round(p.costPrice * p.qty * 100) / 100 }));
+      return (snap?.positions ?? []).filter((p) => p.symbol === symbol).map((p) => ({ qty: p.qty, costBasis: p.costPrice * p.qty })); // unrounded: fractional lots are cents-sized
     }
     return positionsFrom(d.transactions, a.id).filter((p) => p.symbol === symbol).map((p) => ({ qty: p.qty, costBasis: p.costBasis }));
   });
   const posQty = Math.round(posRows.reduce((s, r) => s + r.qty, 0) * 1e6) / 1e6;
-  const posCost = Math.round(posRows.reduce((s, r) => s + r.costBasis, 0) * 100) / 100;
-  const pos = posQty > 0 ? { symbol, qty: posQty, avgCost: Math.round((posCost / posQty) * 100) / 100, costBasis: posCost } : null;
+  const posCost = posRows.reduce((s, r) => s + r.costBasis, 0);
+  const pos = posQty > 0 ? { symbol, qty: posQty, avgCost: Math.round((posCost / posQty) * 100) / 100, costBasis: Math.round(posCost * 100) / 100 } : null;
   return json({
     symbol,
     quote: quoteR.status === "fulfilled" ? quoteR.value : { error: String(quoteR.reason) },
