@@ -123,6 +123,9 @@ quote สด (≤ 60 วิ ตอนตลาดเปิด · fail-closed) ·
 | คำสั่งเปิด | `GET /trading/orders/open-orders/list?account_id&page_size` | `{data:[]}` |
 | ประวัติคำสั่ง | `GET /trading/orders/historical-orders/list?account_id&page_size` | **คืนเฉพาะช่วงล่าสุด** · ทุกรูปแบบ `start_time`/`end_time` → 417 · ยิงถี่ → 429 (เว้น ≥ 8 วิ) |
 | ราคาตลาด | `data-api.webull.co.th/market-data/...` | timeout/ต้อง subscription — ใช้ `last_price` จาก positions แทน |
+| **preview คำสั่ง (ทดสอบจริง 18 ก.ย. 2569)** | `POST /trading/orders/preview` | body **TH v3** `{account_id, new_orders:[{combo_type:"NORMAL", client_order_id (≤32 · A-Za-z0-9-_ · คงที่ต่อตั๋ว), instrument_type:"EQUITY", market:"US", symbol, order_type MARKET|LIMIT|STOP_LOSS|STOP_LOSS_LIMIT, entrust_type:"QTY", support_trading_session:"CORE", time_in_force:"DAY", side, quantity (ทศนิยมได้ = เศษหุ้น OK)}]}` → `{estimated_cost:"2.88", estimated_transaction_fee:"0.02"}` (ขาย AXON 0.00639) · ส่ง `stock_order` แบบ US → `Orders can not be empty.` |
+| ส่งคำสั่ง / ยกเลิก / ดูผล (ยังไม่ทดสอบจริง) | `POST /trading/orders/place` (body เดียวกับ preview) · `POST /trading/orders/cancel {account_id, client_order_id}` · `GET /trading/orders/get?account_id&client_order_id` | place คืน `{client_order_id, order_id}` · ประตูก่อนยิงจริง: `docs/SPEC.md` §14.3 + `docs/DECISIONS.md` D-001 |
+| **UAT (สนามทดสอบจริง — เพิ่งพบในเอกสาร)** | host `th-api.uat.webullbroker.com` (trade + market data) · events `th-events-api.uat.webullbroker.com` | บัญชีทดสอบร่วม 3 บัญชีเผยแพร่ใน docs/sdk.md (ไม่ต้องสมัคร · ใช้ร่วมกับคนอื่น) — v0.1 เคยสรุปว่า TH ไม่มี sandbox = ผิด |
 
 ## ข้อค้นพบสำคัญ (จากซอร์ส SDK ทางการ 3.0.1)
 - ลายเซ็น HMAC-SHA256 ของ Webull ถูกพอร์ตเป็น TypeScript และ **ตรวจเทียบกับ Python SDK แล้วตรงทั้ง GET/POST** (`x-version` ส่งแต่ไม่ถูก sign)
