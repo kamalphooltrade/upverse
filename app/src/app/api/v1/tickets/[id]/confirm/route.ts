@@ -9,6 +9,7 @@ import { readData, withData, uid, nowIso, audit } from "@/lib/store";
 import { evaluate } from "../../route";
 import { hasBlock, confirmPhraseFor } from "@/lib/risk";
 import { placeOrder } from "@/lib/webull";
+import { buildStockOrder, clientOrderIdFor } from "@/lib/webull/orders";
 import { credsFrom } from "@/lib/webull/session";
 
 async function _POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -19,7 +20,7 @@ async function _POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
     return json({ error: { code: "owner_session_required", message: "ยืนยันตั๋วได้จากเซสชันเจ้าของในหน้าจอเท่านั้น (API token ทำไม่ได้)" } }, { status: 403 });
   }
   const { id } = await ctx.params;
-  const b = await parseBody(req, z.object({ phrase: z.string(), idempotencyKey: z.string().min(8).max(64) }));
+  const b = await parseBody(req, z.object({ phrase: z.string(), idempotencyKey: z.string().min(8).max(64), rail: z.enum(["api", "manual"]).optional() }));
   if (!b.ok) return b.res;
   const d = await readData();
   const t = d.tickets.find((x) => x.id === id);
@@ -32,7 +33,8 @@ async function _POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   if (hasBlock(ev.checks)) return json({ error: { code: "risk_blocked", message: "มี ⛔ ในผลตรวจกฎ — ยืนยันไม่ได้" }, checks: ev.checks }, { status: 422 });
 
   const now = nowIso();
-  if (t.rail === "manual") {
+  const rail = b.data.rail ?? t.rail; // owner may choose the rail at confirm time (defaults to the ticket's rail)
+  if (rail === "manual") {
     const out = await withData((dd) => {
       const x = dd.tickets.find((y) => y.id === id)!;
       x.status = "confirmed"; x.confirmedAt = now; x.idempotencyKey = b.data.idempotencyKey; x.riskCheck = ev.checks; x.updatedAt = now;
@@ -52,13 +54,14 @@ async function _POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const acc = d.accounts.find((a) => a.id === t.accountId);
   if (!acc?.brokerAccountMasked) return json({ error: { code: "account", message: "บัญชีนี้ไม่ใช่บัญชี Webull" } }, { status: 422 });
   if (d.brokerCredentials.tokenStatus !== "NORMAL") return json({ error: { code: "broker", message: `token สถานะ ${d.brokerCredentials.tokenStatus ?? "—"} (ต้อง NORMAL)` } }, { status: 422 });
-  const clientOrderId = `upv-${id.slice(0, 8)}-${Date.now().toString(36)}`;
-  const order = { client_order_id: clientOrderId, side: (t.side === "buy" ? "BUY" : "SELL") as "BUY" | "SELL", tif: "DAY" as const, extended_hours_trading: false, symbol: t.symbol, market: "US" as const, instrument_type: "EQUITY" as const, order_type: t.orderType, limit_price: t.limitPrice != null ? String(t.limitPrice) : undefined, qty: ev.qty != null ? String(ev.qty) : undefined, entrust_type: "QTY" as const, trading_session: "CORE" as const };
+  if (rules_whitelist_blocked(d, t)) return json({ error: { code: "whitelist", message: `${t.symbol} ไม่อยู่ใน whitelist ของกฎ — รางส่ง API ต้องมี whitelist` } }, { status: 422 });
+  const clientOrderId = clientOrderIdFor(id);
+  const order = buildStockOrder(t, ev.qty, clientOrderId);
   try {
     const res = await placeOrder(creds, acc.brokerAccountMasked, order);
     const out = await withData((dd) => {
       const x = dd.tickets.find((y) => y.id === id)!;
-      x.status = "sent"; x.confirmedAt = now; x.idempotencyKey = b.data.idempotencyKey; x.brokerOrderId = clientOrderId; x.riskCheck = ev.checks; x.updatedAt = nowIso();
+      x.status = "sent"; x.rail = "api"; x.confirmedAt = now; x.idempotencyKey = b.data.idempotencyKey; x.brokerOrderId = clientOrderId; x.riskCheck = ev.checks; x.updatedAt = nowIso();
       dd.orderLog.push({ id: uid(), ticketId: id, ts: now, action: "send", fromStatus: "proposed", toStatus: "sent", actor: "owner", detail: JSON.stringify({ request: { ...order }, response: res }).slice(0, 2000) });
       audit(dd, "owner", "ticket.send", "ticket", id, { rail: "api", clientOrderId });
       return x;
@@ -70,3 +73,9 @@ async function _POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   }
 }
 export const POST = safe(_POST);
+
+// whitelist is only enforced by the risk engine when the ticket's own rail is "api"; re-check here because the owner may switch rail at confirm time
+function rules_whitelist_blocked(d: Awaited<ReturnType<typeof readData>>, t: { symbol: string }) {
+  const r = d.riskRules[d.riskRules.length - 1];
+  return !r.symbolWhitelist.length || !r.symbolWhitelist.map((s) => s.toUpperCase()).includes(t.symbol.toUpperCase());
+}

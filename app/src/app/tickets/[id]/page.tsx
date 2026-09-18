@@ -18,6 +18,10 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
   const [fill, setFill] = useState({ price: "", qty: "", fees: "0", fxRateThb: "" });
   const [reason, setReason] = useState("");
   const [idem] = useState(() => `${id}-${Math.random().toString(36).slice(2, 10)}`);
+  const [useApi, setUseApi] = useState(false);
+  const [preview, setPreview] = useState<{ ok: boolean; request?: unknown; broker?: unknown; error?: { message?: string } } | null>(null);
+  const tr = health?.trading;
+  const wl = health?.risk_rules?.whitelist ?? [];
   const t = data?.ticket;
   const q = data?.quote ?? null;
   const blocks = t?.riskCheck.filter((c) => c.state === "block") ?? [];
@@ -44,7 +48,21 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
         {t.status === "proposed" && <Card><H2>ยืนยัน (เจ้าของเท่านั้น)</H2>
           {health?.owner_passphrase_source === "none" && <Banner tone="warn">โหมด dev ไม่มีรหัสผ่าน — ตั้งรหัสผ่านเจ้าของในหน้าตั้งค่าก่อนใช้จริง</Banner>}
           <Field label={<span>พิมพ์ประโยคนี้ให้ตรงทุกตัวอักษร: <b className="num text-slate-900 dark:text-slate-100">{t.confirmPhrase}</b></span>}><input className={inputCls} value={phrase} onChange={(e) => setPhrase(e.target.value)} placeholder="พิมพ์ที่นี่" autoComplete="off" /></Field>
-          <Btn block variant="primary" disabled={!canConfirm || busy} onClick={() => act(() => api(`/api/v1/tickets/${id}/confirm`, { method: "POST", json: { phrase, idempotencyKey: idem } }), t.rail === "manual" ? "ยืนยันแล้ว — ไปทำรายการในแอป Webull แล้วกลับมากด 'ทำแล้ว'" : "ส่งคำสั่งแล้ว")}>{phraseOk && blocks.length > 0 ? "ประโยคตรงแล้ว แต่ยังมี ⛔ — ยืนยันไม่ได้" : t.rail === "api" ? `ยืนยันและส่ง ${t.environment.toUpperCase()}` : "ยืนยัน (แล้วไปทำในแอป Webull)"}</Btn>
+          {health?.broker?.status === "connected" && <div className="mb-3 rounded-2xl p-3 bg-slate-500/5 dark:bg-white/5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <label className="flex items-center gap-2 text-[15px] cursor-pointer"><input type="checkbox" className="w-5 h-5" checked={useApi || t.rail === "api"} disabled={t.rail === "api"} onChange={(e) => setUseApi(e.target.checked)} /> ส่งคำสั่งผ่าน Webull API (แทนกดเองในแอป)</label>
+              <Btn small disabled={busy} onClick={async () => { setBusy(true); setMsg(null); try { const r = await api<typeof preview>(`/api/v1/tickets/${id}/preview`, { method: "POST" }); setPreview(r); await mutate(); } catch (e) { const b = (e as { body?: typeof preview }).body; setPreview(b ?? { ok: false, error: { message: e instanceof Error ? e.message : String(e) } }); } finally { setBusy(false); } }}>ดูตัวอย่างจาก Webull (ไม่ส่งจริง)</Btn>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5 text-[13px]">
+              <Chip tone={tr?.environment === "prod" ? "up" : "warn"}>environment {tr?.environment ?? "—"}</Chip>
+              <Chip tone={tr?.trading_enabled_setting ? "up" : "warn"}>kill switch (ตั้งค่า) {tr?.trading_enabled_setting ? "เปิด" : "ปิด"}</Chip>
+              <Chip tone={tr?.trading_enabled_env ? "up" : "warn"}>TRADING_ENABLED (env) {tr?.trading_enabled_env ? "เปิด" : "ปิด"}</Chip>
+              <Chip tone={wl.map((x) => x.toUpperCase()).includes(t.symbol) ? "up" : "warn"}>whitelist {wl.length ? wl.join(", ") : "ว่าง"}</Chip>
+            </div>
+            <Muted className="mt-1 text-[13px]">รางส่ง API จะทำงานเมื่อทั้ง 4 ป้ายเป็นสีเขียว (เปิดในหน้าตั้งค่า + env บน Vercel) · ก่อนเปิดควรกด &quot;ดูตัวอย่าง&quot; ให้ Webull ตอบกลับว่ารับคำสั่งนี้ (เศษหุ้น · ค่าธรรมเนียม) — ไม่มีคำสั่งถูกส่ง</Muted>
+            {preview && <div className={cx("mt-2 rounded-2xl p-3 text-[13px] num whitespace-pre-wrap break-all", preview.ok ? "bg-green-600/10" : "bg-red-600/10")}>{preview.ok ? "✅ Webull ตอบกลับ preview:" : `⛔ preview ไม่ผ่าน: ${preview.error?.message ?? ""}`}{"\n"}{JSON.stringify(preview.broker ?? preview.request ?? {}, null, 1).slice(0, 1500)}</div>}
+          </div>}
+          <Btn block variant="primary" disabled={!canConfirm || busy} onClick={() => act(() => api(`/api/v1/tickets/${id}/confirm`, { method: "POST", json: { phrase, idempotencyKey: idem, rail: useApi || t.rail === "api" ? "api" : "manual" } }), useApi || t.rail === "api" ? "ส่งคำสั่งไป Webull แล้ว — ดูสถานะในแอป Webull แล้วกลับมากรอกผล" : "ยืนยันแล้ว — ไปทำรายการในแอป Webull แล้วกลับมากด 'ทำแล้ว'")}>{phraseOk && blocks.length > 0 ? "ประโยคตรงแล้ว แต่ยังมี ⛔ — ยืนยันไม่ได้" : useApi || t.rail === "api" ? `ยืนยันและส่งผ่าน API (${(tr?.environment ?? t.environment).toUpperCase()})` : "ยืนยัน (แล้วไปทำในแอป Webull)"}</Btn>
           <Muted className="mt-2 text-[13px]">ปุ่มเปิดเมื่อประโยคตรงและไม่มี ⛔ · ใช้กับตั๋วใบนี้ใบเดียว · API token ยืนยันแทนไม่ได้</Muted>
           <div className="mt-3"><Field label="หรือปฏิเสธ (บันทึกเหตุผลลง journal)"><input className={inputCls} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="เหตุผลที่ไม่ทำ" /></Field><Btn variant="ghost" className="text-red-700 dark:text-red-400" disabled={!reason || busy} onClick={() => act(() => api(`/api/v1/tickets/${id}/reject`, { method: "POST", json: { reason } }), "ปฏิเสธแล้ว · บันทึก journal")}>ปฏิเสธตั๋ว</Btn></div>
         </Card>}
