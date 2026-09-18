@@ -78,6 +78,7 @@ curl -s -X POST https://upverse-app.vercel.app/api/v1/theses \
 | POST `/auth/login` · POST `/auth/logout` | — | เซสชันเจ้าของ |
 | GET/PUT `/auth/passphrase` | **เซสชันเจ้าของเท่านั้น** | ดูที่มาของรหัส (env/db/none) · PUT `{current,next}` เปลี่ยนรหัส (scrypt hash ใน DB · env ไม่ถูกใช้อีก · หมุนเซสชัน) |
 | GET `/portfolio?account=all\|<id>` | portfolio:read | positions ที่ราคาล่าสุด + cash + P&L (หุ้น / ค่าเงิน) + caveats |
+| GET `/portfolio/review?account=all` | portfolio:read | **วิเคราะห์พอร์ต** (กฎล้วน ไม่มี LLM · ~5–10 วิ ครั้งแรก): สัดส่วน vs แผน (เป้าจาก `/goal` · ฐาน = พอร์ตแผน 12 เดือนเมื่อตั้งเงินเติม) · เทียบ SPY · รายตัว: Weinstein stage · Minervini trend template x/8 · RS vs SPY 1/3/6/12 เดือน · P/E·P/FCF·"ราคานี้ต้องการโต x%/ปี" · คุณภาพ · thesis · ค่าธรรมเนียมถ้าออก · คะแนน 0–100 (§2B) · **action** ถือ/เพิ่ม/ลด/ออก/โยก/ทบทวน + เหตุผล + `avgDown` (ถัวได้ไหม) · rotation candidates (watchlist + สแกน top-5 + thesis "เพิ่ม") พร้อมด่าน 4 ข้อ · บันทึก `equityHistory` วันละจุด · หลักการ: `docs/TECHNIQUES.md` |
 | GET/POST/DELETE `/transactions` | portfolio:read / write | บันทึกมือ (paper) · `{rows:[…]}` นำเข้า · ลบด้วย `?id=` |
 | GET `/quotes?symbols=` | quotes:read | source · as_of · market_state · stale |
 | GET `/instruments/{symbol}?range=3mo\|6mo\|1y\|2y` | quotes:read | bars + EMA20/SMA50/SMA200/RSI14 + snapshot + EDGAR + ป้ายสแกน + position (บัญชี Webull ใช้ snapshot · paper ใช้ ledger) + thesis ล่าสุด |
@@ -89,7 +90,7 @@ curl -s -X POST https://upverse-app.vercel.app/api/v1/theses \
 | POST `/tickets/{id}/fill` · `/reject` | เจ้าของ | รายงานผลจริง → ledger · ปฏิเสธ → journal |
 | GET/POST/PATCH `/journal` | portfolio:read / journal:write | + `pending_journal` (ตั๋ว filled ที่ยังไม่บันทึก) |
 | GET/PUT `/goal?current_thb=` | portfolio:read / เจ้าของ | อัตราที่จำเป็น · เส้นทาง 3 ฉากทัศน์ (ตัวเลขผู้ใช้กรอก) |
-| GET/PATCH `/settings` · PUT `/settings/rules` | เจ้าของ | PROD ต้อง `confirmProdPhrase:"เปิดเงินจริง"` · กฎเป็นเวอร์ชันใหม่เสมอ |
+| GET/PATCH `/settings` · PUT `/settings/rules` | เจ้าของ | PROD ต้อง `confirmProdPhrase:"เปิดเงินจริง"` · กฎเป็นเวอร์ชันใหม่เสมอ · `fxSpreadPct` (ค่าแลกเงินต่อขา % — Webull ไม่ระบุ · null = 0 + คำเตือน) |
 | GET/POST/DELETE `/settings/tokens` | เจ้าของ | token แสดงครั้งเดียว · เพิกถอนได้ |
 | POST `/broker/connect` | เจ้าของ | บันทึกกุญแจ (เข้ารหัส) + สร้าง token → **Webull ส่ง SMS** · คืน `instructions` |
 | GET `/broker/status` · `?check=1` | เจ้าของ | มุมมองที่เก็บไว้ / ตรวจ token กับ Webull (ไม่ส่ง SMS) · `twoFaSecondsLeft` นับถอยหลัง 5 นาที |
@@ -98,6 +99,9 @@ curl -s -X POST https://upverse-app.vercel.app/api/v1/theses \
 | GET `/theses?symbol=` · POST `/theses` | theses:read / theses:write | **บทวิเคราะห์จาก agent** (สคีมา: summary · verdict ถือ/เพิ่ม/ลด/ออก/รอ/ดูต่อ · role แกน/ดาวเทียม/รายได้/เก็งจังหวะ · sections 3–12 · scenarios bear/base/bull ×3 · buyBelow · invalidation · altZero · dissent ≤6 · sources ≥1 · priceAtWrite · reviewAfter) · POST ด้วย token = `draft_ai` เสมอ · ด้วยเซสชันเจ้าของ = `confirmed` · เวอร์ชันเพิ่มอัตโนมัติต่อ symbol |
 | POST `/theses/{id} {action:"confirm"\|"reject"\|"stale", reason?}` | **เซสชันเจ้าของเท่านั้น** | ต้นกดในหน้า `/stock/{symbol}` · reject ต้องมีเหตุผล · แสดง thesis ล่าสุดที่ไม่ถูก reject ใน `/instruments/{symbol}` |
 | POST `/query {q}` | any (ตาม scope ที่ใช้) | ตัวแปลเจตนาแบบกฎ ไม่มี LLM |
+
+## แบบจำลองค่าธรรมเนียม (`src/lib/fees.ts` · webull.co.th/pricing อ่าน 18 ก.ย. 2569)
+คอมมิชชัน 0.10% ของมูลค่า ไม่มีขั้นต่ำ (ซื้อ+ขาย) · ฝั่งขาย: SEC 0.0000206 × มูลค่า (ขั้นต่ำ $0.01) + FINRA 0.000195 × จำนวนหุ้น (ขั้นต่ำ $0.01 · สูงสุด $9.79) · FX spread จาก `settings.fxSpreadPct` · fills ที่นำเข้าจาก Webull มี `fees: 0` เพราะ API ไม่ส่งค่าธรรมเนียม — ตัวเลขในแอปเป็นค่าประมาณจากแบบจำลองนี้ · ผล: ไม้ขาย < $3 เกินกฎ 1% เสมอ
 
 ## กฎความเสี่ยงที่ตรวจทุกตั๋ว (ค่าเริ่มต้น v1)
 quote สด (≤ 60 วิ ตอนตลาดเปิด · fail-closed) · มูลค่า ≤ $500 · จำนวน ≤ 100 · whitelist (ราง API) · น้ำหนักหลังทำ: หุ้นเดี่ยว ≤ 10% (เตือน 8%) / แกน ETF (VOO SPY IVV VTI QQQ SCHD) ≤ 80% · เงินสดพอ + ขั้นต่ำ 5% · ความเสี่ยงต่อไม้ ≤ 1% (ยกเว้น tag DCA) · ตั๋ว/วัน ≤ 5 · ตั๋วซ้ำ · หมดอายุ · ราง API: kill switch (setting + env) · environment ตรง · เชื่อม Webull แล้ว · ขายไม่เกินที่ถือ
