@@ -19,7 +19,7 @@ export function estimateFees(side: "buy" | "sell", notionalUsd: number, qty: num
     else fx = r4(notionalUsd * (fxSpreadPct / 100));
   }
   const total = r4(commission + sec + finra + fx);
-  if (side === "sell" && notionalUsd > 0 && notionalUsd < 3) notes.push("ไม้ขาย < $3: ค่าธรรมเนียมขั้นต่ำ SEC+FINRA $0.02 ทำให้เกิน 1%");
+  if (side === "sell" && notionalUsd > 0 && notionalUsd < 2.23) notes.push("ไม้ขาย < $2.22: ค่าธรรมเนียมขั้นต่ำ SEC+FINRA $0.02 ทำให้เกิน 1% (แนะนำไม้ขาย ≥ $3 เผื่อไว้)");
   return { commission: r2(commission), sec: r2(sec), finra: r2(finra), fx: r2(fx), total: r2(total), pct: notionalUsd > 0 ? r2((total / notionalUsd) * 100) : null, notes };
 }
 

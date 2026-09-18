@@ -2,14 +2,14 @@
 
 | | |
 |---|---|
-| **เวอร์ชัน** | 0.1 (ร่างแรก — รอต้นเคาะ) |
-| **วันที่** | 17 ก.ย. 2569 |
+| **เวอร์ชัน** | 0.2 (18 ก.ย. 2569 — เพิ่ม F15–F18 · แก้ข้อค้นพบ Webull TH · MCP · ประตูเฟส 2 ฉบับใหม่ · ส่วนที่ต้นยังไม่เคาะยังคงมีป้าย) |
+| **วันที่** | 17 ก.ย. 2569 (v0.1) · 18 ก.ย. 2569 (v0.2) |
 | **เจ้าของ** | ต้น (Chaiwat) = Product Owner · `upverse-advisor` = เจ้าของโดเมนการลงทุน · `sandalphon` = PM · `metatron` = ผู้สร้าง |
-| **เอกสารคู่กัน** | `docs/DESIGN.md` (ระบบดีไซน์ + หน้าจอ) · `docs/design/mockup.html` (ต้นแบบคลิกได้ ดูบนมือถือ) · `~/.claude/agents/upverse-advisor.md` (กฎของสมองวิเคราะห์) · `PROGRESS.md` |
+| **เอกสารคู่กัน** | `docs/DESIGN.md` · `docs/API-UPVerse.md` (curl จริง + endpoint Webull TH ที่ยืนยัน) · `docs/TECHNIQUES.md` (หลักการวิเคราะห์ที่ใช้/ยังไม่ใช้) · `mcp/README.md` (MCP server) · `~/.claude/agents/upverse-advisor.md` · `PROGRESS.md` |
 | **Stack** | Next.js (App Router) + Supabase + Vercel · GitHub `kamalphooltrade/upverse` · Webull OpenAPI (region `th`) |
 | **หลักการอ่าน** | ตัวเลขเกณฑ์ทุกตัวในเอกสารนี้คือ **ค่าเริ่มต้น v1 ที่ต้นปรับได้** ไม่ใช่ความจริงตายตัว · สิ่งที่ยังไม่ยืนยันมีป้าย **[ยังไม่ยืนยัน]** |
 
-> **ศัพท์:** VI = Value Investing (ลงทุนตามมูลค่าพื้นฐาน) · DCA = Dollar-Cost Averaging (ทยอยซื้อสม่ำเสมอ) · UAT = สภาพแวดล้อมทดสอบของ Webull (sandbox ไม่ใช่เงินจริง) · RLS = Row Level Security (กฎสิทธิ์ระดับแถวของ Supabase) · ICT = เวลาไทย · ET = เวลานิวยอร์ก · OHLCV = ราคาเปิด/สูง/ต่ำ/ปิด/ปริมาณ
+> **ศัพท์:** VI = Value Investing (ลงทุนตามมูลค่าพื้นฐาน) · DCA = Dollar-Cost Averaging (ทยอยซื้อสม่ำเสมอ) · UAT = สภาพแวดล้อมทดสอบของ Webull TH (`th-api.uat.webullbroker.com` + บัญชีทดสอบร่วมที่ Webull เผยแพร่ — **ยืนยันจากเอกสารทางการ 18 ก.ย. 2569** · v0.1 เคยเข้าใจผิดว่าไม่มี) · RLS = Row Level Security (กฎสิทธิ์ระดับแถวของ Supabase) · ICT = เวลาไทย · ET = เวลานิวยอร์ก · OHLCV = ราคาเปิด/สูง/ต่ำ/ปิด/ปริมาณ
 
 ---
 
@@ -211,8 +211,8 @@
 **F6.1 โครงตั๋ว (stock)** — บัญชี · ซื้อ/ขาย · สัญลักษณ์ · จำนวน (ทศนิยม 6) หรือมูลค่า USD · ชนิดคำสั่ง (`LIMIT` ค่าเริ่มต้น · `MARKET` ต้องติ๊กยอมรับ) · ราคา limit · ตัดขาดทุน · เป้า · R:R · % พอร์ตหลังทำ · thesis ที่อ้าง · เหตุผล 3 บรรทัด · **ทางเลือกที่ 0** · **อะไรจะทำให้คิดผิด** · หมดอายุ (ค่าเริ่มต้น 3 วันทำการ) · เวอร์ชันกฎที่ใช้ตรวจ · environment
 **F6.2 สถานะ** — `proposed` → `confirmed` → `sent` → `filled` / `partially_filled` / `cancelled` / `rejected` / `expired` · ทุกการเปลี่ยนสถานะลง `order_log` (ใคร · เมื่อไร · จาก/ไป · เหตุผล)
 **F6.3 ตรวจกฎ (รันตอนสร้างและตอนยืนยัน)** — รายการตรวจจาก F1.3 + ตรวจ quote ไม่ค้าง + ตั๋วซ้ำ (สัญลักษณ์/ทางเดียวกันที่ยังเปิด) + ไม่หมดอายุ + environment ตรงกับที่บัญชีอนุญาต · ผลเป็นรายการ ✅/⚠️/⛔ พร้อมตัวเลขจริง · ⛔ ตัวเดียว = ยืนยันไม่ได้
-**F6.4 ยืนยัน** — ต้น (เซสชันคน) เปิดตั๋ว → เห็น **preview จาก Webull** (มูลค่า · ค่าธรรมเนียมโดยประมาณ) ถ้า API รองรับ **[ยังไม่ยืนยันว่า TH มี preview endpoint]** → พิมพ์ประโยคยืนยันที่ระบบสร้าง เช่น `ยืนยัน ซื้อ AAPL 0.5` → `confirmed` → ส่งทันที (`sent`) · ปุ่มยืนยันปิดใช้จนกว่าประโยคจะตรงและการตรวจกฎเป็นเขียว/เหลืองทั้งหมด
-**F6.5 ส่งคำสั่ง (API rail)** — เรียก Webull `place_order` ด้วย environment ปัจจุบัน · เก็บ `broker_order_id` · ติดตามสถานะด้วย poll ทุก 30 วินาทีจนจบ (gRPC event = เฟส 3) · fill → สร้าง `transactions` และเปิดหน้าต่าง journal ทันที
+**F6.4 ยืนยัน** — ต้น (เซสชันคน) เปิดตั๋ว → กด **"ดูตัวอย่างจาก Webull"** (`POST /tickets/{id}/preview` → Webull `/trading/orders/preview` คืน `estimated_cost` + `estimated_transaction_fee` · **ยืนยันแล้ว 18 ก.ย. 2569 กับบัญชีจริง: ขาย AXON 0.00639 → cost $2.88 · fee $0.02 · ไม่มีคำสั่งถูกส่ง**) → เลือกราง (ส่งมือ / API — เลือกได้ตอนยืนยัน · ราง API ต้องผ่านประตู 14.3) → พิมพ์ประโยคยืนยันที่ระบบสร้าง เช่น `ยืนยัน ซื้อ AAPL 0.5` → `confirmed` → ส่งทันที (`sent`) · ปุ่มยืนยันปิดใช้จนกว่าประโยคจะตรงและการตรวจกฎเป็นเขียว/เหลืองทั้งหมด
+**F6.5 ส่งคำสั่ง (API rail)** — เรียก Webull `POST /trading/orders/place` ด้วย body **TH v3 = `{account_id, new_orders:[{combo_type:"NORMAL", client_order_id (≤32 ตัว A–Z a–z 0–9 - _), instrument_type:"EQUITY", market:"US", symbol, order_type MARKET|LIMIT|STOP_LOSS|STOP_LOSS_LIMIT, entrust_type QTY|AMOUNT, support_trading_session CORE, time_in_force DAY|GTC, side, quantity (ทศนิยมได้สำหรับเศษหุ้นสหรัฐ), limit_price?, stop_price?}]}`** (ไม่ใช่ `stock_order` แบบ US — ส่งแบบนั้น Webull ตอบ "Orders can not be empty.") · ตัวสร้าง body เดียวกันสำหรับ preview และ place (`src/lib/webull/orders.ts`) · ตอบกลับ `{client_order_id, order_id}` · ตรวจ whitelist ซ้ำตอนยืนยัน · เก็บ `broker_order_id` · ติดตามสถานะด้วย poll ทุก 30 วินาทีจนจบ (gRPC event = เฟส 3) · fill → สร้าง `transactions` และเปิดหน้าต่าง journal ทันที
 **F6.6 รางส่งมือ (Manual rail — ค่าเริ่มต้นของเฟส 1 จนกว่า API ผ่านการทดสอบ)** — ปุ่ม "ทำในแอป Webull" แสดงรายละเอียดคำสั่งแบบก๊อปได้ + deep link เปิดแอป **[ยังไม่ยืนยันว่า Webull TH มี URL scheme]** → ต้นทำเอง → กลับมากด "ทำแล้ว ราคา __ จำนวน __" → สร้าง transaction (source `manual_after_ticket`) และตั๋วเป็น `filled` · ใช้ได้กับบัญชี `manual_paper` ด้วย (ทดลองระบบก่อนมีกุญแจ)
 **F6.7 ขนาดไม้** — เครื่องคิด: ทุน · %เสี่ยง · ราคาเข้า · ตัดขาดทุน (พรีฟิล 2×ATR14 หรือ swing low) → จำนวนหุ้น (เศษได้) · ปรับตามเพดาน F1.3 · แสดง "R ต่อไม้ = $x"
 **F6.8 ตั๋วชุด DCA** — จากแผน F8 สร้างตั๋วหลายใบในครั้งเดียว (แกน/ดาวเทียมตามสัดส่วน) แต่ยืนยันทีละใบ
@@ -237,6 +237,42 @@
 
 ### F10 ออปชัน (P2 — ระบุไว้เพื่อออกแบบ schema) — สแกน CSP/CC จากหุ้นที่ผ่าน VI + IV rank · ตั๋วออปชัน (ขา · DTE · delta · เครดิต · max loss USD/THB/% · จุดคุ้มทุน · แผน assign) · wheel tracker · กฎ: single-leg เท่านั้นตามที่ API TH รองรับ [ที่มา: trade-api/option — "single-leg (`SINGLE`) option orders only"] · ⛔ naked
 
+### F15 วิเคราะห์พอร์ต — "ควรทำอะไรกับแต่ละตัว" (P0 · ✅ ส่งมอบ 18 ก.ย. 2569 · `GET /portfolio/review` + ส่วนในหน้าพอร์ต)
+กฎล้วน ไม่มี LLM · ทุกตัวเลขมี "ทำไม" · หลักการที่ใช้ระบุที่มาใน `docs/TECHNIQUES.md`
+- **F15.1 สัดส่วนเงินทุน vs แผน** — bucket: แกน (ETF ใน `coreSymbols` หรือ thesis role แกน) · ดาวเทียม · รายได้ · ตกค้าง (role ไม่เข้าเกณฑ์) · ไม่มี thesis · เงินสด → เทียบเป้าจาก F8 (ค่าเริ่มต้น 70/20/0/10) → gap เป็น $ → **"เงินเติมรอบหน้าควรไป →"** (แกนก่อนจนถึงเป้า; หุ้นเดี่ยวเฉพาะที่ผ่านด่าน)
+- **F15.2 ฐานเพดาน** — เมื่อ F8 มีเงินเติมต่อเดือน: วัดเพดานหุ้นเดี่ยวกับ **พอร์ตแผน 12 เดือน** (= มูลค่าวันนี้ + 12 × เงินเติม) ไม่ใช่พอร์ตวันนี้ · ไม่มี → ใช้พอร์ตวันนี้ + คำเตือน
+- **F15.3 รายตัว** — Weinstein stage 1–4 (ราคา vs SMA150 + ความชัน SMA200) · Minervini trend template 8 ข้อ (ข้อ 8 ใช้ RS เทียบ SPY แทน RS rating) · RS vs SPY 1/3/6/12 เดือน · มูลค่า (P/E · P/FCF · FCF yield · ปันผล · **"ราคานี้ต้องการโต x%/ปี"** = reverse DCF 3 ปี · 30× FCF หรือ 12× EPS · คิดลด 10%) · คุณภาพ (F-score · ROE · FCF margin · รายได้โต 3 ปี · หุ้นเพิ่ม/ลด) · thesis ล่าสุด + stale · ค่าธรรมเนียมถ้าออก (F17 fee model) · คะแนน 0–100 ตาม agent §2B
+- **F15.4 ป้าย action + เหตุผล** — ลำดับกฎ: (1) thesis "ออก" → ออก (2) เกินเพดาน → ลด · แต่ไม้ลด < $3 หรือค่าธรรมเนียม > 1% → **de minimis: ถือ + เจือจางด้วยเงินใหม่** (3) ไม่มี thesis → ถือ ห้ามเพิ่ม/ถัว (ขาลง + อ่อนกว่า SPY > 20% → ทบทวน) (4) thesis "เพิ่ม" + ราคา ≤ น่าซื้อ + ไม่ใช่มีดตก + น้ำหนักหลังซื้อ < เตือน → เพิ่ม (5) ขาลง + อ่อนกว่า SPY > 20% + thesis ดูต่อ/รอ/ลด → โยก (ถ้ามีปลายทางผ่านด่าน) ไม่งั้นทบทวน (6) thesis stale → ทบทวน (7) ถือ · ป้าย "ร่าง — รอต้นยืนยัน" เมื่อ thesis ยังไม่ confirmed
+- **F15.5 ถัวได้ไหม** (ทุกตัวที่ขาดทุน) — ได้เฉพาะ thesis "เพิ่ม" ที่ยืนยัน + ไม่ stale + ราคา ≤ น่าซื้อ + ไม่ใช่มีดตก (ขั้น 4 + ร่วง > 15%/20 วัน) + ไม่ถึงระดับเตือน · แกนดัชนี: DCA ตามรอบ ไม่มี stop
+- **F15.6 โยกเงินแบบมีด่าน** — ผู้สมัคร = watchlist + สแกน Top 5 ทุกโมเดล + thesis "เพิ่ม" (ไม่รวมแกน/ตัวที่ถือ) · ผ่านด่านเมื่อ thesis "เพิ่ม" ยืนยัน + ราคาในโซน + ไม่ใช่ขาลง/มีดตก · โยกได้เมื่อ ต้นทางเข้าข่าย (F15.4 ข้อ 5) + คะแนนปลายทางสูงกว่า ≥ 20 + ต้นทุนโยก (ขาย+ซื้อ) ≤ 1% + ถือต้นทาง ≥ 30 วัน — **ผลตอบแทนย้อนหลังอย่างเดียวไม่ใช่เหตุผล** (Barber & Odean)
+- **F15.7 เทียบตลาด** — SPY 1/3/6/12 เดือน · `equityHistory` วันละจุด (จาก sync + review) → ผลตอบแทนพอร์ตแบบง่าย · มีความหมายเมื่อ ≥ 60 วัน · TWR = P1
+- เกณฑ์ตรวจรับ: [x] ทุก holding มี action + ≥ 1 เหตุผล [x] ไม่มี thesis → ห้ามเพิ่ม/ถัวเสมอ [x] ผู้สมัครโยกไม่มี thesis "เพิ่ม" → ไม่ผ่านด่านทุกตัว [x] ค่าธรรมเนียมขายไม้ $2.88 = 0.8% ตรงกับ preview ของ Webull ($0.02) [ ] ทดสอบด้วย F8 ที่ตั้งเงินเติมแล้ว (ฐานเพดาน = แผน)
+
+### F16 Thesis จาก agent (P0 · ✅ ส่งมอบ 18 ก.ย. 2569)
+- สคีมาบังคับ: summary ≤600 · verdict ถือ|เพิ่ม|ลด|ออก|รอ|ดูต่อ · role แกน|ดาวเทียม|รายได้|เก็งจังหวะ|ไม่เข้าเกณฑ์ · sections 3–12 · scenarios bear/base/bull ×3 (value = มูลค่าปัจจุบันหลังคิดลด) · buyBelow · invalidation (**สัญญาณธุรกิจ ไม่ใช่ราคา**) · altZero · dissent ≤6 (จากวง persona) · sources ≥1 พร้อม asOf · priceAtWrite · reviewAfter
+- วงจร: agent (token `theses:write`) → `draft_ai` → ต้นยืนยัน/ปฏิเสธ+เหตุผลในหน้าหุ้น → `confirmed` · เลยวันทบทวน = stale · ปฏิเสธไม่ถูกลบ (ประวัติ)
+- กระบวนการเขียน (บทเรียนใน memory `feedback_upverse-advisor_thesis-structure`): ข้อมูลจริง (Yahoo · EDGAR ดึงตรง · Webull snapshot · หน้าราคา) → ร่าง → **วง persona 5×2** → แก้ตามเสียงค้าน → POST · ส่งแล้ว 3 ฉบับ (NVDA ถือ · AXON ออก → ต้นยืนยัน · USB ถือ)
+- เกณฑ์ตรวจรับ: [x] token ยืนยัน thesis ไม่ได้ [x] thesis แสดงในหน้าหุ้น + หน้าวิเคราะห์พอร์ต [x] สำเนาที่มีตำแหน่งจริงอยู่ `journal/private/` (git-ignored) ไม่ใช่ `output/`
+
+### F17 แบบจำลองค่าธรรมเนียม + ประวัติมูลค่าพอร์ต (P0 · ✅)
+- Webull TH (หน้าราคา 18 ก.ย. 2569): คอมมิชชัน 0.10% ไม่มีขั้นต่ำ · ขาย: SEC 0.0000206×มูลค่า (ขั้นต่ำ $0.01) + FINRA 0.000195×จำนวน (ขั้นต่ำ $0.01 · สูงสุด $9.79) · FX spread ไม่ระบุ → `settings.fxSpreadPct` (null = 0 + คำเตือน) · **fills จาก API มี `fees: 0` เพราะ API ไม่ส่ง** → ตัวเลขในแอปเป็นค่าประมาณ ยืนยันกับ preview ของ Webull ได้
+- ผล: ไม้ขาย < $3 ผิดกฎ ≤ 1% เสมอ · ตั๋วเสนอโดย agent ต้องระบุค่าธรรมเนียมประมาณใน rationale
+- `equityHistory` วันละจุด {date, totalUsd, cashUsd, investedUsd, fxRate} — เขียนจาก sync (Webull รายงาน) และ review
+
+### F18 การเชื่อม agent: REST API v1 + MCP server (P0 · ✅ 18 ก.ย. 2569)
+- **REST** `/api/v1` (F11) + token scope · เพิ่ม `theses:read` · เอกสาร `docs/API-UPVerse.md`
+- **MCP server** `mcp/upverse-mcp.mjs` (stdio · Node ≥ 20 · `@modelcontextprotocol/sdk`) — 18 เครื่องมือ: อ่าน `upverse_health · portfolio · review · instrument · quotes · scans · theses · tickets · transactions · watchlist · journal · goal` · เขียน `thesis_create · ticket_propose (proposed เสมอ) · watchlist_add · journal_add` · `query` (กฎ) · `api` (เรียก /api/v1 ตรง — path ต้องอยู่ใต้ /api/v1) · ลงทะเบียนใน `.mcp.json` ที่ root (Claude Code เห็นเมื่อเปิดโปรเจกต์นี้) · token อ่านจาก `UPVERSE_TOKEN` หรือ `~/.upverse/token` **นอก repo**
+- กติกา: ทำได้เท่าที่ token มี scope · **ยืนยันตั๋ว/เปลี่ยนตั้งค่า/เปิดประตูทำจาก MCP ไม่ได้** (ไม่มี scope) · ทุกการเรียกลง audit · ผลลัพธ์เป็น JSON ดิบ + ที่มา/เวลา · ไม่มี LLM ในตัว
+- เกณฑ์ตรวจรับ: [x] `node mcp/test-client.mjs` ผ่าน 5 tools [x] token ไม่อยู่ใน repo [ ] ต้นอนุมัติ server ใน Claude Code ครั้งแรก
+
+### F19 กฎใหม่ที่เสนอจากวง persona (รอต้นเคาะ → เขียนเข้า agent §3 + F1.3 + F15)
+| กฎ | ใจความ | สถานะ |
+|---|---|---|
+| **ไม่มี thesis เขียนไว้ = ไม่มีตำแหน่งใหม่** | ตั๋วซื้อหุ้นเดี่ยวต้องอ้าง thesis (confirmed หรือ draft) หรือมีเหตุผลใน journal ก่อน · แอปแสดง "ห้ามเพิ่ม/ถัว" สำหรับตัวที่ไม่มี thesis (ทำแล้วใน F15) · ด่านตั๋ว (A1) = P1 | รอต้นเคาะ |
+| **de minimis** | ไม้ลดสัดส่วน < $3 หรือค่าธรรมเนียม > 1% → ไม่บังคับขาย ใช้เงินใหม่เจือจาง (ทำแล้วใน F15.4) | รอต้นเคาะ |
+| **เพดานวัดกับพอร์ตแผน 12 เดือน** | ต้องมีเงินเติมต่อเดือนใน F8 (ทำแล้วใน F15.2) | รอต้นตอบ Q1 |
+| **look-through ผ่าน ETF** | หุ้นเดี่ยวรวม = ถือตรง + สัดส่วน ETF × น้ำหนักในนั้น — ต้องดึง holdings ของ ETF (P1) | รอต้นเคาะว่านับไหม |
+
 ### F11 API-first `/api/v1` (P0)
 | ทาง | scope | หน้าที่ |
 |---|---|---|
@@ -248,7 +284,9 @@
 | `GET /scans` · `GET /scans/{model}` · `GET /scans/{model}/runs/{date}` | `scan:read` | ผลสแกน + why + เวอร์ชัน |
 | `GET /instruments/{symbol}` · `GET /instruments/{symbol}/bars?tf=1d` · `/fundamentals` | `quotes:read` | ข้อมูลหุ้น |
 | `GET/POST /watchlist` · `POST /alerts` | `watchlist:write` | |
-| `GET /theses/{symbol}` · `POST /theses` | `theses:write` | เขียนเป็น draft 🤖 เสมอ |
+| `GET /theses` · `POST /theses` · `POST /theses/{id} {confirm|reject|stale}` | `theses:read` · `theses:write` · เจ้าของ | เขียนเป็น draft 🤖 เสมอ · เจ้าของยืนยัน/ปฏิเสธในหน้าหุ้น · เวอร์ชันต่อ symbol |
+| `GET /portfolio/review` | `portfolio:read` | วิเคราะห์พอร์ต F15 (สัดส่วน vs แผน · action ต่อตัว · โยกเงินแบบมีด่าน) |
+| `POST /tickets/{id}/preview` | เจ้าของ / ผู้ดูแลระบบ (CRON_SECRET) | ให้ Webull ประเมินคำสั่ง (ไม่ส่ง) — ต้องผ่านก่อนเปิดราง API |
 | `GET /tickets` · `POST /tickets` | `tickets:propose` | สร้างได้เฉพาะ `proposed` · response คืนผลตรวจกฎ |
 | `POST /tickets/{id}/confirm` | **ไม่มี scope** | 403 สำหรับ token ทุกชนิด · ทำได้จากเซสชันคนเท่านั้น |
 | `POST /journal` | `journal:write` | |
@@ -392,7 +430,8 @@
 | Market Data | `get_history_bar` · `get_batch_history_bar` · streaming MQTT (quote/snapshot/tick) ใช้ `api_endpoint` และ `data_api_endpoint` แยกกัน · "requires an active OpenAPI market data subscription" · 403 = ยังไม่สมัคร | market-data-api/getting-started |
 | ค่าใช้จ่าย | Trading API: "0 No API fees charged" · Market data: "Free Data — Start with US Market Nasdaq Basic at no cost" · ระดับสูงกว่าไม่ระบุราคา | webull.co.th/en/open-api |
 | Skills/MCP ทางการ | `webull-openapi-skills` และ `webull-openapi-mcp` (PyPI 1.2.4) รองรับ US/HK/JP/SG/MY/UK/MX/BR/ZA — **ไม่มี TH** → ใช้ SDK ตรง · เอาแนวคิดชั้นป้องกันมาใช้ (UAT ค่าเริ่มต้น · notional/quantity limit · symbol whitelist · read-only toolsets · audit) | GitHub webull-inc |
-| **[ยังไม่ยืนยัน]** | เศษหุ้น/มูลค่าผ่าน API สำหรับบัญชีไทย · preview endpoint · rate limit · อายุ token · UAT แยกของ th · endpoint host ของ th · deep link เปิดแอป | → Sprint 0 |
+| **ยืนยันแล้ว 18 ก.ย. 2569 (เอกสารทางการ + บัญชีจริง)** | host prod `api.webull.co.th` · **host UAT `th-api.uat.webullbroker.com` + บัญชีทดสอบร่วม 3 บัญชี (docs/sdk.md — ไม่ต้องสมัคร)** · body คำสั่ง TH v3 `new_orders[]` · **เศษหุ้น: `quantity` รับทศนิยม** · preview คืน `estimated_cost`/`estimated_transaction_fee` (ทดสอบจริง: ขาย 0.00639 AXON → $2.88 / $0.02) · order types MARKET/LIMIT/STOP_LOSS/STOP_LOSS_LIMIT · sessions CORE/ALL/NIGHT/ALL_DAY · token INVALID หลัง 15 วันไม่ใช้ · history คืนช่วงล่าสุด (start_time → 417) · fills ไม่มีค่าธรรมเนียม | `docs/API-UPVerse.md` · llms.txt ของ Webull TH |
+| **[ยังไม่ยืนยัน]** | 2FA/token ของบัญชีทดสอบ UAT (ใช้ flow เดียวกันไหม) · place จริงบน UAT · deep link เปิดแอป · rate limit ของ preview/place | → S0.2 (ทำได้แล้วเพราะมี UAT) |
 
 **การใช้งานในระบบ:** เส้นทางออนไลน์ (Vercel · TypeScript) ต้องเรียก Webull ได้ → **Sprint 0 ตัดสิน**: (ก) พอร์ตตัวเซ็นลายเซ็นจาก SDK Python (open source) มาเป็น TypeScript module `lib/webull/` · หรือ (ข) ใช้ Vercel Python Function เรียก SDK ตรง · **เส้นทางกลางคืน (batch) ใช้ Python SDK บน GitHub Actions เสมอ**
 
@@ -504,7 +543,7 @@
 
 ### 14.1 Sprint 0 — พิสูจน์ก่อนสร้าง (1 สัปดาห์ · metatron + upverse-advisor)
 - [ ] S0.1 บัญชีทดสอบ Webull: auth + 2FA + `account/list` + `positions` + `get_batch_history_bar` ทำงานด้วย region `th` → บันทึกผลจริงใน `docs/SPIKES.md`
-- [ ] S0.2 ทดสอบส่งคำสั่งใน UAT: หุ้นเต็ม 1 หุ้น · เศษหุ้น 0.1 · มูลค่า 10 USD → อันไหนผ่าน/ไม่ผ่าน
+- [~] S0.2 ทดสอบส่งคำสั่ง: **preview บน prod ผ่านแล้ว (เศษหุ้น OK · fee $0.02)** · ถัดไป: ต่อ host UAT `th-api.uat.webullbroker.com` ด้วยบัญชีทดสอบร่วม → place/cancel/detail จริงบน UAT (ไม่ใช่เงินจริง) → บันทึก `docs/SPIKES.md`
 - [ ] S0.3 ตัดสินเส้นทางออนไลน์: พอร์ตลายเซ็นเป็น TS ได้ภายใน 2 วันไหม · ไม่ได้ → Python function
 - [ ] S0.4 ขอบเขต market data ฟรี (Nasdaq Basic): quote ดีเลย์ไหม · bars ย้อนหลังกี่ปี · โควตา
 - [ ] S0.5 Supabase schema v1 + RLS + `/api/v1/health` ขึ้น preview · Supabase `aqklpnjzgtpqotxebthn` ยืนยันบัญชี/กุญแจ
@@ -518,11 +557,15 @@
 | S3 (1–2 สัปดาห์) | F6 ตั๋ว (รางส่งมือ + API rail บน UAT) · F7 journal · F11 API ครบ + `openapi.json` · F5 LINE alerts | e2e ตั๋ว UAT ผ่าน · token confirm = 403 · `npm audit` สะอาด · ข้อมูลจริงในฐานตรวจแล้ว |
 | S4 (1 สัปดาห์) | F9 บรีฟเช้า · F14 ผู้ดู · ขัดเกลา UX จากการใช้จริง · เอกสาร API | ต้นใช้ 2 สัปดาห์โดยไม่ต้องเปิดแอปโบรกเกอร์เพื่อ "ดู" |
 
-### 14.3 ประตูเปิดเงินจริง (Gate → Webull prod) — ต้องครบทุกข้อ
-1. ใช้รางส่งมือ + UAT อย่างน้อย 30 วัน · ตั๋ว ≥ 10 ใบ · journal ครบ
-2. lucifer ทุบ + michael เคาะ (บันทึกใน `docs/DECISIONS.md`)
-3. เพดานเริ่มต้น prod: `max_order_notional_usd` ≤ 200 · whitelist ≥ 1 ตัว · `TRADING_ENABLED` เปิดโดยต้นเอง
-4. ทดสอบ kill switch ทั้งสองชั้นบน prod (คำสั่งต้องถูกปฏิเสธ) ก่อนเปิดจริง
+### 14.3 ประตูเปิดราง API เงินจริง (Gate → Webull prod) — ฉบับ v0.2 (18 ก.ย. 2569)
+สถานะประตูวันนี้: environment `uat` · kill switch ตั้งค่า **ปิด** · env `TRADING_ENABLED` **ปิด** · whitelist **ว่าง** · preview ผ่าน · lucifer ทุบแล้ว (ผลใน §19)
+1. **UAT จริงก่อน** (เพิ่งรู้ว่ามี): ต่อ host UAT + บัญชีทดสอบร่วม → place → detail → cancel ผ่านครบ · ตรวจว่า `client_order_id` ไม่ส่งซ้ำ (idempotency) และสถานะ poll ได้
+2. preview บน prod ผ่านสำหรับตั๋วใบที่จะส่ง (ทำแล้วสำหรับ AXON) · body ที่ preview = body ที่ place (ตัวสร้างเดียวกัน — ทำแล้ว)
+3. lucifer ทุบ + michael เคาะ (บันทึกใน `docs/DECISIONS.md`) — ไม้แรกต้องเป็นไม้ที่เล็กที่สุดที่มี (เช่น ขาย AXON $2.88) และเป็น **ขาย** ไม่ใช่ซื้อ
+4. ต้นเปิดเอง 4 ชั้นในลำดับนี้: whitelist = [สัญลักษณ์เดียวของไม้นั้น] → `max_order_notional_usd` ≤ 20 สำหรับไม้แรก → ตั้งค่า environment `prod` ด้วยประโยค "เปิดเงินจริง" → kill switch ตั้งค่า + env `TRADING_ENABLED=true` บน Vercel (ตัวสุดท้าย)
+5. ทดสอบ kill switch: ยืนยันตั๋วขณะ env ปิด → ต้องถูกปฏิเสธ (log `send_failed`/422) ก่อนเปิดตัวสุดท้าย
+6. หลังส่ง: poll `/trading/orders/get` จนจบ → fill ตรงกับแอป Webull → บันทึก transaction + journal → ปิด kill switch กลับ (opt-in ต่อไม้ในช่วงแรก) → ค่อยผ่อนเพดาน
+7. เกณฑ์เดิม (ใช้รางส่งมือ ≥ 30 วัน · ตั๋ว ≥ 10) **ยังใช้กับการ "ผ่อนเพดาน"** ไม่ใช่กับไม้ทดสอบแรก
 
 ### 14.4 ประตูเฟส 2 (ออปชัน) — พอร์ต ≥ 5,000 USD · มีหุ้นครบ 100 หุ้น 1 ตัว หรือเงินสดกัน CSP ได้ · สิทธิ์ options ของบัญชียืนยันแล้ว · agent §2E เป็นกฎ
 
@@ -581,6 +624,9 @@
 | Q12 | ภาษี: ถิ่นที่อยู่ทางภาษี · W-8BEN · แผนนำเงินกลับ | sachiel |
 | Q13 | สร้าง persona ใหม่ 3 ตัว (technical trader · options income · risk manager) | ต้น |
 | Q14 | น้ำหนัก scorecard และเกณฑ์ M1–M5 เวอร์ชัน 1 — ต้นอยากปรับตัวไหนก่อนรัน | ต้น + upverse-advisor |
+| Q15 | เคาะกฎ F19: ไม่มี thesis = ไม่มีตำแหน่ง · de minimis · เพดานวัดกับพอร์ตแผน · look-through | ต้น |
+| Q16 | จะเปิดราง API เงินจริงด้วยไม้ขาย AXON $2.88 เป็นไม้ทดสอบแรกไหม (ประตู 14.3 ข้อ 1–5) หรือขายมือแล้วรอ UAT ก่อน | ต้น (+ lucifer §19) |
+| Q17 | ต้นทุนแลกเงิน THB↔USD จริงของ Webull (ตั้ง `fxSpreadPct`) + W-8BEN ยื่นแล้วไหม | ต้น + sachiel |
 
 ---
 
@@ -590,7 +636,7 @@ Backtest เต็มรูปแบบ · หลายผู้ใช้/ขา
 ---
 
 ## 19. ผลการทุบโดย lucifer (red-team)
-_รอผล — จะเติมหลังรอบทุบเอกสารฉบับนี้ (ข้อที่รับ → แก้ในเอกสาร · ข้อที่ไม่รับ → เหตุผล)_
+_รอบเอกสาร v0.1: ยังไม่ได้ทุบ_ · **รอบ "ส่งคำสั่งจริงผ่าน API ครั้งแรก" (18 ก.ย. 2569): ผลอยู่ใน `docs/DECISIONS.md` (เติมเมื่อได้ผล) — ข้อที่รับแล้ว: UAT จริงก่อน · ไม้แรก = ขาย ไม้เล็กสุด · whitelist ตัวเดียว · เพดาน ≤ $20 · ปิด kill switch กลับหลังไม้แรก (ดู 14.3)**
 
 ---
 
@@ -598,5 +644,6 @@ _รอผล — จะเติมหลังรอบทุบเอกส�
 | วันที่ | เวอร์ชัน | อะไร | ใคร |
 |---|---|---|---|
 | 17 ก.ย. 2569 | 0.1 | ร่างแรก: ปัญหา/เป้า · scope · F1–F14 · โมเดล M1–M6 · schema · integrations (ตรวจ Webull TH แล้ว) · sequences · security · gates · คำถามเปิด | upverse-advisor (ผ่านสกิล write-spec) |
+| 18 ก.ย. 2569 | 0.2 | เพิ่ม F15 วิเคราะห์พอร์ต · F16 thesis จาก agent · F17 ค่าธรรมเนียม/ประวัติพอร์ต · F18 MCP + API · F19 กฎที่เสนอ · แก้ F6.4/F6.5 ตามสคีมา TH v3 + preview จริง · §9 ข้อค้นพบ Webull TH (UAT มีจริง · เศษหุ้น OK) · §14.3 ประตูราง API ฉบับใหม่ · Q15–Q17 | upverse-advisor (ผ่านสกิล write-spec) |
 
 > ไม่ใช่คำแนะนำจากผู้มีใบอนุญาต · ตัวเลขเกณฑ์ทั้งหมดเป็นค่าเริ่มต้นที่ต้องยืนยันด้วยข้อมูลจริงก่อนใช้

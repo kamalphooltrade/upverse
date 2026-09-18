@@ -57,6 +57,12 @@ async function _POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   if (rules_whitelist_blocked(d, t)) return json({ error: { code: "whitelist", message: `${t.symbol} ไม่อยู่ใน whitelist ของกฎ — รางส่ง API ต้องมี whitelist` } }, { status: 422 });
   const clientOrderId = clientOrderIdFor(id);
   const order = buildStockOrder(t, ev.qty, clientOrderId);
+  // persist the attempt BEFORE calling the broker: if the DB is fine but the broker times out, the app still knows an order may exist
+  await withData((dd) => {
+    const x = dd.tickets.find((y) => y.id === id)!;
+    x.brokerOrderId = clientOrderId; x.updatedAt = nowIso();
+    dd.orderLog.push({ id: uid(), ticketId: id, ts: now, action: "send_attempt", fromStatus: "proposed", toStatus: "proposed", actor: "owner", detail: JSON.stringify({ request: { account_id: acc.brokerAccountMasked, new_orders: [order] } }).slice(0, 2000) });
+  });
   try {
     const res = await placeOrder(creds, acc.brokerAccountMasked, order);
     const out = await withData((dd) => {
@@ -69,7 +75,7 @@ async function _POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
     return json({ ticket: out, broker: res });
   } catch (e) {
     await withData((dd) => { dd.orderLog.push({ id: uid(), ticketId: id, ts: nowIso(), action: "send_failed", fromStatus: "proposed", toStatus: "proposed", actor: "owner", detail: e instanceof Error ? e.message : String(e) }); });
-    return json({ error: { code: "broker_error", message: e instanceof Error ? e.message : String(e) } }, { status: 502 });
+    return json({ error: { code: "broker_error", message: `${e instanceof Error ? e.message : String(e)} — ⚠ ห้ามกดยืนยันซ้ำจนกว่าจะตรวจในแอป Webull ว่าคำสั่ง ${clientOrderId} ถูกส่งไปแล้วหรือไม่ (client_order_id คงที่ต่อตั๋ว: ส่งซ้ำจะถูก Webull ปฏิเสธ)` } }, { status: 502 });
   }
 }
 export const POST = safe(_POST);

@@ -1,0 +1,11 @@
+{
+  "name": "upverse-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MCP server exposing the UPVerse app (REST API v1) as tools for Claude Code / other MCP clients",
+  "bin": { "upverse-mcp": "./upverse-mcp.mjs" },
+  "scripts": { "start": "node upverse-mcp.mjs", "test": "node test-client.mjs" },
+  "engines": { "node": ">=20" },
+  "dependencies": { "@modelcontextprotocol/sdk": "^1.12.0", "zod": "^3.24.0" }
+}

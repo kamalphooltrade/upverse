@@ -20,5 +20,6 @@ export function buildStockOrder(t: Ticket, qty: number | null, clientOrderId: st
   if (t.limitPrice != null) o.limit_price = String(t.limitPrice);
   return o;
 }
-/** ≤ 32 chars · letters/digits/-/_ · unique per account: upv-<8 of ticket id>-<base36 time> = 22 chars */
-export const clientOrderIdFor = (ticketId: string) => `upv-${ticketId.slice(0, 8)}-${Date.now().toString(36)}`;
+/** ≤ 32 chars · letters/digits/-/_ · unique per account. STABLE per ticket (no timestamp): a retry after a timeout reuses the
+ *  same id, so Webull rejects the duplicate instead of filling twice (lucifer finding B, 18 ก.ย. 2569). upv-<8>-<8> = 21 chars. */
+export const clientOrderIdFor = (ticketId: string) => `upv-${ticketId.slice(0, 8)}-${ticketId.replace(/-/g, "").slice(8, 16)}`;

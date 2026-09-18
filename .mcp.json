@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "upverse": {
+      "command": "node",
+      "args": ["mcp/upverse-mcp.mjs"],
+      "env": { "UPVERSE_URL": "https://upverse-app.vercel.app" }
+    }
+  }
+}

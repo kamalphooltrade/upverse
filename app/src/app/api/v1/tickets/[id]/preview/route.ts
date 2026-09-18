@@ -38,11 +38,11 @@ async function _POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
       if (dd.brokerCredentials) dd.brokerCredentials.tokenLastUsedAt = nowIso();
       audit(dd, actor, "ticket.preview", "ticket", id, { symbol: t.symbol, side: t.side, ms: Date.now() - started });
     });
-    return json({ ok: true, request: { account_id: acc.brokerAccountMasked, stock_order: order }, broker: res, checks: ev.checks, note: "preview เท่านั้น — ยังไม่มีคำสั่งถูกส่ง" });
+    return json({ ok: true, request: { account_id: acc.brokerAccountMasked, new_orders: [order] }, broker: res, checks: ev.checks, note: "preview เท่านั้น — ยังไม่มีคำสั่งถูกส่ง" });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     await withData((dd) => { dd.orderLog.push({ id: uid(), ticketId: id, ts: nowIso(), action: "preview_failed", fromStatus: t.status, toStatus: t.status, actor, detail: JSON.stringify({ request: order, error: msg }).slice(0, 2000) }); });
-    return json({ ok: false, request: { account_id: acc.brokerAccountMasked, stock_order: order }, error: { code: "broker_error", message: msg }, checks: ev.checks }, { status: 502 });
+    return json({ ok: false, request: { account_id: acc.brokerAccountMasked, new_orders: [order] }, error: { code: "broker_error", message: msg }, checks: ev.checks }, { status: 502 });
   }
 }
 export const POST = safe(_POST);
